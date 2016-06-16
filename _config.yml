@@ -7,7 +7,7 @@
 
 # Site Settings
 locale                   : "en-US"
-title                    : "Site Title"
+title                    : "Karthik's website"
 title_separator          : "-"
 name                     : "Sriram Karthik Badam"
 description              : "Karthik's website."
@@ -37,7 +37,7 @@ yandex_site_verification :
 
 # Social Sharing
 twitter:
-  username               : karthikbadam
+  username               : karthik_badam
 facebook:
   username               : karthikb007
   app_id                 :
