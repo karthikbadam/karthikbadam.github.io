@@ -9,9 +9,9 @@
 locale                   : "en-US"
 title                    : "Site Title"
 title_separator          : "-"
-name                     : "Your Name"
-description              : "An amazing website."
-url                      : # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
+name                     : "Sriram Karthik Badam"
+description              : "Karthik's website."
+url                      : # the base hostname & protocol for your site e.g. "https://karthikbadam.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 gh_repo                  :
 teaser                   : # filename of teaser fallback teaser image placed in /images/, .e.g. "500x300.png"
@@ -37,9 +37,9 @@ yandex_site_verification :
 
 # Social Sharing
 twitter:
-  username               :
+  username               : karthikbadam
 facebook:
-  username               :
+  username               : karthikb007
   app_id                 :
   publisher              :
 og_image                 : # Open Graph/Twitter default site image
@@ -63,13 +63,13 @@ google_ad_slot           :
 
 # Site Author
 author:
-  name             : "Your Name"
+  name             : "Sriram Karthik Badam"
   avatar           : "bio-photo.jpg"
-  bio              : "I am an amazing person."
-  location         : "Somewhere"
-  email            :
+  bio              : "I am a PhD student in Computer Science at University of Maryland, College Park"
+  location         : "Greenbelt, MD, USA"
+  email            : "karthikbadam@infoviz.me"
   uri              :
-  bitbucket        :
+  bitbucket        : 
   codepen          :
   dribbble         :
   flickr           :
