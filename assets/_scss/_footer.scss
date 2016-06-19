@@ -9,9 +9,8 @@
   color: mix(#fff, $gray, 25%);
   animation: intro 0.3s both;
   animation-delay: 0.45s;
-  background-color: $lighter-gray;
-  border-top: 1px solid $light-gray;
-
+  background-color: $light-purple;
+  
   footer {
     @include container;
     @include clearfix;
