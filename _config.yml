@@ -65,18 +65,18 @@ google_ad_slot           :
 author:
   name             : "Sriram Karthik Badam"
   avatar           : "bio-photo.jpg"
-  bio              : "I am a PhD student in Computer Science at University of Maryland, College Park"
+  bio              : "I am a PhD student in Computer Science at University of Maryland, College Park. My research interests include Visualization, Visual Analytics, and Human-Computer Interaction."
   location         : "Greenbelt, MD, USA"
   email            : "karthikbadam@infoviz.me"
-  uri              :
+  uri              : 
   bitbucket        : 
   codepen          :
   dribbble         :
   flickr           :
-  facebook         :
+  facebook         : "karthikb007"
   foursquare       :
-  github           :
-  google_plus      :
+  github           : "karthikbadam"
+  google_plus      : 
   keybase          :
   instagram        :
   lastfm           :
@@ -86,11 +86,11 @@ author:
   stackoverflow    : # http://stackoverflow.com/users/123456/username
   steam            :
   tumblr           :
-  twitter          :
+  twitter          : "karthik_badam"
   vine             :
   weibo            :
   xing             :
-  youtube          :
+  youtube          : "karthikbadam"
 
 
 # Reading Files
