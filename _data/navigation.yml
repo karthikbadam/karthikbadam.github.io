@@ -4,13 +4,13 @@ main:
     url: /projects/
 
   - title: "Publications"
-    url: https://mmistakes.github.io/minimal-mistakes/
+    url: /publications/
 
   - title: "Teaching"
-    url: https://mmistakes.github.io/minimal-mistakes/year-archive/
+    url: /teaching/
 
   - title: "Blog"
-    url: https://mmistakes.github.io/minimal-mistakes/page-archive/
+    url: /blog/
 
   - title: "Pictures"
-    url: https://mmistakes.github.io/minimal-mistakes/collection-archive/
+    url: /pictures/
