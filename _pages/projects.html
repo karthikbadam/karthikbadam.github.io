@@ -7,13 +7,16 @@ permalink: /projects/
 author_profile: true
 ---
 
+<div class="grid__wrapper">
+  {% for post in site.portfolio %}
+    {% include archive-single.html type="grid" %}
+  {% endfor %}
+</div>
 
-{% include base_path %}
-
-
-
-{% for post in paginator.posts %}
-  {% include archive-single.html %}
-{% endfor %}
-
-{% include paginator.html %}
+<script>
+    
+    $(document).ready(function () {
+        window.alert("blah");    
+    });
+    
+</script>
