@@ -1,0 +1,210 @@
+[
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Niklas Elmqvist",
+      "Jean-Daniel Fekete"
+    ],
+    "title": "Steering the Craft: UI Elements and Visualizations for Supporting Progressive Visual Analytics",
+    "venue": "(Under review) ACM Human Factors in Computing Systems (CHI)",
+    "year": "2017",
+    "type": "Conference",
+    "pdf": "",
+    "video": "",
+    "bibtex": "",
+    "name": "progressive",
+    "keywords": ["Visual Analytics", "Progressive Analytics", "Visual Exploration", "Twitter Analysis", "User Study", "Web-Based"]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Niklas Elmqvist"
+    ],
+    "title": "Effects of Display Size on Data Comprehension in Screen-Responsive Visualization",
+    "venue": "(Under review) ACM Human Factors in Computing Systems (CHI)",
+    "year": "2017",
+    "type": "Conference",
+    "pdf": "",
+    "video": "",
+    "bibtex": "",
+    "name": "touchinsight",
+    "keywords": ["User Study", "Visual Analytics", "Visualization", "Responsive", "Large Displays", "Handheld Devices"]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Fereshteh Amini",
+      "Niklas Elmqvist",
+      "Pourang Irani"
+    ],
+    "title": "Supporting Visual Exploration for Multiple Users in Large Display Environments",
+    "venue": "IEEE Visual Analytics Science and Technology (VAST)",
+    "year": "2016",
+    "type": "Conference",
+    "pdf": "https://www.dropbox.com/s/f8bnurb80n1a322/multiuser-vis.pdf?dl=0",
+    "video": "https://www.youtube.com/watch?v=xd7G_q8nocc",
+    "bibtex": "",
+    "name": "proxemiclens",
+    "keywords": ["Proxemics", "Gestures", "Visual Exploration", "Collaboration", "Sensemaking", "User Study", "Large Displays", "Visualization", "Visual Analytics", "HCI"]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Jieqiong Zhao",
+      "Shivalik Sen",
+      "Niklas Elmqvist",
+      "David Ebert"
+    ],
+    "title": "TimeFork: Interactive Prediction of Time Series",
+    "venue": "ACM Human Factors in Computing Systems (CHI)",
+    "year": "2016",
+    "type": "Conference",
+    "pdf": "http://www.umiacs.umd.edu/~elm/projects/timefork/timefork.pdf",
+    "video": "https://www.youtube.com/watch?v=nUfSqqbaD5k",
+    "bibtex": "https://scholar.googleusercontent.com/citations?view_op=export_citations&user=ExY_mkUAAAAJ&s=ExY_mkUAAAAJ:bEWYMUwI8FkC&citsig=AMstHGQAAAAAWBWHBeg-ztWfyWcitNGpk61uzR8yZ-aE&hl=en&cit_fmt=0",
+    "name": "timefork",
+    "keywords": ["Visual Analytics", "Visual Prediction", "Time Series", "User Study", "Temporal Forecasting", "Mixed-Initative", "Web-Based"]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Niklas Elmqvist"
+    ],
+    "title": "PolyChrome: A Cross-Device Framework for Collaborative Web Visualization",
+    "venue": "ACM Interactive Tabletops and Surfaces (ITS), now known as ISS",
+    "year": "2014",
+    "type": "Conference",
+    "pdf": "http://www.umiacs.umd.edu/~elm/projects/polychrome/polychrome.pdf",
+    "video": "https://www.youtube.com/watch?v=0izPWZs7jHU",
+    "bibtex": "https://scholar.googleusercontent.com/citations?view_op=export_citations&user=ExY_mkUAAAAJ&s=ExY_mkUAAAAJ:bEWYMUwI8FkC&citsig=AMstHGQAAAAAWBWHBeg-ztWfyWcitNGpk61uzR8yZ-aE&hl=en&cit_fmt=0",
+    "name": "polychrome",
+    "keywords": ["Co-browsing", "Cross-Device Interaction", "Multi-Display Environments", "Visualization", "Web-Based", "Framework", "Handheld Devices"]
+  },
+  {
+    "authors": [
+      "Senthil Chandrasegaran",
+      "Sriram Karthik Badam",
+      "Zhenpeng Zhao",
+      "Niklas Elmqvist",
+      "Lorraine Kisselburgh",
+      "Karthik Ramani"
+    ],
+    "title": "Collaborative Sketching with skWiki: A Case Study",
+    "venue": "ASME IDETC/CIE",
+    "year": "2014",
+    "type": "Conference",
+    "pdf": "https://engineering.purdue.edu/cdesign/wp/wp-content/uploads/2014/08/skWiki_case_study.pdf",
+    "video": "https://www.youtube.com/watch?v=zHG_53Hv9hA",
+    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:4f8GCfQbOogJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ7i3jHXsvi5RqvUgBlUA5Q-TpfbvCC&scisf=4&ct=citation&cd=-1&hl=en",
+    "name": "skwikistudy",
+    "keywords": ["User Study", "Sketching", "Collaboration", "Case Study", "Design", "Creativity", "HCI"]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Senthil Chandrasegaran",
+      "Niklas Elmqvist",
+      "Karthik Ramani"
+    ],
+    "title": "Tracing and Sketching Performance using Blunt-Tipped Styli on Direct-Touch Tablets",
+    "venue": " ACM Advanced Visual Interfaces (AVI)",
+    "year": "2014",
+    "type": "Conference",
+    "pdf": "https://engineering.purdue.edu/cdesign/wp/wp-content/uploads/2014/05/sketch-media.pdf",
+    "video": "https://www.dropbox.com/s/uff5290s5rx4lei/sketch-media-avi.mov?dl=0",
+    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:7MjtVaadzPMJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ8PLm5rBwHsra9Qc5hipOtyxfXtkdQ&scisf=4&ct=citation&cd=-1&hl=en",
+    "name": "sketchmedia",
+    "keywords": ["Sketching", "Evaluation", "Pen", "Paper", "User Study", "HCI", "Handheld Devices"]
+  },
+  {
+    "authors": [
+      "Zhenpeng Zhao",
+      "Sriram Karthik Badam",
+      "Senthil Chandrasegaran",
+      "Deok Gun Park",
+      "Niklas Elmqvist",
+      "Lorraine Kisselburgh",
+      "Karthik Ramani"
+    ],
+    "title": "skWiki: A Multimedia Sketching System for Collaborative Creativity",
+    "venue": "ACM Human Factors in Computing Systems (CHI)",
+    "year": "2014",
+    "type": "Conference",
+    "pdf": "https://engineering.purdue.edu/cdesign/wp/wp-content/uploads/2014/02/skwiki.pdf",
+    "video": "https://www.youtube.com/watch?v=zHG_53Hv9hA",
+    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:oc707uRfWRQJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ86yWnio0ONJhs3sRZq5kOPtH8-TGd&scisf=4&ct=citation&cd=-1&hl=en",
+    "name": "skwiki",
+    "keywords": ["User Study", "Sketching", "Cross-Device Interaction", "Multi-Display Environments", "Collaboration", "Design", "History", "Wiki", "Web-Based", "Handheld Devices"]
+  },
+  {
+    "authors": [
+      "Senthil Chandrasegaran",
+      "Sriram Karthik Badam",
+      "Lorraine Kisselburgh",
+      "Kyle Peppler",
+      "Niklas Elmqvist",
+      "Karthik Ramani"
+    ],
+    "title": "VizScribe: A Visual Analytics Approach to Understand Designer Behavior",
+    "venue": "(Under review - minor revision) International Journal of Human-Computer Studies (IJHCS)",
+    "year": "2016",
+    "type": "Journal",
+    "pdf": "",
+    "video": "https://vimeo.com/169905057",
+    "bibtex": "",
+    "name": "vizscribe",
+    "keywords": ["Protocol Analysis", "Design", "User Study", "Visual Analytics", "HCI"]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Eli Fisher",
+      "Niklas Elmqvist"
+    ],
+    "title": "Munin: A Peer-to-Peer Middleware for Ubiquitous Analytics and Visualization Spaces",
+    "venue": "IEEE Transactions on Visualization & Computer Graphics (TVCG)",
+    "year": "2015",
+    "type": "Journal",
+    "pdf": "http://www.umiacs.umd.edu/~elm/projects/munin/munin.pdf",
+    "video": "https://www.youtube.com/watch?v=ZKIXSdUm6-s",
+    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:CPJihiRlBtsJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ_aRyqEQZI7eif2DXVs6IaWIKATPZN&scisf=4&ct=citation&cd=-1&hl=en",
+    "name": "munin",
+    "keywords": ["Multi-Display Environments", "Cross-Device Interaction", "Visualization", "Framework", "Handheld Devices"]
+
+  },
+  {
+    "authors": [
+      "Jonathan C. Roberts",
+      "Panagiotis D. Ritsos",
+      "Sriram Karthik Badam",
+      "Dominique Brodbeck",
+      "Jessie Kennedy",
+      "Niklas Elmqvist"
+    ],
+    "title": "Visualization beyond the Desktop---The Next Big Thing",
+    "venue": " IEEE Computer Graphics & Applications (CG&A)",
+    "year": "2014",
+    "type": "Journal",
+    "pdf": "http://pages.bangor.ac.uk/~pas601/papers/Roberts_et_al_Beyond_CGA.pdf",
+    "video": "https://www.youtube.com/watch?v=0izPWZs7jHU",
+    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:hRHLfkhAjygJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBRAKuJCktzRDUUql6xsTRG60vTAir9o&scisf=4&ct=citation&cd=-1&hl=en",
+    "name": "beyondDesktopVis",
+    "keywords": ["Immersion", "Visualization", "Multi-Display Environments", "Cross-Device Interaction", "Multimodal", "Multi-Sensory", "Handheld Devices"]
+  },
+  {
+    "authors": [
+      "Eli Fisher",
+      "Sriram Karthik Badam",
+      "Niklas Elmqvist"
+    ],
+    "venue": "International Journal of Human-Computer Studies (IJHCS)",
+    "title": "Designing Peer-to-Peer Distributed User Interfaces: Case Studies on Building Distributed Applications",
+    "year": "2014",
+    "type": "Journal",
+    "pdf": "http://www.umiacs.umd.edu/~elm/projects/dui-design/dui-design.pdf",
+    "video": "",
+    "bibtex": "https://scholar.googleusercontent.com/citations?view_op=export_citations&user=ExY_mkUAAAAJ&s=ExY_mkUAAAAJ:bEWYMUwI8FkC&citsig=AMstHGQAAAAAWBWHBeg-ztWfyWcitNGpk61uzR8yZ-aE&hl=en&cit_fmt=0",
+    "name": "dui",
+    "keywords": ["Distributed User Interfaces", "Case Study", "Design", "Framework"]
+  }
+]
