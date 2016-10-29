@@ -27,8 +27,8 @@
     ],
     "abstract": "Traditional visual analytics systems face challenges with latency when dealing with large datasets and complex computations. Considering that humans cannot maintain their attention when system response time exceeds approximately 10 seconds, we need to alternative ways to create responsive visual analytics systems. This project targets creating such systems by taking advantage of a progressive paradigm involves intermediate results and incremental data processing. Visualizing these intermediate results, associated uncertainities, and corresponding feedback and control options is the challenge in this project.",
     "publications": ["ACM CHI 2017 (in review)"],
-    "name": "progressiveVA"
-
+    "name": "progressiveVA",
+    "comments": "Internship at INRIA, Saclay, France"
   },
   {
     "title": "Natural Interaction Spaces for Collaborative Design",
