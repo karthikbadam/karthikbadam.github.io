@@ -78,7 +78,7 @@ function showPublication (publicationsContent, paper, i) {
     pub.append("div").style("width", "110px")
         .style("height", "72px")
         .style("display", "inline-block")
-        .style("border", "2px solid #222")
+        .style("border", "1.5px solid #222")
         .style("background-size", "cover")
         .style("background-repeat", "no-repeat")
         .style("vertical-align", "top")

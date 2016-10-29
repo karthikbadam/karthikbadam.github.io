@@ -7,32 +7,10 @@ permalink: /projects/
 author_profile: true
 ---
 
-<div class="grid__wrapper">
-  {% for post in site.portfolio %}
-    {% include archive-single.html type="grid" %}
-  {% endfor %}
-</div>
+<{% include base_path %}
 
-<div class="archive" id="projectList">
+<script src="{{ base_path }}/assets/js/projects.js"></script>
 
+<div class="archive" id="projectsList"></div>
 
-
-</div>
-
-<script>
-    
-    $(document).ready(function () {
-        //window.alert("blah");
-
-        //for each project add a teaser thumbnail and an abstract
-
-
-        //show links to the papers, video, pdfs on click
-
-
-
-
-    });
-
-
-</script>
+{% include paginator.html %}
