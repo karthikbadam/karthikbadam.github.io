@@ -81,7 +81,7 @@ function showPublication (publicationsContent, paper, i) {
         .style("border", "2px solid #222")
         .style("background-size", "cover")
         .style("background-repeat", "no-repeat")
-        .style("vertical-align", "bottom")
+        .style("vertical-align", "top")
         .style("background-image", "url(/assets/images/" + paper.name + ".png");
 
     var pubInfo = pub.append("div").style("width", "calc(100% - 110px)")
