@@ -1,0 +1,57 @@
+[
+  {
+    "title": "Bridging Physical and Digital Worlds: When Your Body Is Your Tool, Data Becomes Accessible",
+    "abstract": "New interaction models developed at University of Maryland and University of Manitoba utilize body and hand movement to perform data analysis on large wall-sized displays.",
+    "link": "http://hcil.umd.edu/bridging-physical-and-digital-worlds/",
+    "video": "https://www.youtube.com/watch?v=xd7G_q8nocc",
+    "name": "proxemiclens",
+    "type": "Blog Post",
+    "date": "Oct 23, 2016"
+  },
+  {
+    "title": "Back to the Future: Exploring Multiple Futures in the Stock Market",
+    "abstract": "A new tool called TimeFork uses interactive graphics and state-of-the-art statistical models to allow traders to investigate multiple parallel universes for predicting the stock market.",
+    "link": "http://hcil.umd.edu/back-to-the-future-exploring-multiple-futures-in-the-stock-market/",
+    "video": "https://www.youtube.com/watch?v=nUfSqqbaD5k",
+    "name": "timefork",
+    "type": "Blog Post",
+    "date": "May 12, 2016"
+  },
+  {
+    "title": "Attended IEEE VIS conference in Baltimore, Maryland, USA",
+    "abstract": "Presented our work on multi-user visual exploration on large displays",
+    "video": "https://www.youtube.com/watch?v=xd7G_q8nocc",
+    "type": "News",
+    "date": "Oct 25, 2016"
+  },
+  {
+    "title": "Returned from a four-month visit to AVIZ group in INRIA, Saclay, France",
+    "abstract": "Developed a progressive visual analytics system with Jean-Daniel Fekete for Twitter analysis based on natural language processing to understand the underlying topics, sentiments, and conversations",
+    "type": "News",
+    "date": "Oct 03, 2016"
+  },
+  {
+    "title": "Visited Interactive Media Lab in Dresden, Germany",
+    "abstract": "Started a collaboration with Raimund Dachselt and his students to explore the use of multiple devices for co-located collaborative sensemaking",
+    "type": "News",
+    "date": "Aug 22, 2016"
+  },
+  {
+    "title": "Attended ACM CHI conference in San Jose, California, USA",
+    "abstract": "Presented our work on interactive prediction of time-series data",
+    "type": "News",
+    "date": "May 12, 2016"
+  },
+  {
+    "title": "Attended IEEE VIS conference in Chicago, Illinois, USA",
+    "abstract": "Presented our work on visualization beyond the desktop",
+    "type": "News",
+    "date": "Oct 30, 2015"
+  },
+  {
+    "title": "Attended HCIC workshop on HCI theories in Pajaro Dunes, California, USA",
+    "abstract": "My trip was funded by Human-Computer Interaction Consortium (HCIC), an organization consisting of top academic and industrial HCI labs",
+    "type": "News",
+    "date": "Jul 03, 2015"
+  }
+]
