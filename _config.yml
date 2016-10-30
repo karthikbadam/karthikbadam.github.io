@@ -10,7 +10,7 @@ locale                   : "en-US"
 title                    : "Karthik Badam"
 title_separator          : "-"
 name                     : "Sriram Karthik Badam"
-description              : "Karthik's website."
+description              : "Karthik's website"
 url                      : # the base hostname & protocol for your site e.g. "https://karthikbadam.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 gh_repo                  :
