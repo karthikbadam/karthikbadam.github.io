@@ -42,7 +42,7 @@ $(document).ready(function () {
         coauthors = coauthors.unique();
         keywords = keywords.unique();
 
-        publicationsList.append("div").html("Karthik has worked on <u>" + data.length + " publications</u> with <u>" + (coauthors.length - 1) + " collaborators</u> so far.")
+        publicationsList.append("div").html("Karthik has <u>" + data.length + " publications</u> with <u>" + (coauthors.length - 1) + " collaborators</u> so far.")
 
 
         // publications

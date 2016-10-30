@@ -2,37 +2,6 @@
   {
     "authors": [
       "Sriram Karthik Badam",
-      "Niklas Elmqvist",
-      "Jean-Daniel Fekete"
-    ],
-    "title": "Steering the Craft: UI Elements and Visualizations for Supporting Progressive Visual Analytics",
-    "venue": "(Under review) ACM Human Factors in Computing Systems (CHI)",
-    "year": "2017",
-    "type": "Conference",
-    "pdf": "",
-    "video": "",
-    "bibtex": "",
-    "name": "progressive",
-    "keywords": ["Visual Analytics", "Progressive Analytics", "Visual Exploration", "Twitter Analysis", "User Study", "Web-Based"]
-  },
-  {
-    "authors": [
-      "Sriram Karthik Badam",
-      "Niklas Elmqvist"
-    ],
-    "title": "Effects of Display Size on Data Comprehension in Screen-Responsive Visualization",
-    "venue": "(Under review) ACM Human Factors in Computing Systems (CHI)",
-    "year": "2017",
-    "type": "Conference",
-    "pdf": "",
-    "video": "",
-    "bibtex": "",
-    "name": "touchinsight",
-    "keywords": ["User Study", "Visual Analytics", "Visualization", "Responsive", "Large Displays", "Handheld Devices"]
-  },
-  {
-    "authors": [
-      "Sriram Karthik Badam",
       "Fereshteh Amini",
       "Niklas Elmqvist",
       "Pourang Irani"

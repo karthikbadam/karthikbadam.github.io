@@ -5,7 +5,7 @@
       "Niklas Elmqvist"
     ],
     "abstract": "This project envisions leveraging ecosystems of digital devices, including large high-resolution displays, tabletop displays, handheld devices, and augmented reality displays, to support collaborative sensemaking during crisis situations. The research challenges for this include designing universal interfaces that combine multiple devices, developing flexible visual representations that can seamlessly migrate between devices, building ecosystems of devices while supporting computational and storage requirements, and enabling analysts efficiently work together.",
-    "publications": ["IEEE VAST 2016", "IEEE TVCG 2015", "ACM ITS 2014", "IEEE CG&A 2014", "IJHCS 2014"],
+    "publications": ["ACM CHI 2017 (in review)", "IEEE VAST 2016", "IEEE TVCG 2015", "ACM ITS 2014", "IEEE CG&A 2014", "IJHCS 2014"],
     "name": "ubilytics",
     "comments": "PhD dissertation topic"
   },
@@ -37,7 +37,7 @@
       "Karthik Ramani"
     ],
     "abstract": "The goal of this project is to create exploratory environments that holistically support early design-driven innovation, especially concerning products, for groups of designers. This includes taking advantage of natural interaction technologies including large multi-touch displays, handheld direct-touch devices, and activity sensors in a coherent design environment. Furthermore, this  includes developing storage and history management platforms to keep track of the design process (which is traditionally done by sketching on paper and storyboarding).",
-    "publications": ["ACM CHI 2014", "ASME IDETC/DIC 2014", "IJHCS 2014"],
+    "publications": ["ACM CHI 2017 (in review)", "ACM CHI 2014", "ASME IDETC/DIC 2014", "IJHCS 2014"],
     "name": "nuidesign",
     "comments": "Masters thesis topic"
   }
