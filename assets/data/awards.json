@@ -1,0 +1,45 @@
+[
+  {
+    "title": "Awarded \"Best Use of Existing Tools/Libraries\" and honorable mention for \"Clear Analysis Strategy\" at IEEE VAST Challenge 2016",
+    "link": "http://vacommunity.org/VAST+Challenge+2016",
+    "type": "Award",
+    "date": "Oct 2016"
+  },
+  {
+    "title": "Awarded travel grant for attending Human-Computer Interaction Consortium 2015 workshop on HCI theories",
+    "link": "http://hcic.org/hcic2016/index.phtml",
+    "type": "Award",
+    "date": "July 2015"
+  },
+  {
+    "title": "Awarded University of Tokyo - Mori Seiki Co. IIT Undergraduate Scholarship for the years 2009-10, 2010-11",
+    "abstract": "Also known as Todai IIT Scholarship",
+    "link": "http://www.oir.iitm.ac.in/wp-content/uploads/2013/05/todai_underg_guide.pdf",
+    "type": "Award",
+    "date": "Aug 2010"
+  },
+  {
+    "title": "Tools for real-time visual collaboration: Indiana and Purdue University Professors design cyberlearning system to make sharing ideas easier",
+    "abstract": "NSF Discovery",
+    "link": "https://www.nsf.gov/discoveries/disc_summ.jsp?cntn_id=135089&org=NSF",
+    "type": "Press",
+    "date": "June 2015",
+    "name": "skwiki"
+  },
+  {
+    "title": "7 Cyberlearning technologies transforming education",
+    "abstract": "Huffington Post",
+    "link": "http://www.huffingtonpost.com/aaron-dubrow/7-cyberlearning-technolog_b_6988976.html",
+    "type": "Press",
+    "date": "June 2015",
+    "name": "skwikistudy"
+  },
+  {
+    "title": "Startup Makes One App Run on Many Screens",
+    "abstract": "MIT Technology Review",
+    "link": "https://www.technologyreview.com/s/526191/startup-makes-one-app-run-on-many-screens/",
+    "type": "Press",
+    "date": "April 10, 2014",
+    "name": "polychrome"
+  }
+]
