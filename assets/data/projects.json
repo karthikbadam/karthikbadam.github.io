@@ -25,7 +25,7 @@
       "Niklas Elmqvist",
       "Jean-Daniel Fekete"
     ],
-    "abstract": "Traditional visual analytics systems face challenges with latency when dealing with large datasets and complex computations. Considering that humans cannot maintain their attention when system response time exceeds approximately 10 seconds, we need alternative ways to create responsive visual analytics systems. This project targets creating such systems by taking advantage of a progressive paradigm involves intermediate results and incremental data processing. Visualizing these intermediate results, associated uncertainities, and corresponding feedback and control options is the challenge in this project.",
+    "abstract": "Traditional visual analytics systems face challenges with latency when dealing with large datasets and complex computations. Considering that humans cannot maintain their attention when system response time exceeds approximately 10 seconds, we need alternative ways to create responsive visual analytics systems. This project targets creating such systems by taking advantage of a progressive paradigm that involves intermediate results and incremental data processing. Visualizing these intermediate results, associated uncertainities, and corresponding feedback and control options is the challenge in this project.",
     "publications": ["ACM CHI 2017 (in review)"],
     "name": "progressiveVA"
   },
@@ -36,7 +36,7 @@
       "Lorraine Kisselburgh",
       "Karthik Ramani"
     ],
-    "abstract": "The goal of this project is to create exploratory environments that holistically support early design-driven innovation, especially concerning products, for groups of designers. This includes taking advantage of natural interaction technologies including large multi-touch displays, handheld direct-touch devices, and activity sensors in a coherent design environment. Furthermore, this  includes developing storage and history management platforms to keep track of the design process (which is traditionally done by sketching on paper and storyboarding).",
+    "abstract": "The goal of this project is to create exploratory environments that holistically support early design-driven innovation, especially concerning products, for groups of designers. This involves taking advantage of natural interaction technologies including large multi-touch displays, handheld direct-touch devices, and activity sensors in a coherent design environment. Furthermore, this  includes developing storage and history management platforms to keep track of the design process (which is traditionally done by sketching on paper and storyboarding).",
     "publications": ["ACM CHI 2017 (in review)", "ACM CHI 2014", "ASME IDETC/DIC 2014", "IJHCS 2014"],
     "name": "nuidesign",
     "comments": "Masters thesis topic"
