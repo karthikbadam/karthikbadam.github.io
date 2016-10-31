@@ -14,12 +14,34 @@ Array.prototype.unique = function () {
     return a;
 };
 
+var publicationsViz;
+
+function BarChart (options) {
+
+    var _self = this;
+    _self.data = options.data;
+    _self.id = _self.id;
+}
+
+BarChart.prototype.drawHorizontalBar = function (key, top) {
+
+}
+
+
 $(document).ready(function () {
 
     d3.json("/assets/data/publications.json", function (data) {
 
         // Empty the div
+        d3.select("#publicationsViz").empty();
         d3.select("#publicationsList").empty();
+        
+        //create publications viz
+        publicationsViz = new BarChart ({
+            id: "#publicationsViz",
+            data: data
+        });
+        
         var publicationsList = d3.select("#publicationsList").style("float", "left");
 
         // meta data
@@ -39,6 +61,8 @@ $(document).ready(function () {
             }
 
         });
+
+
         coauthors = coauthors.unique();
         keywords = keywords.unique();
 
@@ -82,7 +106,7 @@ function showPublication (publicationsContent, paper, i) {
         .style("background-size", "cover")
         .style("background-repeat", "no-repeat")
         .style("vertical-align", "top")
-        .style("background-image", "url(/assets/images/" + paper.name + ".png");
+        .style("background-image", "url(/assets/images/" + paper.name + ".png)");
 
     var pubInfo = pub.append("div").style("width", "calc(100% - 110px)")
         .style("height", "100%")

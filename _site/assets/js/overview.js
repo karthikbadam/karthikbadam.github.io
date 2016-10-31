@@ -76,7 +76,7 @@ function showPost (postsContent, post, i) {
         .style("background-size", "cover")
         .style("background-repeat", "no-repeat")
         .style("vertical-align", "bottom")
-        .style("background-image", "url(/assets/images/" + post.name + ".png");
+        .style("background-image", "url(/assets/images/" + post.name + ".png)");
 
     var proInfo = pro.append("div").style("width", "calc(100% - 100px)")
         .style("background", "white")
