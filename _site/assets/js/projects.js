@@ -25,34 +25,33 @@ $(document).ready(function () {
 
 function showProject (projectsContent, project, i) {
 
-    projectsContent.append("div").style("float", "left").style("display", "block")
-        .style("width", "100%")
-        .style("class", "archive");
+    // projectsContent.append("div").style("float", "left").style("display", "block")
+    //     .style("width", "100%")
+    //     .style("class", "archive");
 
     var pro = projectsContent.append("div")
         .style("line-height", "1")
-        .style("margin-bottom", "20px")
         .style("background", "white")
-        .style("margin-top", "0px")
+        .style("min-height", "150px")
         .style("display", "flux");
 
     pro.append("img").style("width", "200px")
-        .style("height", "140px")
         .style("display", "inline-block")
         .style("border", "1.5px solid #222")
         // .style("background-size", "cover")
         // .style("background-repeat", "no-repeat")
         .style("vertical-align", "top")
         .style("float", "left")
-        .style("margin-right", "10px")
+        .style("height", "150px")
+        .style("margin-right", "7px")
         .attr("src", "/assets/images/" + project.name + ".png");
 
     var proInfo = pro.append("p")
         .style("background", "white")
-        .style("padding-left", "10px");
+        .style("margin", "0px");
 
     if ("comments" in project) {
-        proInfo.append("span").html("<u>" + project.comments + "</u>. ").style("font-size", "14px");
+        proInfo.append("span").html("<u>" + project.comments + "</u><br/> ").style("font-size", "14px");
     }
 
     proInfo.append("span").html("Advised by: ").style("font-size", "14px");
@@ -65,8 +64,6 @@ function showProject (projectsContent, project, i) {
         proInfo.append("span").html(advisor).style("font-size", "14px");
     });
 
-    proInfo.append("span").html(project.abstract+" ").style("font-size", "12px");
-
     proInfo.append("span").html("Publication venues: ").style("font-size", "12px");
     project.publications.forEach(function (publication, j) {
         if (j != project.publications.length - 1) {
@@ -76,6 +73,10 @@ function showProject (projectsContent, project, i) {
         }
         proInfo.append("span").html(publication).style("font-size", "12px");
     });
+
+    proInfo.append("span").html(project.abstract+" ").style("font-size", "12px");
+
+
 
 
 
