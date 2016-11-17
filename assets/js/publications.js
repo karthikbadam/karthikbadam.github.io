@@ -78,7 +78,7 @@ $(document).ready(function () {
 
         });
 
-        publicationsContent.append("h3").html("<br/>Conference Papers (" + conferences.length + ")");
+        publicationsContent.append("h3").html("Conference Papers (" + conferences.length + ")");
         conferences.forEach(function (paper, i) {
             showPublication(publicationsContent, paper, i);
         });
