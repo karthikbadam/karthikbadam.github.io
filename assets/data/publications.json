@@ -2,6 +2,79 @@
   {
     "authors": [
       "Sriram Karthik Badam",
+      "Niklas Elmqvist",
+      "Jean-Daniel Fekete"
+    ],
+    "title": "Steering the Craft: UI Elements and Visualizations for Supporting Progressive Visual Analytics",
+    "venue": "(in press) Computer Graphics Forum",
+    "year": "2017",
+    "type": "Journal",
+    "pdf": "",
+    "video": "https://www.dropbox.com/s/lg3cbxdv0f8hodm/eurovis-revised.mp4?dl=0",
+    "bibtex": "",
+    "name": "progressive",
+    "keywords": ["Visual Analytics", "Progressive Analytics", "Visual Exploration", "Twitter Analysis", "User Study", "Web-Based"]
+  },
+  {
+    "authors": [
+      "Senthil Chandrasegaran",
+      "Sriram Karthik Badam",
+      "Lorraine Kisselburgh",
+      "Karthik Ramani",
+      "Niklas Elmqvist"
+    ],
+    "title": "Integrating Visual Analytics Support for Grounded Theory Practice in Qualitative Text Analysis",
+    "venue": "(in press) Computer Graphics Forum",
+    "year": "2017",
+    "type": "Journal",
+    "pdf": "",
+    "video": "https://www.dropbox.com/s/pjeyosgfbgrfeis/EuroVis_submission_307.mp4?dl=0",
+    "bibtex": "",
+    "name": "gthelper",
+    "keywords": ["Grounded Theory", "Design", "User Study", "Visual Analytics", "HCI"]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Zehua Zeng",
+      "Emily Wall",
+      "Alex Endert",
+      "Niklas Elmqvist"
+    ],
+    "title": "Supporting Team-First Visual Analytics through Group Activity Representations",
+    "venue": "Graphics Interface (accepted)",
+    "year": "2017",
+    "type": "Conference",
+    "pdf": "",
+    "video": "https://www.dropbox.com/s/nx8g8c5rh9bef2v/InsightsDrive-GI-final.mp4?dl=0",
+    "bibtex": "",
+    "name": "ga",
+    "keywords": ["Visual Analytics", "Collaboration", "Group Awareness", "Sensemaking", "User Study"]
+  },
+  {
+    "authors": [
+      "Senthil Chandrasegaran",
+      "Sriram Karthik Badam",
+      "Ninger Zhou",
+      "Zhenpeng Zhao",
+      "Lorraine Kisselburgh",
+      "Kylie Peppler",
+      "Niklas Elmqvist",
+      "Karthik Ramani"
+    ],
+    "title": "Merge Sketches for Creative Design Exploration: An Evaluation of Physical and Cognitive Operations",
+    "venue": "Graphics Interface (accepted)",
+    "year": "2017",
+    "type": "Conference",
+    "pdf": "https://www.dropbox.com/s/sksi5mwir8nx0y3/merge-study.pdf?dl=0",
+    "video": "",
+    "bibtex": "",
+    "name": "merge",
+    "keywords": ["User Study", "Merge", "Sketching", "Cross-Device Interaction", "Multi-Display Environments", "Design", "Handheld Devices"]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
       "Fereshteh Amini",
       "Niklas Elmqvist",
       "Pourang Irani"
@@ -115,10 +188,10 @@
       "Karthik Ramani"
     ],
     "title": "VizScribe: A Visual Analytics Approach to Understand Designer Behavior",
-    "venue": "(Under review - minor revision) International Journal of Human-Computer Studies (IJHCS)",
+    "venue": "(in press) International Journal of Human-Computer Studies (IJHCS)",
     "year": "2016",
     "type": "Journal",
-    "pdf": "",
+    "pdf": "https://senthilchandrasegaran.github.io/pages/pubs/pdfs/vizscribe.pdf",
     "video": "https://vimeo.com/169905057",
     "bibtex": "",
     "name": "vizscribe",
