@@ -2,6 +2,28 @@
   {
     "authors": [
       "Sriram Karthik Badam",
+      "Niklas Elmqvist"
+    ],
+    "title": "Visfer: Camera-Based Visual Data Transfer for Cross-Device Visualization",
+    "venue": "(accepted) Information Visualization Journal",
+    "year": "2017",
+    "type": "Journal",
+    "pdf": "/assets/data/visfer.pdf",
+    "video": "https://www.dropbox.com/s/deyioyl7i121003/video.mp4?dl=0",
+    "bibtex": "",
+    "name": "visfer",
+    "keywords": [
+      "Visual Analytics",
+      "Cross-Device Analytics",
+      "Responsive Visualization",
+      "Visual Transfer",
+      "QR codes",
+      "Web-Based"
+    ]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
       "Niklas Elmqvist",
       "Jean-Daniel Fekete"
     ],
@@ -10,10 +32,17 @@
     "year": "2017",
     "type": "Journal",
     "pdf": "/assets/data/InsightsFeed.pdf",
-    "video": "https://www.dropbox.com/s/lg3cbxdv0f8hodm/eurovis-revised.mp4?dl=0",
+    "video": "https://www.youtube.com/watch?v=GVhNR5dyccE",
     "bibtex": "",
     "name": "progressive",
-    "keywords": ["Visual Analytics", "Progressive Analytics", "Visual Exploration", "Twitter Analysis", "User Study", "Web-Based"]
+    "keywords": [
+      "Visual Analytics",
+      "Progressive Analytics",
+      "Visual Exploration",
+      "Twitter Analysis",
+      "User Study",
+      "Web-Based"
+    ]
   },
   {
     "authors": [
@@ -31,7 +60,13 @@
     "video": "https://www.dropbox.com/s/pjeyosgfbgrfeis/EuroVis_submission_307.mp4?dl=0",
     "bibtex": "",
     "name": "gthelper",
-    "keywords": ["Grounded Theory", "Design", "User Study", "Visual Analytics", "HCI"]
+    "keywords": [
+      "Grounded Theory",
+      "Design",
+      "User Study",
+      "Visual Analytics",
+      "HCI"
+    ]
   },
   {
     "authors": [
@@ -46,10 +81,16 @@
     "year": "2017",
     "type": "Conference",
     "pdf": "/assets/data/group-awareness.pdf",
-    "video": "https://www.dropbox.com/s/nx8g8c5rh9bef2v/InsightsDrive-GI-final.mp4?dl=0",
+    "video": "https://www.youtube.com/watch?v=jb20SzgYhbA",
     "bibtex": "",
     "name": "ga",
-    "keywords": ["Visual Analytics", "Collaboration", "Group Awareness", "Sensemaking", "User Study"]
+    "keywords": [
+      "Visual Analytics",
+      "Collaboration",
+      "Group Awareness",
+      "Sensemaking",
+      "User Study"
+    ]
   },
   {
     "authors": [
@@ -70,7 +111,15 @@
     "video": "",
     "bibtex": "",
     "name": "merge",
-    "keywords": ["User Study", "Merge", "Sketching", "Cross-Device Interaction", "Multi-Display Environments", "Design", "Handheld Devices"]
+    "keywords": [
+      "User Study",
+      "Merge",
+      "Sketching",
+      "Cross-Device Interaction",
+      "Multi-Display Environments",
+      "Design",
+      "Handheld Devices"
+    ]
   },
   {
     "authors": [
@@ -87,7 +136,18 @@
     "video": "https://www.youtube.com/watch?v=xd7G_q8nocc",
     "bibtex": "",
     "name": "proxemiclens",
-    "keywords": ["Proxemics", "Gestures", "Visual Exploration", "Collaboration", "Sensemaking", "User Study", "Large Displays", "Visualization", "Visual Analytics", "HCI"]
+    "keywords": [
+      "Proxemics",
+      "Gestures",
+      "Visual Exploration",
+      "Collaboration",
+      "Sensemaking",
+      "User Study",
+      "Large Displays",
+      "Visualization",
+      "Visual Analytics",
+      "HCI"
+    ]
   },
   {
     "authors": [
@@ -105,7 +165,15 @@
     "video": "https://www.youtube.com/watch?v=nUfSqqbaD5k",
     "bibtex": "https://scholar.googleusercontent.com/citations?view_op=export_citations&user=ExY_mkUAAAAJ&s=ExY_mkUAAAAJ:bEWYMUwI8FkC&citsig=AMstHGQAAAAAWBWHBeg-ztWfyWcitNGpk61uzR8yZ-aE&hl=en&cit_fmt=0",
     "name": "timefork",
-    "keywords": ["Visual Analytics", "Visual Prediction", "Time Series", "User Study", "Temporal Forecasting", "Mixed-Initative", "Web-Based"]
+    "keywords": [
+      "Visual Analytics",
+      "Visual Prediction",
+      "Time Series",
+      "User Study",
+      "Temporal Forecasting",
+      "Mixed-Initative",
+      "Web-Based"
+    ]
   },
   {
     "authors": [
@@ -120,7 +188,15 @@
     "video": "https://www.youtube.com/watch?v=0izPWZs7jHU",
     "bibtex": "https://scholar.googleusercontent.com/citations?view_op=export_citations&user=ExY_mkUAAAAJ&s=ExY_mkUAAAAJ:bEWYMUwI8FkC&citsig=AMstHGQAAAAAWBWHBeg-ztWfyWcitNGpk61uzR8yZ-aE&hl=en&cit_fmt=0",
     "name": "polychrome",
-    "keywords": ["Co-browsing", "Cross-Device Interaction", "Multi-Display Environments", "Visualization", "Web-Based", "Framework", "Handheld Devices"]
+    "keywords": [
+      "Co-browsing",
+      "Cross-Device Interaction",
+      "Multi-Display Environments",
+      "Visualization",
+      "Web-Based",
+      "Framework",
+      "Handheld Devices"
+    ]
   },
   {
     "authors": [
@@ -139,7 +215,15 @@
     "video": "https://www.youtube.com/watch?v=zHG_53Hv9hA",
     "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:4f8GCfQbOogJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ7i3jHXsvi5RqvUgBlUA5Q-TpfbvCC&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "skwikistudy",
-    "keywords": ["User Study", "Sketching", "Collaboration", "Case Study", "Design", "Creativity", "HCI"]
+    "keywords": [
+      "User Study",
+      "Sketching",
+      "Collaboration",
+      "Case Study",
+      "Design",
+      "Creativity",
+      "HCI"
+    ]
   },
   {
     "authors": [
@@ -156,7 +240,15 @@
     "video": "https://www.dropbox.com/s/uff5290s5rx4lei/sketch-media-avi.mov?dl=0",
     "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:7MjtVaadzPMJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ8PLm5rBwHsra9Qc5hipOtyxfXtkdQ&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "sketchmedia",
-    "keywords": ["Sketching", "Evaluation", "Pen", "Paper", "User Study", "HCI", "Handheld Devices"]
+    "keywords": [
+      "Sketching",
+      "Evaluation",
+      "Pen",
+      "Paper",
+      "User Study",
+      "HCI",
+      "Handheld Devices"
+    ]
   },
   {
     "authors": [
@@ -176,7 +268,18 @@
     "video": "https://www.youtube.com/watch?v=zHG_53Hv9hA",
     "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:oc707uRfWRQJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ86yWnio0ONJhs3sRZq5kOPtH8-TGd&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "skwiki",
-    "keywords": ["User Study", "Sketching", "Cross-Device Interaction", "Multi-Display Environments", "Collaboration", "Design", "History", "Wiki", "Web-Based", "Handheld Devices"]
+    "keywords": [
+      "User Study",
+      "Sketching",
+      "Cross-Device Interaction",
+      "Multi-Display Environments",
+      "Collaboration",
+      "Design",
+      "History",
+      "Wiki",
+      "Web-Based",
+      "Handheld Devices"
+    ]
   },
   {
     "authors": [
@@ -195,7 +298,13 @@
     "video": "https://vimeo.com/169905057",
     "bibtex": "",
     "name": "vizscribe",
-    "keywords": ["Protocol Analysis", "Design", "User Study", "Visual Analytics", "HCI"]
+    "keywords": [
+      "Protocol Analysis",
+      "Design",
+      "User Study",
+      "Visual Analytics",
+      "HCI"
+    ]
   },
   {
     "authors": [
@@ -211,8 +320,13 @@
     "video": "https://www.youtube.com/watch?v=ZKIXSdUm6-s",
     "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:CPJihiRlBtsJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ_aRyqEQZI7eif2DXVs6IaWIKATPZN&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "munin",
-    "keywords": ["Multi-Display Environments", "Cross-Device Interaction", "Visualization", "Framework", "Handheld Devices"]
-
+    "keywords": [
+      "Multi-Display Environments",
+      "Cross-Device Interaction",
+      "Visualization",
+      "Framework",
+      "Handheld Devices"
+    ]
   },
   {
     "authors": [
@@ -231,7 +345,15 @@
     "video": "https://www.youtube.com/watch?v=0izPWZs7jHU",
     "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:hRHLfkhAjygJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBRAKuJCktzRDUUql6xsTRG60vTAir9o&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "beyondDesktopVis",
-    "keywords": ["Immersion", "Visualization", "Multi-Display Environments", "Cross-Device Interaction", "Multimodal", "Multi-Sensory", "Handheld Devices"]
+    "keywords": [
+      "Immersion",
+      "Visualization",
+      "Multi-Display Environments",
+      "Cross-Device Interaction",
+      "Multimodal",
+      "Multi-Sensory",
+      "Handheld Devices"
+    ]
   },
   {
     "authors": [
@@ -247,6 +369,11 @@
     "video": "",
     "bibtex": "https://scholar.googleusercontent.com/citations?view_op=export_citations&user=ExY_mkUAAAAJ&s=ExY_mkUAAAAJ:bEWYMUwI8FkC&citsig=AMstHGQAAAAAWBWHBeg-ztWfyWcitNGpk61uzR8yZ-aE&hl=en&cit_fmt=0",
     "name": "dui",
-    "keywords": ["Distributed User Interfaces", "Case Study", "Design", "Framework"]
+    "keywords": [
+      "Distributed User Interfaces",
+      "Case Study",
+      "Design",
+      "Framework"
+    ]
   }
 ]
