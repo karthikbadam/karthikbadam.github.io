@@ -66,7 +66,7 @@ $(document).ready(function () {
         coauthors = coauthors.unique();
         keywords = keywords.unique();
 
-        publicationsList.append("div").html("Karthik has <u>" + data.length + " publications</u> with <u>" + (coauthors.length - 1) + " collaborators</u> since " + data[data.length-1].year + ".")
+        publicationsList.append("div").html("Karthik has <b>" + data.length + " publications</b> with <b>" + (coauthors.length - 1) + " collaborators</b> since " + data[data.length-1].year + ".")
 
 
         // publications
@@ -118,19 +118,24 @@ function showPublication (publicationsContent, paper, i) {
     pubInfo.append("span").html(paper.title+"<br/>").style("font-size", "14px");
 
     paper.authors.forEach(function (author, j) {
+        var mainAuthor = false;
         if (author == "Sriram Karthik Badam") {
-            author = "<u>" + author + "</u>";
+            author = "" + author + "";
+            mainAuthor = true;
         }
 
+        // if (j != paper.authors.length - 1) {
+        //     author = author + ", ";
+        // } else {
+        //     author = author + "<br/>";
+        // }
+        pubInfo.append("span").html(author).style("font-size", "12px").style("background-color", mainAuthor?"#f0e8ff":"#FFF");
         if (j != paper.authors.length - 1) {
-            author = author + ", ";
+            pubInfo.append("span").html(", ");
         } else {
-            author = author + "<br/>";
+            pubInfo.append("span").html("<br/>");
         }
-
-
-        pubInfo.append("span").html(author).style("font-size", "12px");
-    })
+    });
 
     pubInfo.append("span").html(paper.venue + ", " + paper.year +"<br/>").style("font-size", "12px");
 

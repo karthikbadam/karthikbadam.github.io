@@ -51,7 +51,7 @@ function showProject (projectsContent, project, i) {
         .style("margin", "0px");
 
     if ("comments" in project) {
-        proInfo.append("span").html("<u>" + project.comments + "</u><br/> ").style("font-size", "14px");
+        proInfo.append("span").html("" + project.comments + "<br/> ").style("background-color", "#f0e8ff").style("font-size", "14px");
     }
 
     proInfo.append("span").html("Advised by: ").style("font-size", "14px");
