@@ -18,8 +18,20 @@
     "date": "May 12, 2016"
   },
   {
+    "title": "Began internship with Leo Liu at Adobe Research, Seattle",
+    "abstract": "Working on responsive visualization design for mobile devices",
+    "type": "News",
+    "date": "May 30, 2017"
+  },
+  {
+    "title": "Moved to PhD Candidacy (Yay!!)",
+    "abstract": "Passed the PhD preliminary oral exam at UMD",
+    "type": "News",
+    "date": "May 24, 2017"
+  },
+  {
     "title": "Survived IEEE VIS 2017 deadline",
-    "abstract": "Submitted three papers on managing annotations, responsive visualization, and mixed-initiative workflows",
+    "abstract": "Submitted papers on managing annotations, responsive visualization, and mixed-initiative workflows",
     "type": "News",
     "date": "Mar 31, 2017"
   },
