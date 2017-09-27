@@ -18,6 +18,12 @@
     "date": "May 12, 2016"
   },
   {
+    "title": "Survived ACM CHI 2018 deadline",
+    "abstract": "Worked on visualization design for smartwatches",
+    "type": "News",
+    "date": "Sep 19, 2017"
+  },
+  {
     "title": "Began internship with Leo Liu at Adobe Research, Seattle",
     "abstract": "Working on responsive visualization design for mobile devices",
     "type": "News",
@@ -50,13 +56,13 @@
   },
   {
     "title": "Returned from a four-month visit to AVIZ group in INRIA, Saclay, France",
-    "abstract": "Developed a progressive visual analytics system with Jean-Daniel Fekete for Twitter analysis based on natural language processing to understand the underlying topics, sentiments, and conversations",
+    "abstract": "Developed a progressive visual analytics system with Jean-Daniel Fekete for Twitter analysis",
     "type": "News",
     "date": "Oct 03, 2016"
   },
   {
     "title": "Visited Interactive Media Lab in Dresden, Germany",
-    "abstract": "Started a collaboration with Raimund Dachselt and his team to explore the use of multiple devices for co-located collaborative sensemaking",
+    "abstract": "Started a collaboration with Raimund Dachselt and his team",
     "type": "News",
     "date": "Aug 18, 2016"
   },
@@ -74,7 +80,7 @@
   },
   {
     "title": "Attended HCIC workshop on HCI theories in Pajaro Dunes, California, USA",
-    "abstract": "My trip was funded by Human-Computer Interaction Consortium (HCIC), an organization consisting of top academic and industrial HCI labs",
+    "abstract": "Funded by Human-Computer Interaction Consortium (HCIC), an organization consisting of academic and industrial HCI labs",
     "type": "News",
     "date": "Jul 03, 2015"
   }

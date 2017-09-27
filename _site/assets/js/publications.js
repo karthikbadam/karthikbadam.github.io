@@ -66,7 +66,7 @@ $(document).ready(function () {
         coauthors = coauthors.unique();
         keywords = keywords.unique();
 
-        publicationsList.append("div").html("Karthik has <b>" + data.length + " publications</b> with <b>" + (coauthors.length - 1) + " collaborators</b> since " + data[data.length-1].year + ".")
+        //publicationsList.append("div").html("Karthik has <b>" + data.length + " publications</b> with <b>" + (coauthors.length - 1) + " collaborators</b> since " + data[data.length-1].year + ".")
 
 
         // publications
