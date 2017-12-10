@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
-<loc>/awards/</loc>
+<loc>http://localhost:4000/awards/</loc>
 </url>
 <url>
-<loc>/</loc>
+<loc>http://localhost:4000/</loc>
+</url>
+<url>
+<loc>http://localhost:4000/assets/data/InsightsFeed.pdf</loc>
+<lastmod>2017-12-10T00:27:40-05:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/assets/data/group-awareness.pdf</loc>
+<lastmod>2017-12-10T00:27:40-05:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/assets/data/multi-user.pdf</loc>
+<lastmod>2017-12-10T00:27:40-05:00</lastmod>
+</url>
+<url>
+<loc>http://localhost:4000/assets/data/visfer.pdf</loc>
+<lastmod>2017-12-10T00:27:40-05:00</lastmod>
 </url>
 </urlset>
