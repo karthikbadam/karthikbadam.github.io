@@ -134,9 +134,9 @@ function showPublication (publicationsContent, paper, i) {
         pubInfo.append("span").html(author).style("font-size", "12px").style("background-color", mainAuthor?"#f0e8ff":"#FFF");
         if (j != paper.authors.length - 1) {
             if (paper.equal == "true" && j == 0) {
-                pubInfo.append("span").html("~");
+                pubInfo.append("span").text(" ~ ").style("font-size", "12px");
             } else {
-                pubInfo.append("span").html(", ");
+                pubInfo.append("span").text(", ").style("font-size", "12px");
             }
         } else {
             pubInfo.append("span").html("<br/>");
