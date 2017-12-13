@@ -66,8 +66,10 @@ $(document).ready(function () {
         coauthors = coauthors.unique();
         keywords = keywords.unique();
 
-        //publicationsList.append("div").html("Karthik has <b>" + data.length + " publications</b> with <b>" + (coauthors.length - 1) + " collaborators</b> since " + data[data.length-1].year + ".")
+        publicationsList.append("div").html("Karthik has <b>" + data.length + " peer-reviewed publications</b> with <b>" + (coauthors.length - 1) + " collaborators</b> since " + data[data.length-1].year + ".")
 
+        publicationsList.append("div").html("<br/>");
+        publicationsList.append("div").html("'~' implies equal contribution.");
 
         // publications
         publicationsContent = publicationsList.append("div").attr("id", "publicationsContent");
@@ -131,7 +133,11 @@ function showPublication (publicationsContent, paper, i) {
         // }
         pubInfo.append("span").html(author).style("font-size", "12px").style("background-color", mainAuthor?"#f0e8ff":"#FFF");
         if (j != paper.authors.length - 1) {
-            pubInfo.append("span").html(", ");
+            if (paper.equal == "true" && j == 0) {
+                pubInfo.append("span").html("~");
+            } else {
+                pubInfo.append("span").html(", ");
+            }
         } else {
             pubInfo.append("span").html("<br/>");
         }
