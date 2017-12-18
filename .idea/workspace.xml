@@ -29,10 +29,10 @@
       <file leaf-file-name="publications.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/assets/js/publications.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="375">
-              <caret line="101" column="22" selection-start-line="101" selection-start-column="22" selection-end-line="101" selection-end-column="22" />
+            <state relative-caret-position="435">
+              <caret line="71" column="159" selection-start-line="71" selection-start-column="159" selection-end-line="71" selection-end-column="159" />
               <folding>
-                <marker date="1513615456531" expanded="true" signature="1916:1965" ph="..." />
+                <marker date="1513617608092" expanded="true" signature="1919:1968" ph="..." />
               </folding>
             </state>
           </provider>
@@ -939,10 +939,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/assets/js/publications.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="101" column="22" selection-start-line="101" selection-start-column="22" selection-end-line="101" selection-end-column="22" />
+        <state relative-caret-position="435">
+          <caret line="71" column="159" selection-start-line="71" selection-start-column="159" selection-end-line="71" selection-end-column="159" />
           <folding>
-            <marker date="1513615456531" expanded="true" signature="1916:1965" ph="..." />
+            <marker date="1513617608092" expanded="true" signature="1919:1968" ph="..." />
           </folding>
         </state>
       </provider>
