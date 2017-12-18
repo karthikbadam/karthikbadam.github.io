@@ -69,7 +69,7 @@ $(document).ready(function () {
         // publicationsList.append("div").html("Karthik has <b>" + data.length + " peer-reviewed publications</b> with <b>" + (coauthors.length - 1) + " collaborators</b> since " + data[data.length-1].year + ".")
 
         publicationsList.append("div").html("<br/>");
-        publicationsList.append("div").html("'~' implies equal contribution.");
+        publicationsList.append("div").html('First author contributions are highlighted in <span style="background-color:#f0f0f0; border:4px solid white;">gray background.</span>');
 
         // publications
         publicationsContent = publicationsList.append("div").attr("id", "publicationsContent");
@@ -112,18 +112,22 @@ function showPublication (publicationsContent, paper, i) {
 
     var pubInfo = pub.append("div").style("width", "calc(100% - 110px)")
         .style("height", "100%")
-        .style("background", "white")
+        .style("background", "transparent")
         .style("padding-left", "10px")
         .style("height", "72px")
         .style("display", "inline-block");
 
     pubInfo.append("span").html(paper.title+"<br/>").style("font-size", "14px");
 
+    var firstAuthor = false;
+
     paper.authors.forEach(function (author, j) {
         var mainAuthor = false;
         if (author == "Sriram Karthik Badam") {
             author = "" + author + "";
             mainAuthor = true;
+            if (j == 0)
+                firstAuthor = true;
         }
 
         // if (j != paper.authors.length - 1) {
@@ -131,7 +135,13 @@ function showPublication (publicationsContent, paper, i) {
         // } else {
         //     author = author + "<br/>";
         // }
-        pubInfo.append("span").html(author).style("font-size", "12px").style("background-color", mainAuthor?"#f0e8ff":"#FFF");
+
+        pubInfo.append("span").html(function ()
+        {
+            return mainAuthor? "<b>" + author + "</b>" : author;
+        }
+        ).style("font-size", "12px")
+            // .style("background-color", mainAuthor?"#f0e8ff":"transparent");
         if (j != paper.authors.length - 1) {
             if (paper.equal == "true" && j == 0) {
                 pubInfo.append("span").text(" ~ ").style("font-size", "12px");
@@ -142,6 +152,14 @@ function showPublication (publicationsContent, paper, i) {
             pubInfo.append("span").html("<br/>");
         }
     });
+
+    if (paper.equal == "true") {
+        pubInfo.append("span").html("<b>" + "The first two authors contributed equally to this work." + "</b><br/>").style("font-size", "11px");
+    }
+
+    if (firstAuthor) {
+        pub.style("background-color", "#f0f0f0").style("border", "2px solid #FFF");
+    }
 
     pubInfo.append("span").html(paper.venue + ", " + paper.year +"<br/>").style("font-size", "12px");
 
