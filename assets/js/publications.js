@@ -98,7 +98,9 @@ function showPublication (publicationsContent, paper, i) {
     var pub = publicationsContent.append("div").style("display", "block")
         .style("padding-left", "10px")
         .style("line-height", "1")
-        .style("margin-bottom", "20px")
+        .style("padding-bottom", "5px")
+        .style("margin-bottom", "5px")
+        .style("padding-top", "5px")
         .style("background", "white");
 
     pub.append("div").style("width", "110px")

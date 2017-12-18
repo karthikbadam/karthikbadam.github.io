@@ -69,7 +69,7 @@ $(document).ready(function () {
         // publicationsList.append("div").html("Karthik has <b>" + data.length + " peer-reviewed publications</b> with <b>" + (coauthors.length - 1) + " collaborators</b> since " + data[data.length-1].year + ".")
 
         publicationsList.append("div").html("<br/>");
-        publicationsList.append("div").html('First author contributions are highlighted in <span style="background-color:#f0f0f0; border:4px solid white;">gray background.</span>');
+        publicationsList.append("div").html('First author contributions are highlighted with a <span style="background-color:#f0f0f0; border:4px solid white;">gray background.</span>');
 
         // publications
         publicationsContent = publicationsList.append("div").attr("id", "publicationsContent");
@@ -98,7 +98,9 @@ function showPublication (publicationsContent, paper, i) {
     var pub = publicationsContent.append("div").style("display", "block")
         .style("padding-left", "10px")
         .style("line-height", "1")
-        .style("margin-bottom", "20px")
+        .style("padding-bottom", "5px")
+        .style("margin-bottom", "5px")
+        .style("padding-top", "5px")
         .style("background", "white");
 
     pub.append("div").style("width", "110px")
