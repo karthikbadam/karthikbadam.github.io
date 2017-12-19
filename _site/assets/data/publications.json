@@ -2,6 +2,50 @@
 
   {
     "authors": [
+      "Sriram Karthik Badam",
+      "Arjun Srinivasan",
+      "Niklas Elmqvist",
+      "John Stasko"
+    ],
+    "title": "Affordances of Input Modalities for Visual Data Exploration in Immersive Environments",
+    "venue": "Immersive Analytics Workshop at IEEE VIS",
+    "year": "2017",
+    "type": "Workshop",
+    "pdf": "/assets/data/mixing-modalities.pdf",
+    "video": "",
+    "bibtex": "",
+    "name": "mixing-modalities",
+    "keywords": [
+      "Multimodal interaction",
+      "Responsive Visualization",
+      "Large Displays",
+      "Smartwatches",
+      "Touch",
+      "Speech",
+      "Multi-Display Environments"
+    ]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Niklas Elmqvist"
+    ],
+    "title": "Design Considerations for Mid-Air Interaction with Holographic Projections",
+    "venue": "Mid-Air Haptics and Displays Workshop at ACM CHI",
+    "year": "2016",
+    "type": "Workshop",
+    "pdf": "/assets/data/mid-air.pdf",
+    "video": "",
+    "bibtex": "",
+    "name": "mid-air",
+    "keywords": [
+      "Multimodal interaction",
+      "Mid-air interaction",
+      "Holograms"
+    ]
+  },
+  {
+    "authors": [
       "Zhe Cui",
       "Shivalik Sen",
       "Sriram Karthik Badam",

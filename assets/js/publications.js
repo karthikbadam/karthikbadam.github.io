@@ -49,6 +49,7 @@ $(document).ready(function () {
         var keywords = [];
         var journals = [];
         var conferences = [];
+        var workshops = [];
 
         data.forEach(function (datum) {
             coauthors = coauthors.concat(datum.authors);
@@ -56,8 +57,10 @@ $(document).ready(function () {
 
             if (datum.type == "Conference") {
                 conferences.push(datum);
-            } else if (datum.type = "Journal") {
+            } else if (datum.type == "Journal") {
                 journals.push(datum);
+            } else if (datum.type == "Workshop") {
+                workshops.push(datum);
             }
 
         });
@@ -74,17 +77,22 @@ $(document).ready(function () {
         // publications
         publicationsContent = publicationsList.append("div").attr("id", "publicationsContent");
 
-        publicationsContent.append("h3").text("Journal Papers (" + journals.length + ")");
+        publicationsContent.append("h3").text("Peer-Reviewed Journal Papers (" + journals.length + ")");
         journals.forEach(function (paper, i) {
             showPublication(publicationsContent, paper, i);
 
         });
 
-        publicationsContent.append("h3").html("Conference Papers (" + conferences.length + ")");
+        publicationsContent.append("h3").html("Peer-Reviewed Conference Papers (" + conferences.length + ")");
         conferences.forEach(function (paper, i) {
             showPublication(publicationsContent, paper, i);
         });
 
+
+        publicationsContent.append("h3").html("Featured Workshop Papers");
+        workshops.forEach(function (paper, i) {
+            showPublication(publicationsContent, paper, i);
+        });
     });
 
 });

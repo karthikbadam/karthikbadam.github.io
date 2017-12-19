@@ -5,7 +5,7 @@
       "Niklas Elmqvist"
     ],
     "abstract": "This project envisions leveraging ecosystems of digital devices, including large high-resolution displays, tabletop displays, handheld devices, and augmented reality displays, to support collaborative sensemaking during crisis situations. The research challenges for this include designing universal interfaces that combine multiple devices, developing flexible visual representations that can seamlessly migrate between devices, building ecosystems of devices while supporting computational and storage requirements, and enabling analysts efficiently work together.",
-    "publications": ["VAST 2017 (in review)", "GI 2017", "IEEE VAST 2016", "IEEE TVCG 2015", "ACM ITS 2014", "IEEE CG&A 2014"],
+    "publications": ["CHI 2018", "IV Journal 2017", "GI 2017", "IEEE VAST 2016", "IEEE TVCG 2015", "ACM ITS 2014", "IEEE CG&A 2014"],
     "name": "ubilytics",
     "comments": "PhD dissertation topic"
   },
