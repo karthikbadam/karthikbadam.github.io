@@ -18,10 +18,16 @@
     "date": "May 12, 2016"
   },
   {
-    "title": "Survived ACM CHI 2018 deadline",
-    "abstract": "Submitted work on visualization design for smartwatches",
+    "title": "Yay, CHI 2018 (conditional) acceptance!",
+    "abstract": "Watch out for our work on combining large displays with smartwatches for visual exploration",
     "type": "News",
-    "date": "Sep 19, 2017"
+    "date": "Dec 11, 2017"
+  },
+  {
+    "title": "Presented at IEEE VIS conference in Phoenix, Maryland, USA",
+    "abstract": "Presented a workshop paper on affordances of input modalities for visual exploration",
+    "type": "News",
+    "date": "Oct 01, 2017"
   },
   {
     "title": "Began internship with Leo Liu at Adobe Research, Seattle",
@@ -36,19 +42,13 @@
     "date": "May 24, 2017"
   },
   {
-    "title": "Survived IEEE VIS 2017 deadline",
-    "abstract": "Submitted papers on managing annotations, responsive visualization, and mixed-initiative workflows",
-    "type": "News",
-    "date": "Mar 31, 2017"
-  },
-  {
     "title": "Visited Gothenburg, Sweden to work with the t2i lab at Chalmers",
     "abstract": "Working on a Virtual Reality system that better incorporates real-world aspects",
     "type": "News",
     "date": "Nov 30, 2016"
   },
   {
-    "title": "Attended IEEE VIS conference in Baltimore, Maryland, USA",
+    "title": "Presented at IEEE VIS conference in Baltimore, Maryland, USA",
     "abstract": "Presented our work on multi-user visual exploration on large displays",
     "video": "https://www.youtube.com/watch?v=xd7G_q8nocc",
     "type": "News",
@@ -67,7 +67,7 @@
     "date": "Aug 18, 2016"
   },
   {
-    "title": "Attended ACM CHI conference in San Jose, California, USA",
+    "title": "Presented at ACM CHI conference in San Jose, California, USA",
     "abstract": "Presented our work on interactive prediction of time-series data",
     "type": "News",
     "date": "May 12, 2016"

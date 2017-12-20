@@ -48,6 +48,7 @@ function showAward (awardsContent, award, i) {
         .style("display", "inline-block")
         .style("vertical-align", "top")
         .style("font-size", "14px")
+        .style("line-height", "2")
         .text(award.date);
 
     var proInfo = pro.append("div").style("width", "calc(100% - 100px)")
@@ -56,7 +57,7 @@ function showAward (awardsContent, award, i) {
         .style("display", "inline-block");
 
 
-    proInfo.append("div").html('<a target="_blank" href="' + award.link + '">' + award.title + '</a>').style("font-size", "14px");
+    proInfo.append("div").html('<a target="_blank" href="' + award.link + '">' + award.title + '</a>').style("font-size", "14px").style("line-height", "2");
 
     if ("abstract" in award) {
         proInfo.append("span").html(award.abstract + " ").style("font-size", "12px");
