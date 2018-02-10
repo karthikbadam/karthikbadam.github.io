@@ -152,12 +152,15 @@ function showPublication (publicationsContent, paper, i) {
         }
         ).style("font-size", "12px")
             // .style("background-color", mainAuthor?"#f0e8ff":"transparent");
+
         if (j != paper.authors.length - 1) {
+
             if (paper.equal == "true" && j == 0) {
                 pubInfo.append("span").text(" ~ ").style("font-size", "12px");
             } else {
                 pubInfo.append("span").text(", ").style("font-size", "12px");
             }
+
         } else {
             pubInfo.append("span").html("<br/>");
         }
@@ -180,6 +183,14 @@ function showPublication (publicationsContent, paper, i) {
     if (paper.video != "") {
         pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.video + '">[video]</a>  ').style("font-size", "12px");
     }
+
+    if ("award" in paper) {
+        var award = pubInfo.append("div").style("float", "right").style("height", "auto");
+
+        award.append("span").html("<b>" + paper["award"].toUpperCase() + "</b>").style("font-size", "12px");
+        award.append("img").attr("src", "/assets/images/badge.png").style("height", "30px");
+    }
+
     //
     // if (paper.bibtex != "") {
     //     pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.bibtex + '">(bibtex)</a> ').style("font-size", "12px");

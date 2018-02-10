@@ -57,12 +57,19 @@ function showAward (awardsContent, award, i) {
         .style("display", "inline-block");
 
 
-    proInfo.append("div").html('<a target="_blank" href="' + award.link + '">' + award.title + '</a>').style("font-size", "14px").style("line-height", "2");
+    proInfo.append("div").html('<a target="_blank" href="' + award.link + '">' + award.title + '</a>')
+        .style("font-size", "14px").style("line-height", "1.5").style("display","inline-block");
 
     if ("abstract" in award) {
         proInfo.append("span").html(award.abstract + " ").style("font-size", "12px");
     }
 
+    if ("award" in award) {
+        proInfo.select("div").style("width", "calc(100% - 30px)");
+        proInfo.style("width", "calc(100% - 130px)").style("display","inline-block");
+        var award = proInfo.append("div").style("float", "right").style("width", "30px").style("height", "auto").style("display","inline-block");
+        award.append("img").style("float", "right").attr("src", "/assets/images/badge.png").style("height", "30px");
+    }
     // proInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + award.link + '">[Link]</a>  ').style("font-size", "12px");
 
 
@@ -95,6 +102,8 @@ function showPress (pressContent, press, i) {
     proInfo.append("span").html(press.abstract + "<br/>").style("font-size", "12px");
     proInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + press.link + '">[Link]</a>  ').style("font-size", "12px");
     proInfo.append("span").attr("class", "textlink").html(press.date + '<br/>').style("font-size", "12px");
+
+
 
 }
 
