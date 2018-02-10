@@ -124,13 +124,13 @@ function showPublication (publicationsContent, paper, i) {
         .style("height", "100%")
         .style("background", "transparent")
         .style("padding-left", "10px")
-        .style("height", "72px")
+        // .style("height", "72px")
         .style("display", "inline-block");
 
      if ("award" in paper) {
         var award = pubInfo.append("div").style("float", "right").style("height", "auto");
         // award.append("span").html("<b>" + paper["award"].toUpperCase() + "</b>").style("font-size", "12px");
-        award.append("img").attr("src", "/assets/images/badge.png").style("height", "40px");
+        award.append("img").attr("src", "/assets/images/badge.png").style("height", "25px").style("margin-right", "3px");
     }
 
     pubInfo.append("span").html(paper.title+"<br/>").style("font-size", "14px");
@@ -191,6 +191,11 @@ function showPublication (publicationsContent, paper, i) {
         pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.video + '">[video]</a>  ').style("font-size", "12px");
     }
 
+     if ("award" in paper) {
+        var award = pubInfo.append("div").style("float", "right").style("height", "auto");
+        award.append("span").html("<b>" + paper["award"].toUpperCase() + "</b>").style("font-size", "12px").style("margin-right", "3px");
+        // award.append("img").attr("src", "/assets/images/badge.png").style("height", "25px").style("margin-right", "3px");
+    }
 
     //
     // if (paper.bibtex != "") {
