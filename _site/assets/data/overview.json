@@ -1,5 +1,22 @@
 [
   {
+    "title": "When David Meets Goliath: Using smartwatches and large displays together for data analysis",
+    "abstract": "New conceptual framework developed at University of Maryland and Technische Universität Dresden utilize multiple devices together for visual data analysis.",
+    "link": "http://hcil.umd.edu/when-david-meets-goliath-using-smartwatches-and-large-displays-together-for-data-analysis/",
+    "video": "https://www.youtube.com/watch?v=DYSvA_Hn39o",
+    "name": "DG",
+    "type": "Blog Post",
+    "date": "April 18, 2018"
+  },
+  {
+    "title": "Understanding Data by Having Computers and Humans Work Together",
+    "abstract": "Introducing a new tool called DataSite for proactive visual exploration using insight-based recommendations to help analysts easily get started with data analysis.",
+    "link": "http://hcil.umd.edu/posts/understanding-data-by-having-computers-and-humans-work-together/",
+    "name": "datasite",
+    "type": "Blog Post",
+    "date": "March 9, 2018"
+  },
+  {
     "title": "Bridging Physical and Digital Worlds: When Your Body Is Your Tool, Data Becomes Accessible",
     "abstract": "New interaction models developed at University of Maryland and University of Manitoba utilize body and hand movement to perform data analysis on large wall-sized displays.",
     "link": "http://hcil.umd.edu/bridging-physical-and-digital-worlds/",

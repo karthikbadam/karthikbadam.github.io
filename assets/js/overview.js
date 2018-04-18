@@ -87,7 +87,8 @@ function showPost (postsContent, post, i) {
     proInfo.append("div").html('<a target="_blank" href="' + post.link + '">' + post.title + '</a>').style("font-size", "14px");
     proInfo.append("span").html(post.abstract + "<br/>").style("font-size", "12px");
     proInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + post.link + '">[Link]</a>  ').style("font-size", "12px");
-    proInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + post.video + '">[Video]</a>  ').style("font-size", "12px");
+    if (post.video)
+        proInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + post.video + '">[Video]</a>  ').style("font-size", "12px");
     proInfo.append("span").attr("class", "textlink").html(post.date + '<br/>').style("font-size", "12px");
 
 }
