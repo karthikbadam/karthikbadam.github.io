@@ -1,14 +1,5 @@
 [
   {
-    "title": "When David Meets Goliath: Using Smartwatches and Large Displays Together for Data Analysis",
-    "abstract": "New conceptual framework developed at University of Maryland and Technische Universität Dresden helps utilize multiple devices together for visual data analysis.",
-    "link": "http://hcil.umd.edu/when-david-meets-goliath-using-smartwatches-and-large-displays-together-for-data-analysis/",
-    "video": "https://www.youtube.com/watch?v=DYSvA_Hn39o",
-    "name": "DG",
-    "type": "Blog Post",
-    "date": "April 18, 2018"
-  },
-  {
     "title": "Understanding Data by Having Computers and Humans Work Together",
     "abstract": "Introducing a new tool called DataSite for proactive visual exploration using insight-based recommendations to help analysts easily get started with data analysis.",
     "link": "http://hcil.umd.edu/posts/understanding-data-by-having-computers-and-humans-work-together/",
@@ -33,6 +24,12 @@
     "name": "timefork",
     "type": "Blog Post",
     "date": "May 12, 2016"
+  },
+  {
+    "title": "Awarded Outstanding Graduate Assistant (top 2%) at University of Maryland",
+    "abstract": "Recognition for oustanding research and teaching contributions at the University level.",
+    "type": "News",
+    "date": "Apr 25, 2018"
   },
   {
     "title": "Yay! Honorable mention award (top 5%) at CHI 2018!",
