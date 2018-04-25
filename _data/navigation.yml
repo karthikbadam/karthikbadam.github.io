@@ -15,8 +15,8 @@ main:
   - title: "Teaching"
     url: /teaching/
 
-  - title: "Blog"
-    url: /blog/
-
-  - title: "Pictures"
-    url: /pictures/
+#  - title: "Blog"
+#    url: /blog/
+#
+#  - title: "Pictures"
+#    url: /pictures/

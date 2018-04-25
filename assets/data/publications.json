@@ -1,5 +1,26 @@
 [
-
+ {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Roman Rädle",
+      "Clemens N. Klokmose",
+      "Niklas Elmqvist"
+    ],
+    "title": "Towards a Unified Visualization Platform for Ubiquitous Analytics",
+    "venue": "Data Visualization on Mobile Devices at ACM CHI",
+    "year": "2018",
+    "type": "Workshop",
+    "pdf": "https://mobilevis.github.io/assets/mobilevis2018_paper_13.pdf",
+    "video": "",
+    "bibtex": "",
+    "name": "unified",
+    "keywords": [
+      "Visual analytics",
+      "collaboration",
+      "cross-device",
+      "Multimodal interaction"
+    ]
+  },
   {
     "authors": [
       "Sriram Karthik Badam",

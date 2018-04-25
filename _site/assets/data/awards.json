@@ -1,6 +1,20 @@
 [
   {
-    "title": "Awarded \"Honorable Mention (top 5%)\" for our Large Display + Smartwatch paper at ACM CHI 2018.",
+    "title": "HCIL Team Combines Large Display Monitors with Smartwatches for Better Data Analysis",
+    "abstract": "UMIACS",
+    "link": "https://www.umiacs.umd.edu/about-us/news/hcil-team-combines-large-display-monitors-smartwatches-better-data-analysis",
+    "type": "Press",
+    "date": "April 24, 2018",
+    "name": "DG"
+  },
+  {
+    "title": "Awarded Outstanding Graduate Assistant (top 2%) for contributions in both research and teaching at University of Maryland, College Park.",
+    "link": "https://gradschool.umd.edu/funding/student-fellowships-awards/outstanding-graduate-assistant-awards",
+    "type": "Award",
+    "date": "Apr 2018"
+  },
+  {
+    "title": "Awarded Honorable Mention (top 5%) for our Large Display + Smartwatch paper at ACM CHI 2018.",
     "link": "https://chi2018.acm.org/attending/awards/",
     "type": "Award",
     "award": "Honorable Mention (top 5%)",
