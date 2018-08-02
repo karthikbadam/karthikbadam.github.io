@@ -1,4 +1,44 @@
 [
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Andreas Mathisen",
+      "Roman Rädle",
+      "Clemens Klokmose",
+      "Niklas Elmqvist"
+    ],
+    "title": "Vistrates: A Component Model for Ubiquitous Analytics",
+    "venue": "IEEE TVCG (Proc. VAST/InfoVis/SciVis 2018)",
+    "year": "2019",
+    "type": "Journal",
+    "pdf": "/assets/data/vistrates.pdf",
+    "video": "https://www.dropbox.com/s/u6ldqj1j4ewjb4l/Vistrates_Final_Subtitles.mp4?dl=0",
+    "bibtex": "",
+    "name": "vistrates",
+    "keywords": [
+      "Visual Analytics",
+      "Cross-Device Analytics",
+      "Ubiquitous Analytics"
+    ]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Zhicheng Liu",
+      "Niklas Elmqvist"
+    ],
+    "title": "Elastic Documents: Coupling Text and Tables through Contextual Visualizations for Enhanced Document Reading",
+    "venue": "IEEE TVCG (Proc. VAST/InfoVis/SciVis 2018)",
+    "year": "2019",
+    "type": "Journal",
+    "video": "",
+    "pdf": "/assets/data/elastic-documents.pdf",
+    "bibtex": "",
+    "name": "elasticdocs",
+    "keywords": [
+      "Document reading"
+    ]
+  },
  {
     "authors": [
       "Sriram Karthik Badam",
