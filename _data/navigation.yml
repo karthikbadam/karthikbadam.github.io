@@ -9,11 +9,12 @@ main:
   - title: "Publications"
     url: /publications/
 
+  - title: "Teaching"
+    url: /teaching/
+
   - title: "Awards & Press"
     url: /awards/
 
-  - title: "Teaching"
-    url: /teaching/
 
 #  - title: "Blog"
 #    url: /blog/
