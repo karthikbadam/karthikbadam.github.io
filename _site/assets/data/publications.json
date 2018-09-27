@@ -12,7 +12,7 @@
     "year": "2019",
     "type": "Journal",
     "pdf": "/assets/data/vistrates.pdf",
-    "video": "https://www.dropbox.com/s/u6ldqj1j4ewjb4l/Vistrates_Final_Subtitles.mp4?dl=0",
+    "video": "https://www.youtube.com/watch?v=nMmiWBJoJUc",
     "bibtex": "",
     "name": "vistrates",
     "keywords": [
@@ -37,6 +37,25 @@
     "name": "elasticdocs",
     "keywords": [
       "Document reading"
+    ]
+  },
+  {
+    "authors": [
+      "Zhe Cui",
+      "Sriram Karthik Badam",
+      "Adil Yalcin",
+      "Niklas Elmqvist"
+    ],
+    "title": "DataSite: Proactive Visual Data Exploration with Computation of Insight-based Recommendations",
+    "venue": "(in press) Information Visualization Journal",
+    "year": "2019",
+    "type": "Journal",
+    "video": "",
+    "pdf": "/assets/data/datasite.pdf",
+    "bibtex": "",
+    "name": "datasite",
+    "keywords": [
+      "Exploratory analysis", "proactive visualization"
     ]
   },
  {
@@ -113,11 +132,11 @@
       "Niklas Elmqvist"
     ],
     "title": "VisHive: Supporting Web-based Visualization through Ad-hoc Computational Clusters of Mobile Devices",
-    "venue": "(in press) Information Visualization Journal",
+    "venue": "Information Visualization Journal",
     "year": "2018",
     "type": "Journal",
     "bibtex": "",
-    "video": "https://www.dropbox.com/s/bw8qjhky479svwg/vishive_demo_720p.mp4?dl=0",
+    "video": "",
     "pdf": "/assets/data/vishive.pdf",
     "name": "vishive",
     "keywords": [
