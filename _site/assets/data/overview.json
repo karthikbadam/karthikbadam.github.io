@@ -1,5 +1,23 @@
 [
   {
+    "title": "Vistrates: A Versatile Tool for Data Analytics",
+    "abstract": "Introducing a new platform for many activities in data exploration between multiple users on heterogeneous devices. Vistrates is web-based and collaborative by nature, thus supporting data analysis anywhere, anytime, and by anyone.",
+    "link": "http://hcil.umd.edu/vistrates/",
+    "video": " https://www.youtube.com/watch?v=nMmiWBJoJUc",
+    "name": "vistrates",
+    "type": "Blog Post",
+    "date": "Oct 22, 2018"
+  },
+  {
+    "title": "Document Reading with Visual Aids",
+    "abstract": "Linking text and tables through contextual visualizations in data-rich documents improves reading comprehension. Our user evaluations have shown the power of this new approach in summarization and comprehension of data-rich documents.",
+    "link": "http://hcil.umd.edu/document-reading-with-visual-aids/",
+    "video": "https://vimeo.com/289784966",
+    "name": "elasticdocs",
+    "type": "Blog Post",
+    "date": "Oct 21, 2018"
+  },
+  {
     "title": "When David Meets Goliath: Using Smartwatches and Large Displays Together for Data Analysis",
     "abstract": "New conceptual framework developed at University of Maryland and Technische Universität Dresden helps utilize multiple devices together for visual data analysis.",
     "link": "http://hcil.umd.edu/when-david-meets-goliath-using-smartwatches-and-large-displays-together-for-data-analysis/",
