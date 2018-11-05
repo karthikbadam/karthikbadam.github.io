@@ -2,7 +2,7 @@
  * Created by karthik on 10/29/16.
  */
 
-$(document).ready(function () {
+$(document).ready(function () {   
 
     d3.json("/assets/data/overview.json", function (data) {
 

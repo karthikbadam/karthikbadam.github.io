@@ -17,6 +17,17 @@
   min-height: 750px;
 }
 
+#jobAnnouncement {
+  padding: 1em;
+  border: 1px dashed #542788;
+  font-size: 0.85em;
+  border-radius: 7px;
+  background-color: #EEE;
+  float: left;
+  margin-bottom: 2em;
+  line-height: 1.5;
+}
+
 .page {
   @include breakpoint($large) {
     @include span(10 of 12 last);
