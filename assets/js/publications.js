@@ -103,7 +103,9 @@ function showPublication (publicationsContent, paper, i) {
         .style("width", "100%")
         .style("class", "archive");
 
-    var pub = publicationsContent.append("div").style("display", "block")
+    var pub = publicationsContent.append("div").style("display", "flex")
+        .style("justify-content", "center")
+        .style("align-items", "center")
         .style("padding-left", "10px")
         .style("line-height", "1")
         .style("padding-bottom", "5px")
@@ -111,16 +113,17 @@ function showPublication (publicationsContent, paper, i) {
         .style("padding-top", "5px")
         .style("background", "white");
 
-    pub.append("div").style("width", "110px")
-        .style("height", "72px")
+    pub.append("a").attr("href", paper.pdf).attr("target", "_blank").append("div").style("width", "120px")
+        .style("height", "80px")
         .style("display", "inline-block")
         .style("border", "1.5px solid #222")
         .style("background-size", "cover")
         .style("background-repeat", "no-repeat")
         .style("vertical-align", "top")
-        .style("background-image", "url(/assets/images/" + paper.name + ".png)");
+        .style("background-image", "url(/assets/images/" + paper.name + ".png)")
+        
 
-    var pubInfo = pub.append("div").style("width", "calc(100% - 110px)")
+    var pubInfo = pub.append("div").style("width", "calc(100% - 120px)")
         .style("height", "100%")
         .style("background", "transparent")
         .style("padding-left", "10px")
@@ -184,7 +187,7 @@ function showPublication (publicationsContent, paper, i) {
     pubInfo.append("span").html(paper.venue + ", " + paper.year +"<br/>").style("font-size", "12px");
 
     if (paper.pdf != "") {
-        pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.pdf + '">[pdf]</a>  ').style("font-size", "12px");
+        pubInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + paper.pdf + '">[pdf]</a>').style("font-size", "12px");
     }
 
     if (paper.video != "") {

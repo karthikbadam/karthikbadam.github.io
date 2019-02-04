@@ -69,8 +69,9 @@ function showPost (postsContent, post, i) {
         .style("background", "white")
         .style("padding-bottom", "20px");
 
-    pro.append("div").style("width", "100px")
-        .style("height", "72px")
+    pro.append("a").attr("href",  post.link).attr("target", "_blank")
+        .append("div").style("width", "120px")
+        .style("height", "80px")
         .style("display", "inline-block")
         .style("border", "1.5px solid #222")
         .style("background-size", "cover")
@@ -78,17 +79,16 @@ function showPost (postsContent, post, i) {
         .style("vertical-align", "bottom")
         .style("background-image", "url(/assets/images/" + post.name + ".png)");
 
-    var proInfo = pro.append("div").style("width", "calc(100% - 100px)")
+    var proInfo = pro.append("div").style("width", "calc(100% - 120px)")
         .style("background", "white")
         .style("padding-left", "10px")
         .style("display", "inline-block");
 
-
     proInfo.append("div").html('<a target="_blank" href="' + post.link + '">' + post.title + '</a>').style("font-size", "14px");
     proInfo.append("span").html(post.abstract + "<br/>").style("font-size", "12px");
-    proInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + post.link + '">[Link]</a>  ').style("font-size", "12px");
+    proInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + post.link + '">[Link]</a>  ').style("font-size", "13px");
     if (post.video)
-        proInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + post.video + '">[Video]</a>  ').style("font-size", "12px");
+        proInfo.append("span").attr("class", "textlink").html('<a target="_blank" href="' + post.video + '">[Video]</a>  ').style("font-size", "13px");
     proInfo.append("span").attr("class", "textlink").html(post.date + '<br/>').style("font-size", "12px");
 
 }
