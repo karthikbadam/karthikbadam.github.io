@@ -63,7 +63,9 @@ function showNews (newsContent, news, i) {
 
 function showPost (postsContent, post, i) {
 
-    var pro = postsContent.append("div").style("display", "block")
+    var pro = postsContent.append("div").style("display", "flex")
+        .style("justify-content", "center")
+        .style("align-items", "center")
         .style("padding-left", "10px")
         .style("line-height", "1")
         .style("background", "white")
