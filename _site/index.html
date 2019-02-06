@@ -231,7 +231,7 @@
 
 <script src="http://localhost:4000/assets/js/overview.js"></script>
 
-<div class="archive" id="jobAnnouncement"> Hi! I am actively seeking positions in academia and industry research. View my <a class="textlink" target="_blank" href="/assets/data/packet.pdf"><u>job packet here</u></a> and feel free to reach out to me. Email: <a href="mailto:sbadam@umd.edu" target="_top">sbadam@umd.edu</a></div>
+<div class="archive" id="jobAnnouncement"> Hi! I am actively seeking positions in academia and industry research. View my <a class="textlink" target="_blank" href="/assets/data/packet.pdf" onClick='ga("send", { hitType: "click", eventCategory: "link", eventAction: "show", eventLabel: "JobPacket" });'><u>job packet here</u></a> and please reach out to me if you are hiring. Email: <a href="mailto:sbadam@umd.edu" target="_top">sbadam@umd.edu</a></div>
 
 <div class="archive" id="postsList"></div>
 
@@ -240,11 +240,11 @@
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111496562-1"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
 
-  gtag('config', 'UA-111496562-1');
+gtag('config', 'UA-111496562-1');
 </script>
 
 
