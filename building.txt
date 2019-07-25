@@ -1,0 +1,5 @@
+https://jekyllrb.com/docs/installation/macos/
+
+## get gems
+bundle install 
+

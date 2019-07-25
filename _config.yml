@@ -65,8 +65,8 @@ google_ad_slot           :
 author:
   name             : "Sriram Karthik Badam"
   avatar           : "bio-photo.jpg"
-  bio              : "I am a Ph.D. Candidate in Computer Science at University of Maryland, College Park. My research interests include Visualization, Visual Analytics, and Human-Computer Interaction."
-  location         : "Hyattsville, MD, USA"
+  bio              : "I am a data scientist at Apple. I create analytical tools for exploration, collaboration, and explanation, when dealing with data. I recently completed my PhD in Computer Science at the University of Maryland."
+  location         : "Mountain View, CA, USA"
   email            : "sbadam@umd.edu"
   uri              : 
   bitbucket        : 
