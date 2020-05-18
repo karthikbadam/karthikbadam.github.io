@@ -11,19 +11,19 @@ $(document).ready(function () {
         // Empty the div
         d3.select("#postsList").empty();
         var postsList = d3.select("#postsList").style("float", "left").style("padding-left", "0px");
-        postsList.append("h1").html("Recent blog posts <hr/>").style("margin", "0px");
+        postsList.append("h1").html("Blog posts <hr/>").style("margin", "0px");
 
 
         // Empty the div
         d3.select("#newsList").empty();
         var newsList = d3.select("#newsList").style("float", "left").style("padding-left", "0px");
-        newsList.append("h1").html("Recent news <hr/>").style("margin", "0px");
+        newsList.append("h1").html("Updates <hr/>").style("margin", "0px");
 
         // posts
         postsContent = postsList.append("div").attr("id", "postsContent");
         newsContent = newsList.append("div").attr("id", "newsContent");
 
-        data.forEach(function (datum, i) {
+        data.slice(0, 15).forEach(function (datum, i) {
             if (datum.type == "Blog Post") {
                 showPost(postsContent, datum, i);
             } else if (datum.type == "News") {
