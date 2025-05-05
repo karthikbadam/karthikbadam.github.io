@@ -1,0 +1,57 @@
+{
+  "posts": [
+    {
+      "title": "Vistrates: A Versatile Tool for Data Analytics",
+      "abstract": "Introducing a new platform for many activities in data exploration between multiple users on heterogeneous devices. Vistrates is web-based and collaborative by nature, thus supporting data analysis anywhere, anytime, and by anyone.",
+      "link": "http://hcil.umd.edu/vistrates/",
+      "video": "https://www.youtube.com/watch?v=nMmiWBJoJUc",
+      "name": "vistrates",
+      "type": "Blog Post",
+      "date": "Oct 22, 2018"
+    },
+    {
+      "title": "Document Reading with Visual Aids",
+      "abstract": "Linking text and tables through contextual visualizations in data-rich documents improves reading comprehension. Our user evaluations have shown the power of this new approach in summarization and comprehension of data-rich documents.",
+      "link": "http://hcil.umd.edu/document-reading-with-visual-aids/",
+      "video": "https://vimeo.com/289784966",
+      "name": "elasticdocs",
+      "type": "Blog Post",
+      "date": "Oct 21, 2018"
+    },
+    {
+      "title": "When David Meets Goliath: Using Smartwatches and Large Displays Together for Data Analysis",
+      "abstract": "New conceptual framework developed at University of Maryland and Technische Universität Dresden helps utilize multiple devices together for visual data analysis.",
+      "link": "http://hcil.umd.edu/when-david-meets-goliath-using-smartwatches-and-large-displays-together-for-data-analysis/",
+      "video": "https://www.youtube.com/watch?v=DYSvA_Hn39o",
+      "name": "DG",
+      "type": "Blog Post",
+      "date": "April 18, 2018"
+    },
+    {
+      "title": "Understanding Data by Having Computers and Humans Work Together",
+      "abstract": "Introducing a new tool called DataSite for proactive visual exploration using insight-based recommendations to help analysts easily get started with data analysis.",
+      "link": "http://hcil.umd.edu/posts/understanding-data-by-having-computers-and-humans-work-together/",
+      "name": "datasite",
+      "type": "Blog Post",
+      "date": "March 9, 2018"
+    },
+    {
+      "title": "Bridging Physical and Digital Worlds: When Your Body Is Your Tool, Data Becomes Accessible",
+      "abstract": "New interaction models developed at University of Maryland and University of Manitoba utilize body and hand movement to perform data analysis on large wall-sized displays.",
+      "link": "http://hcil.umd.edu/bridging-physical-and-digital-worlds/",
+      "video": "https://www.youtube.com/watch?v=xd7G_q8nocc",
+      "name": "proxemiclens",
+      "type": "Blog Post",
+      "date": "Oct 23, 2016"
+    },
+    {
+      "title": "Back to the Future: Exploring Multiple Futures in the Stock Market",
+      "abstract": "A new tool called TimeFork uses interactive graphics and state-of-the-art statistical models to allow traders to investigate multiple parallel universes for predicting the stock market.",
+      "link": "http://hcil.umd.edu/back-to-the-future-exploring-multiple-futures-in-the-stock-market/",
+      "video": "https://www.youtube.com/watch?v=nUfSqqbaD5k",
+      "name": "timefork",
+      "type": "Blog Post",
+      "date": "May 12, 2016"
+    }
+  ]
+} 
