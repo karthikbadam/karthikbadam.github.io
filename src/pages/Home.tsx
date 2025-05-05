@@ -1,16 +1,15 @@
 import {
+  Button,
   Container,
   Grid,
   Heading,
+  HStack,
+  Image,
+  Link,
+  Stack,
+  Tag,
   Text,
   VStack,
-  SimpleGrid,
-  Link,
-  Image,
-  HStack,
-  Button,
-  Tag,
-  Stack,
 } from "@chakra-ui/react";
 import postsData from "../data/posts.json";
 
@@ -42,7 +41,7 @@ const Home = () => {
             <Heading
               size="xl"
               css={{
-                background: "linear-gradient(to right, #4299e1, #9f7aea)",
+                background: "linear-gradient(to right, #4299e1, #4299e1)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -50,38 +49,54 @@ const Home = () => {
               Karthik Badam
             </Heading>
             <HStack gap={2} wrap="wrap">
-              <Tag.Root>
-                <Tag.Label>Research Engineer</Tag.Label>
+              <Tag.Root bg="blue.subtle">
+                <Tag.Label color="blue.fg">Research Engineer</Tag.Label>
               </Tag.Root>
-              <Tag.Root>
-                <Tag.Label>Apple</Tag.Label>
+              <Tag.Root bg="blue.subtle">
+                <Tag.Label color="blue.fg">Apple</Tag.Label>
               </Tag.Root>
-              <Tag.Root>
-                <Tag.Label>Machine Learning</Tag.Label>
+              <Tag.Root bg="blue.subtle">
+                <Tag.Label color="blue.fg">Machine Learning</Tag.Label>
               </Tag.Root>
             </HStack>
             <Text fontSize="md" color="gray.600" lineHeight="tall">
               Creating tools for exploration, explanation, and augmentation of
-              data that feeds into modern large language models at Apple.
+              data that feeds into large language models.
             </Text>
             <HStack gap={4}>
               <Link href="/publications">
-                <Button colorScheme="blue" size="sm" variant="outline">
+                <Button
+                  size="sm"
+                  variant="solid"
+                  bg="gray.subtle"
+                  color="gray.fg"
+                >
                   View Publications
                 </Button>
               </Link>
-              <Button colorScheme="purple" size="sm" variant="outline">
+              <Button
+                size="sm"
+                variant="solid"
+                bg="gray.subtle"
+                color="gray.fg"
+              >
                 Contact Me
               </Button>
             </HStack>
           </Stack>
         </VStack>
-        <Stack>
-          <Heading size="xl">Posts and Prototypes</Heading>
-          <SimpleGrid
-            columns={{ base: 1, md: 2, "2xl": 3 }}
-            gap={8}
-            height="calc(100vh - 150px)"
+        <Stack gap={4}>
+          <Heading size="xl">
+            Posts and Prototypes
+          </Heading>
+          <Grid
+            templateColumns={{
+              base: "1fr",
+              md: "1fr 1fr",
+              "2xl": "1fr 1fr 1fr",
+            }}
+            gap={6}
+            maxH="calc(100vh - 150px)"
             overflowY="auto"
             pb={10}
           >
@@ -97,9 +112,10 @@ const Home = () => {
                   borderRadius="xl"
                   _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
                   transition="all 0.3s"
-                  bg="gray.subtle"
                 >
-                  <Heading size="md">{post.title}</Heading>
+                  <Heading size="md" color="blue.fg">
+                    {post.title}
+                  </Heading>
                   <Text color="gray.focusRing" fontSize="sm" lineClamp={3}>
                     {post.abstract}
                   </Text>
@@ -116,7 +132,7 @@ const Home = () => {
                 </Stack>
               </Link>
             ))}
-          </SimpleGrid>
+          </Grid>
         </Stack>
       </Grid>
     </Container>
