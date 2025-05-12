@@ -38,7 +38,14 @@ const components = {
     />
   ),
   h3: (props: HeadingProps) => (
-    <Heading as="h3" size="md" mb={2} mt={8} color="gray.subtle" {...props} />
+    <Heading
+      as="h3"
+      size="md"
+      mb={2}
+      mt={8}
+      color="gray.focusRing"
+      {...props}
+    />
   ),
   p: (props: TextProps) => (
     <Text mb={4} lineHeight="tall" fontSize="md" {...props} />

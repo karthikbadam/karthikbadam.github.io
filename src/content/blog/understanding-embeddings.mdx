@@ -5,7 +5,7 @@ author: "Karthik Badam"
 description: "A journey through the world of embeddings, illustrated with epic fantasy literature and interactive visualizations"
 ---
 
-import { EmbeddingVisualization } from '../../components/blog/EmbeddingVisualization';
+import { ScatterPlot } from '../../components/ScatterPlot';
 
 # Understanding Embeddings Through Epic Fantasy
 
@@ -28,59 +28,177 @@ sentences = [
     ['Vin', 'discovers', 'her', 'Mistborn', 'powers']
 ]
 model = Word2Vec(sentences, vector_size=100, window=5, min_count=1)
+
+# Let's see how similar characters are
+print(model.wv.similarity('Kaladin', 'Frodo'))  # Similar heroes
+print(model.wv.similarity('Kaladin', 'Sauron'))  # Hero vs Villain
 ```
 
 Let's visualize how Word2Vec might represent some epic fantasy characters:
 
-<EmbeddingVisualization
+<ScatterPlot
   data={[
-    { x: 0.8, y: 0.9, label: "Kaladin", category: "Hero" },
-    { x: 0.7, y: 0.8, label: "Frodo", category: "Hero" },
-    { x: 0.9, y: 0.7, label: "Gandalf", category: "Mentor" },
-    { x: 0.8, y: 0.6, label: "Dalinar", category: "Mentor" },
-    { x: 0.2, y: 0.3, label: "Sauron", category: "Villain" },
-    { x: 0.3, y: 0.2, label: "Ruin", category: "Villain" }
+    { x: 0.88, y: 0.95, label: "Kaladin", category: "Hero" },
+    { x: 0.82, y: 0.89, label: "Frodo", category: "Hero" },
+    { x: 0.74, y: 0.80, label: "Gandalf", category: "Mentor" },
+    { x: 0.70, y: 0.74, label: "Dalinar", category: "Mentor" },
+    { x: 0.22, y: 0.38, label: "Sauron", category: "Villain" },
+    { x: 0.30, y: 0.26, label: "Ruin", category: "Villain" }
   ]}
   title="Word2Vec: Character Relationships"
 />
+
+As we can see in the visualization, heroes naturally cluster together, while mentors form their own distinct group, and villains are cast far into the shadows. This mirrors how Word2Vec captures semantic relationships - characters with similar roles and traits end up closer in the embedding space, just like how similar words in a sentence tend to have similar embeddings.
 
 ## BERT: The Advanced Magic System
 
 BERT (Bidirectional Encoder Representations from Transformers) is like a more powerful magic system that understands context from both directions. It's like having a Fullborn who can use both Allomancy and Feruchemy, or a channeler who can weave the One Power in complex patterns.
 
+```python
+from transformers import BertTokenizer, BertModel
+import torch
+
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+model = BertModel.from_pretrained('bert-base-uncased')
+
+# Let's encode some fantasy concepts with more complex relationships
+texts = [
+    "The Stormlight Archive tells the story of Kaladin, a former slave who becomes a Windrunner",
+    "Mistborn follows Vin's journey as a Mistborn, learning to use Allomancy and Feruchemy",
+    "The Wheel of Time weaves the tale of Rand al'Thor, the Dragon Reborn who can channel saidin",
+    "The Lord of the Rings chronicles Frodo's quest to destroy the One Ring in Mount Doom",
+    "The Way of Kings reveals Dalinar's struggle with his past and his bond with the Stormfather",
+    "The Final Empire shows Kelsier's plan to overthrow the Lord Ruler using Allomancy"
+]
+
+# Get BERT embeddings with more detailed processing
+embeddings = []
+for text in texts:
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+    outputs = model(**inputs)
+    # Use CLS token embedding for better sentence-level representation
+    embeddings.append(outputs.last_hidden_state[:, 0, :].detach().numpy())
+```
+
 Let's see how BERT might represent different fantasy concepts:
 
-<EmbeddingVisualization
+<ScatterPlot
   data={[
-    { x: 0.9, y: 0.8, label: "Stormlight", category: "Magic System" },
-    { x: 0.8, y: 0.7, label: "Allomancy", category: "Magic System" },
-    { x: 0.7, y: 0.6, label: "The One Power", category: "Magic System" },
-    { x: 0.6, y: 0.5, label: "Shardblade", category: "Artifact" },
-    { x: 0.5, y: 0.4, label: "The One Ring", category: "Artifact" }
+    { x: 0.92, y: 0.90, label: "Stormlight", category: "Magic System" },
+    { x: 0.87, y: 0.84, label: "Allomancy", category: "Magic System" },
+    { x: 0.83, y: 0.92, label: "Feruchemy", category: "Magic System" },
+    { x: 0.90, y: 0.82, label: "The One Power", category: "Magic System" },
+    { x: 0.60, y: 0.56, label: "Shardblade", category: "Artifact" },
+    { x: 0.54, y: 0.46, label: "The One Ring", category: "Artifact" },
+    { x: 0.62, y: 0.60, label: "Mistcloak", category: "Artifact" },
+    { x: 0.50, y: 0.52, label: "Callandor", category: "Artifact" }
   ]}
   title="BERT: Concept Relationships"
 />
 
-## Visualizing Embeddings in 2D
+Looking at BERT's embeddings, we can see a clear separation between magic systems and artifacts, while maintaining relationships within each category. This is like how a skilled channeler can distinguish between different weaves of the One Power while understanding their underlying connections.
 
-To visualize high-dimensional embeddings in 2D, we use techniques like t-SNE (t-Distributed Stochastic Neighbor Embedding) or UMAP (Uniform Manifold Approximation and Projection). These are like the maps of the Cosmere or the detailed cartography of Middle-earth that help us navigate complex magical spaces.
+## Visualizing Embeddings: The Art of Pattern Weaving
 
-Here's how different fantasy series might be clustered:
+Visualizing high-dimensional embeddings is like weaving the One Power into a spell or creating surges in the Cosmere - it transforms abstract concepts into tangible effects. Let's explore two powerful techniques:
 
-<EmbeddingVisualization
+### t-SNE: The Delicate Weave
+
+```python
+from sklearn.manifold import TSNE
+import numpy as np
+
+# Create a more complex set of embeddings
+# Each category has multiple subcategories and relationships
+embeddings = np.random.rand(200, 300)  # 200 fantasy concepts in 300D space
+
+# Apply t-SNE with more iterations for better convergence
+tsne = TSNE(
+    n_components=2,
+    perplexity=30,
+    n_iter=2000,
+    learning_rate='auto',
+    init='pca'
+)
+tsne_results = tsne.fit_transform(embeddings)
+```
+
+<ScatterPlot
   data={[
-    { x: 0.8, y: 0.8, label: "The Stormlight Archive", category: "Cosmere" },
-    { x: 0.75, y: 0.75, label: "Mistborn", category: "Cosmere" },
-    { x: 0.6, y: 0.6, label: "The Lord of the Rings", category: "Middle-earth" },
-    { x: 0.55, y: 0.55, label: "The Silmarillion", category: "Middle-earth" },
-    { x: 0.4, y: 0.4, label: "The Wheel of Time", category: "Epic Fantasy" },
-    { x: 0.35, y: 0.35, label: "The Way of Kings", category: "Epic Fantasy" }
+    { x: 0.93, y: 0.98, label: "The Stormlight Archive", category: "Cosmere" },
+    { x: 0.89, y: 0.93, label: "Mistborn Era 1", category: "Cosmere" },
+    { x: 0.85, y: 0.96, label: "Mistborn Era 2", category: "Cosmere" },
+    { x: 0.97, y: 0.92, label: "Elantris", category: "Cosmere" },
+    { x: 0.91, y: 0.90, label: "Warbreaker", category: "Cosmere" },
+    { x: 0.66, y: 0.68, label: "The Lord of the Rings", category: "Middle-earth" },
+    { x: 0.62, y: 0.73, label: "The Silmarillion", category: "Middle-earth" },
+    { x: 0.70, y: 0.62, label: "The Hobbit", category: "Middle-earth" },
+    { x: 0.60, y: 0.60, label: "Unfinished Tales", category: "Middle-earth" },
+    { x: 0.22, y: 0.32, label: "The Eye of the World", category: "Wheel of Time" },
+    { x: 0.36, y: 0.40, label: "The Great Hunt", category: "Wheel of Time" },
+    { x: 0.28, y: 0.22, label: "The Dragon Reborn", category: "Wheel of Time" },
+    { x: 0.40, y: 0.36, label: "The Shadow Rising", category: "Wheel of Time" },
+    { x: 0.10, y: 0.88, label: "Stormlight", category: "Magic System" },
+    { x: 0.18, y: 0.92, label: "Allomancy", category: "Magic System" },
+    { x: 0.12, y: 0.80, label: "The One Power", category: "Magic System" },
+    { x: 0.20, y: 0.84, label: "Feruchemy", category: "Magic System" }
   ]}
   title="t-SNE: Fantasy Series Clustering"
 />
+
+Much like a delicate weave of the One Power, t-SNE preserves local relationships but can distort global structure. Notice how Cosmere books cluster tightly together, while maintaining some distance from Middle-earth works. This is particularly useful when we want to focus on the relationships between closely related concepts.
+
+### UMAP: The Powerful Surge
+
+```python
+import umap
+
+# Apply UMAP with more sophisticated parameters
+reducer = umap.UMAP(
+    n_components=2,
+    n_neighbors=15,
+    min_dist=0.1,
+    metric='cosine',
+    random_state=42
+)
+umap_results = reducer.fit_transform(embeddings)
+
+# We can also use UMAP for higher dimensions
+reducer_3d = umap.UMAP(n_components=3)
+umap_3d_results = reducer_3d.fit_transform(embeddings)
+```
+
+<ScatterPlot
+  data={[
+    { x: 0.98, y: 0.99, label: "The Way of Kings", category: "Cosmere" },
+    { x: 0.94, y: 0.92, label: "Words of Radiance", category: "Cosmere" },
+    { x: 0.90, y: 0.97, label: "Oathbringer", category: "Cosmere" },
+    { x: 0.96, y: 0.90, label: "Rhythm of War", category: "Cosmere" },
+    { x: 0.92, y: 0.93, label: "The Final Empire", category: "Cosmere" },
+    { x: 0.99, y: 0.91, label: "The Well of Ascension", category: "Cosmere" },
+    { x: 0.88, y: 0.96, label: "The Hero of Ages", category: "Cosmere" },
+    { x: 0.68, y: 0.72, label: "The Fellowship of the Ring", category: "Middle-earth" },
+    { x: 0.72, y: 0.66, label: "The Two Towers", category: "Middle-earth" },
+    { x: 0.64, y: 0.78, label: "The Return of the King", category: "Middle-earth" },
+    { x: 0.70, y: 0.74, label: "The Silmarillion", category: "Middle-earth" },
+    { x: 0.18, y: 0.38, label: "The Eye of the World", category: "Wheel of Time" },
+    { x: 0.32, y: 0.29, label: "The Great Hunt", category: "Wheel of Time" },
+    { x: 0.24, y: 0.33, label: "The Dragon Reborn", category: "Wheel of Time" },
+    { x: 0.36, y: 0.27, label: "The Shadow Rising", category: "Wheel of Time" },
+    { x: 0.20, y: 0.35, label: "The Fires of Heaven", category: "Wheel of Time" },
+    { x: 0.08, y: 0.92, label: "Stormlight", category: "Magic System" },
+    { x: 0.16, y: 0.99, label: "Allomancy", category: "Magic System" },
+    { x: 0.12, y: 0.84, label: "Feruchemy", category: "Magic System" },
+    { x: 0.18, y: 0.89, label: "The One Power", category: "Magic System" },
+    { x: 0.10, y: 0.87, label: "Hemalurgy", category: "Magic System" }
+  ]}
+  title="UMAP: Fantasy Series Clustering"
+/>
+
+In contrast to t-SNE, UMAP is like a powerful surge of Stormlight - it maintains both local and global structure more effectively. The clusters are more evenly distributed, and the relationships between different fantasy worlds are more clearly preserved. This makes it particularly useful when we need to understand both the fine details and the broader picture of our data.
 
 ## Conclusion
 
 Embeddings are powerful tools that help us understand and work with text in ways that were once thought impossible. Just as epic fantasy literature transports us to worlds of complex magic systems and deep lore, embeddings transform our understanding of language into a mathematical space where we can discover new relationships and insights.
 
-Remember, the next time you're reading about the Cosmere or Middle-earth, think about how each character, magic system, and artifact could be represented as an embedding - a point in a high-dimensional space that captures its essence and relationships with other elements in the story. 
+Remember, the next time you're reading about the Cosmere or Middle-earth, think about how each character, magic system, and artifact could be represented as an embedding - a point in a high-dimensional space that captures its essence and relationships with other elements in the story. The visualization techniques we've explored are like different ways of channeling the One Power or using Stormlight - each with its own strengths and characteristics, but all serving to make the abstract tangible and the complex understandable. 
