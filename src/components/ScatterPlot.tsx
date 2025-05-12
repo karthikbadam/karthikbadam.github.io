@@ -63,9 +63,11 @@ const LabelText: React.FC<{
     <Text
       x={xPos}
       y={yPos}
-      fontSize='0.6em'
       fill="#666"
       cursor="default"
+      style={{
+        fontSize: '0.8em'
+      }}
       textAnchor={anchor}
     >
       {label}
@@ -232,7 +234,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
 
           {/* Points */}
           {data.map((point, i) => (
-            <g
+            <Group
               key={i}
               onMouseMove={(event: React.MouseEvent) => {
                 const coords = localPoint(event);
@@ -261,7 +263,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
                   innerHeight={innerHeight}
                 />
               )}
-            </g>
+            </Group>
           ))}
         </Group>
       </svg>

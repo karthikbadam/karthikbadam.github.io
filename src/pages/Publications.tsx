@@ -52,7 +52,7 @@ const Publications = () => {
   };
 
   return (
-    <Container maxW="container.xl" py={8}>
+    <Container maxW="100ch" py={8}>
       <VStack gap={8} align="stretch">
         <Heading>Publications</Heading>
 
@@ -117,9 +117,16 @@ const Publications = () => {
                     </a>
                     <Text fontWeight="semibold">{pub.year}</Text>
                   </Flex>
-
                   <Text>{pub.authors.join(", ")}</Text>
-
+                  {pub.keywords && pub.keywords.length > 0 && (
+                    <Flex gap={2} wrap="wrap">
+                      {pub.keywords.map((keyword, idx) => (
+                        <Tag.Root key={idx} fontSize="sm">
+                          <Tag.Label>{keyword}</Tag.Label>
+                        </Tag.Root>
+                      ))}
+                    </Flex>
+                  )}
                   <Flex gap={2} wrap="wrap">
                     {pub.award && (
                       <Text fontSize="sm" color="#6B46C1">
@@ -128,14 +135,14 @@ const Publications = () => {
                     )}
                   </Flex>
                   <Text color="green.focusRing">{pub.venue}</Text>
-                  <Flex gap={4}>
+                  <Flex gap={2}>
                     {pub.pdf && (
                       <Link
                         href={pub.pdf}
                         target="_blank"
                         rel="noopener noreferrer"
-                        px={4}
-                        py={2}
+                        px={2}
+                        py={1}
                         borderRadius="md"
                         borderWidth="1px"
                         borderColor="blue.subtle"
@@ -153,15 +160,15 @@ const Publications = () => {
                         href={pub.video}
                         target="_blank"
                         rel="noopener noreferrer"
-                        px={4}
-                        py={2}
+                        px={2}
+                        py={1}
                         borderRadius="md"
                         borderWidth="1px"
-                        borderColor="red.subtle"
-                        color="red.contrast"
-                        bg="red.solid"
+                        borderColor="orange.subtle"
+                        color="orange.contrast"
+                        bg="orange.solid"
                         _hover={{
-                          bg: "red.muted",
+                          bg: "orange.muted",
                         }}
                       >
                         Video
@@ -172,8 +179,8 @@ const Publications = () => {
                         href={pub.bibtex}
                         target="_blank"
                         rel="noopener noreferrer"
-                        px={4}
-                        py={2}
+                        px={2}
+                        py={1}
                         borderRadius="md"
                         borderWidth="1px"
                         borderColor="gray.subtle"
@@ -187,16 +194,6 @@ const Publications = () => {
                       </Link>
                     )}
                   </Flex>
-
-                  {pub.keywords && pub.keywords.length > 0 && (
-                    <Flex gap={2} wrap="wrap">
-                      {pub.keywords.map((keyword, idx) => (
-                        <Tag.Root key={idx} fontSize="sm">
-                          <Tag.Label>{keyword}</Tag.Label>
-                        </Tag.Root>
-                      ))}
-                    </Flex>
-                  )}
                 </VStack>
               </Box>
             ))}

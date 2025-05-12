@@ -5,8 +5,8 @@ const Posts = () => {
   const { posts } = postsData;
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack gap={8} align="stretch">
+    <Container maxW="100ch" py={8}>
+      <VStack gap={4} align="stretch">
         <Heading 
           size="2xl"
           css={{
