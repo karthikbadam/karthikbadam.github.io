@@ -115,9 +115,7 @@ const Publications = () => {
                     >
                       <Heading size="md">{pub.title}</Heading>
                     </a>
-                    <Text fontWeight="semibold">
-                      {pub.year}
-                    </Text>
+                    <Text fontWeight="semibold">{pub.year}</Text>
                   </Flex>
 
                   <Text>{pub.authors.join(", ")}</Text>
@@ -141,7 +139,8 @@ const Publications = () => {
                         borderRadius="md"
                         borderWidth="1px"
                         borderColor="blue.subtle"
-                        color="blue.fg"
+                        color="blue.constrast"
+                        bg="blue.solid"
                         _hover={{
                           bg: "blue.subtle",
                         }}
@@ -159,7 +158,8 @@ const Publications = () => {
                         borderRadius="md"
                         borderWidth="1px"
                         borderColor="red.subtle"
-                        color="red.fg"
+                        color="red.contrast"
+                        bg="red.solid"
                         _hover={{
                           bg: "red.muted",
                         }}
@@ -177,7 +177,8 @@ const Publications = () => {
                         borderRadius="md"
                         borderWidth="1px"
                         borderColor="gray.subtle"
-                        color="gray.fg"
+                        color="gray.contrast"
+                        bg="gray.solid"
                         _hover={{
                           bg: "gray.muted",
                         }}

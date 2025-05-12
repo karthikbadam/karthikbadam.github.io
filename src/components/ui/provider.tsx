@@ -6,7 +6,8 @@ import {
   defaultConfig,
   defineConfig,
 } from "@chakra-ui/react";
-import { ColorModeProvider, type ColorModeProviderProps } from "./color-mode";
+import { ColorModeProvider } from "./color-mode-provider";
+import type { ColorModeProviderProps } from "./color-mode";
 import { textStyles } from "./textStyles";
 
 const config = defineConfig({

@@ -16,14 +16,14 @@ import postsData from "../data/posts.json";
 const Home = () => {
   const { posts } = postsData;
   return (
-    <Container maxW="container.xl" py={8} height="calc(100vh - 130px)">
+    <Container maxW="container.xl" py={8} px={8} height="calc(100vh - 130px)">
       <Grid
         templateColumns={{ base: "1fr", md: "1fr 3fr" }}
         gap="100px"
         height="100%"
       >
         <VStack align="start" gap={8} width="100%">
-          <Stack width="100%" position="relative">
+          <Stack width="100%" position="relative" mt={10}>
             <Image
               src="/profile.jpg"
               alt="Karthik Badam"
@@ -37,11 +37,11 @@ const Home = () => {
               _hover={{ transform: "scale(1.05)" }}
             />
           </Stack>
-          <Stack>
+          <Stack gap={4}>
             <Heading
               size="xl"
               css={{
-                background: "linear-gradient(to right, #4299e1, #4299e1)",
+                background: "linear-gradient(to right, #ECC94B, #ED8936)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -49,17 +49,17 @@ const Home = () => {
               Karthik Badam
             </Heading>
             <HStack gap={2} wrap="wrap">
-              <Tag.Root bg="blue.subtle">
-                <Tag.Label color="blue.fg">Research Engineer</Tag.Label>
+              <Tag.Root bg="orange.subtle">
+                <Tag.Label color="orange.fg">Research Engineer</Tag.Label>
               </Tag.Root>
-              <Tag.Root bg="blue.subtle">
-                <Tag.Label color="blue.fg">Apple</Tag.Label>
+              <Tag.Root bg="orange.subtle">
+                <Tag.Label color="orange.fg">Apple</Tag.Label>
               </Tag.Root>
-              <Tag.Root bg="blue.subtle">
-                <Tag.Label color="blue.fg">Machine Learning</Tag.Label>
+              <Tag.Root bg="orange.subtle">
+                <Tag.Label color="orange.fg">Machine Learning</Tag.Label>
               </Tag.Root>
             </HStack>
-            <Text fontSize="md" color="gray.600" lineHeight="tall">
+            <Text fontSize="md" color="gray.fg" lineHeight="tall">
               Creating tools for exploration, explanation, and augmentation of
               data that feeds into large language models.
             </Text>
@@ -85,9 +85,9 @@ const Home = () => {
             </HStack>
           </Stack>
         </VStack>
-        <Stack gap={4}>
+        <Stack gap={2}>
           <Heading size="xl">
-            Posts and Prototypes
+            Latest Works
           </Heading>
           <Grid
             templateColumns={{
@@ -95,6 +95,7 @@ const Home = () => {
               md: "1fr 1fr",
               "2xl": "1fr 1fr 1fr",
             }}
+            pt={2}
             gap={6}
             maxH="calc(100vh - 150px)"
             overflowY="auto"
@@ -113,7 +114,7 @@ const Home = () => {
                   _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
                   transition="all 0.3s"
                 >
-                  <Heading size="md" color="blue.fg">
+                  <Heading size="md">
                     {post.title}
                   </Heading>
                   <Text color="gray.focusRing" fontSize="sm" lineClamp={3}>

@@ -1,0 +1,86 @@
+---
+title: "Understanding Embeddings Through Epic Fantasy"
+date: "2025-05-11"
+author: "Karthik Badam"
+description: "A journey through the world of embeddings, illustrated with epic fantasy literature and interactive visualizations"
+---
+
+import { EmbeddingVisualization } from '../../components/blog/EmbeddingVisualization';
+
+# Understanding Embeddings Through Epic Fantasy
+
+In the world of Natural Language Processing (NLP), embeddings are like magical systems that transform words into numbers. Just as Allomancy in Mistborn or the One Power in The Wheel of Time can transmute and manipulate reality, embeddings convert text into numerical vectors that capture meaning and relationships.
+
+## What are Embeddings?
+
+Imagine you're in the Great Library of Tar Valon or the archives of the White Tower. Each book has its own unique characteristics: some are about the One Power, others about Allomancy, some focus on the history of Middle-earth, while others emphasize the Cosmere's magic systems. Embeddings work similarly - they capture these characteristics as numbers, allowing us to understand relationships between different pieces of text.
+
+## Word2Vec: The Basic Magic System
+
+Word2Vec is like the first magic system a novice learns. It creates embeddings by looking at the context of words. For example:
+
+```python
+# A simple Word2Vec example
+from gensim.models import Word2Vec
+sentences = [
+    ['Kaladin', 'learns', 'to', 'use', 'Stormlight'],
+    ['Gandalf', 'teaches', 'Frodo', 'about', 'the', 'Ring'],
+    ['Vin', 'discovers', 'her', 'Mistborn', 'powers']
+]
+model = Word2Vec(sentences, vector_size=100, window=5, min_count=1)
+```
+
+Let's visualize how Word2Vec might represent some epic fantasy characters:
+
+<EmbeddingVisualization
+  data={[
+    { x: 0.8, y: 0.9, label: "Kaladin", category: "Hero" },
+    { x: 0.7, y: 0.8, label: "Frodo", category: "Hero" },
+    { x: 0.9, y: 0.7, label: "Gandalf", category: "Mentor" },
+    { x: 0.8, y: 0.6, label: "Dalinar", category: "Mentor" },
+    { x: 0.2, y: 0.3, label: "Sauron", category: "Villain" },
+    { x: 0.3, y: 0.2, label: "Ruin", category: "Villain" }
+  ]}
+  title="Word2Vec: Character Relationships"
+/>
+
+## BERT: The Advanced Magic System
+
+BERT (Bidirectional Encoder Representations from Transformers) is like a more powerful magic system that understands context from both directions. It's like having a Fullborn who can use both Allomancy and Feruchemy, or a channeler who can weave the One Power in complex patterns.
+
+Let's see how BERT might represent different fantasy concepts:
+
+<EmbeddingVisualization
+  data={[
+    { x: 0.9, y: 0.8, label: "Stormlight", category: "Magic System" },
+    { x: 0.8, y: 0.7, label: "Allomancy", category: "Magic System" },
+    { x: 0.7, y: 0.6, label: "The One Power", category: "Magic System" },
+    { x: 0.6, y: 0.5, label: "Shardblade", category: "Artifact" },
+    { x: 0.5, y: 0.4, label: "The One Ring", category: "Artifact" }
+  ]}
+  title="BERT: Concept Relationships"
+/>
+
+## Visualizing Embeddings in 2D
+
+To visualize high-dimensional embeddings in 2D, we use techniques like t-SNE (t-Distributed Stochastic Neighbor Embedding) or UMAP (Uniform Manifold Approximation and Projection). These are like the maps of the Cosmere or the detailed cartography of Middle-earth that help us navigate complex magical spaces.
+
+Here's how different fantasy series might be clustered:
+
+<EmbeddingVisualization
+  data={[
+    { x: 0.8, y: 0.8, label: "The Stormlight Archive", category: "Cosmere" },
+    { x: 0.75, y: 0.75, label: "Mistborn", category: "Cosmere" },
+    { x: 0.6, y: 0.6, label: "The Lord of the Rings", category: "Middle-earth" },
+    { x: 0.55, y: 0.55, label: "The Silmarillion", category: "Middle-earth" },
+    { x: 0.4, y: 0.4, label: "The Wheel of Time", category: "Epic Fantasy" },
+    { x: 0.35, y: 0.35, label: "The Way of Kings", category: "Epic Fantasy" }
+  ]}
+  title="t-SNE: Fantasy Series Clustering"
+/>
+
+## Conclusion
+
+Embeddings are powerful tools that help us understand and work with text in ways that were once thought impossible. Just as epic fantasy literature transports us to worlds of complex magic systems and deep lore, embeddings transform our understanding of language into a mathematical space where we can discover new relationships and insights.
+
+Remember, the next time you're reading about the Cosmere or Middle-earth, think about how each character, magic system, and artifact could be represented as an embedding - a point in a high-dimensional space that captures its essence and relationships with other elements in the story. 

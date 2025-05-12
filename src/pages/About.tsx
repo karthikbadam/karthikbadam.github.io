@@ -36,7 +36,7 @@ const About = () => {
               <Box key={index} p={4} borderWidth="1px" borderRadius="lg">
                 <Heading size="md">{exp.title}</Heading>
                 <Text fontWeight="bold" mt={2}>{exp.company}</Text>
-                <Text color="gray.600">{exp.period}</Text>
+                <Text color="gray.fg">{exp.period}</Text>
                 <Text mt={4}>{exp.description}</Text>
               </Box>
             ))}

@@ -7,13 +7,12 @@ const Navbar = () => {
         <Link 
           href="/"
           fontWeight="bold" 
-          fontSize="xl" 
+          fontSize="lg" 
           _hover={{ textDecoration: 'none', color: 'blue.500' }}
           textDecoration="none"
         >
           Karthik Badam
         </Link>
-
         <Stack direction="row" gap={8}>
           <Link 
             href="/publications"
