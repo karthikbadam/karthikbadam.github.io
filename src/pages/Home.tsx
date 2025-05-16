@@ -31,7 +31,7 @@ const Home = () => {
               alt="Karthik Badam"
               borderRadius="full"
               width="100%"
-              maxWidth="200px"
+              maxWidth="150px"
               height="auto"
               objectFit="cover"
               boxShadow="2xl"
