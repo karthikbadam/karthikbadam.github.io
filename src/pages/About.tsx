@@ -8,14 +8,14 @@ import {
   Link,
 } from "@chakra-ui/react";
 
-const About = () => {
+export const About = () => {
   const experiences = [
     {
       title: "Staff Full Stack Engineer",
       company: "Apple",
       period: "2019 - Present",
       description:
-        "Creating interactive tools to curate data that feeds in Apple Intelligence model training.",
+        "Creating interactive tools for data that feeds in Apple Intelligence model training.",
     },
     {
       title: "Ph.D. in Computer Science",
@@ -66,5 +66,3 @@ const About = () => {
     </Container>
   );
 };
-
-export default About;

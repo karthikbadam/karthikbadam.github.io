@@ -12,7 +12,7 @@ import {
 import { FormEvent, useState } from "react";
 import publicationsData from "../data/publications.json";
 
-const Publications = () => {
+export const Publications = () => {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
 
@@ -203,5 +203,3 @@ const Publications = () => {
     </Container>
   );
 };
-
-export default Publications;

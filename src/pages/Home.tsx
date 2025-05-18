@@ -13,9 +13,16 @@ import {
 import { useColorModeValue } from "../components/ui/color-mode";
 import featuredData from "../data/featured.json";
 
-const Home = () => {
+export const Home = () => {
   const highlightColor = useColorModeValue("#948979", "#DFD0B8");
   const [firstPost, ...restPosts] = featuredData;
+
+  // Always call useColorModeValue
+  const colorModeImage = useColorModeValue(
+    firstPost.image && typeof firstPost.image === "object" ? firstPost.image.light : undefined,
+    firstPost.image && typeof firstPost.image === "object" ? firstPost.image.dark : undefined
+  );
+  const firstPostImage = typeof firstPost.image === "object" ? colorModeImage : firstPost.image;
 
   return (
     <Container maxW="container.xl" py={8} px={8} height="calc(100vh - 130px)">
@@ -81,7 +88,7 @@ const Home = () => {
               transition="all 0.3s"
             >
               <Image
-                src={`/images/${firstPost.image}`}
+                src={`/images/${firstPostImage}`}
                 alt={firstPost.title}
                 borderRadius="lg"
                 objectFit="contain"
@@ -156,5 +163,3 @@ const Home = () => {
     </Container>
   );
 };
-
-export default Home;

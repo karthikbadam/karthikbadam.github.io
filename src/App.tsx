@@ -1,11 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { BlogPost } from './pages/BlogPost'
-import { Provider } from './components/ui/provider'
-import Navbar from './components/Navbar'
-import Home from './pages/Home'
-import About from './pages/About'
-import Posts from "./pages/Posts"
-import Publications from "./pages/Publications"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BlogPost } from "./pages/BlogPost";
+import { Provider } from "./components/ui/provider";
+import { Navbar } from "./components/Navbar";
+import { Home } from "./pages/Home";
+import { About } from "./pages/About";
+import { Posts } from "./pages/Posts";
+import { Publications } from "./pages/Publications";
 
 function App() {
   return (
@@ -21,7 +21,7 @@ function App() {
         </Routes>
       </Router>
     </Provider>
-  )
+  );
 }
 
-export default App
+export default App;

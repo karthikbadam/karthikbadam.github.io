@@ -3,7 +3,10 @@
     "title": "Understanding Embeddings Through Epic Fantasy",
     "abstract": "A journey through the world of embeddings, illustrated with epic fantasy literature and interactive visualizations. Learn how embeddings transform text into numerical vectors that capture meaning and relationships, using examples from The Wheel of Time, Mistborn, and other fantasy series.",
     "link": "/blog/understanding-embeddings",
-    "image": "understanding-embeddings.png",
+    "image": {
+      "dark": "understanding-embeddings-dark.png",
+      "light": "understanding-embeddings-light.png"
+    },
     "type": "Blog Post",
     "date": "May 11, 2025"
   },

@@ -1,46 +1,46 @@
-import { Box, Flex, Link, Stack } from '@chakra-ui/react'
+import { Box, Flex, Link, Stack } from "@chakra-ui/react";
+import { ColorModeButton } from "./ui/color-mode-button";
 
-const Navbar = () => {
+export const Navbar = () => {
   return (
     <Box bg="gray.subtle" px={10} shadow="sm">
       <Flex h={16} alignItems="center" justifyContent="space-between">
-        <Link 
+        <Link
           href="/"
-          fontWeight="bold" 
-          fontSize="lg" 
-          _hover={{ textDecoration: 'none', color: 'blue.500' }}
+          fontWeight="bold"
+          fontSize="lg"
+          _hover={{ textDecoration: "none", color: "blue.500" }}
           textDecoration="none"
         >
           Karthik Badam
         </Link>
         <Stack direction="row" gap={8}>
-          <Link 
+          <Link
             href="/publications"
-            _hover={{ textDecoration: 'none', color: 'blue.500' }}
+            _hover={{ textDecoration: "none", color: "blue.500" }}
             textDecoration="none"
           >
             Publications
           </Link>
-          
-          <Link 
+
+          <Link
             href="/posts"
-            _hover={{ textDecoration: 'none', color: 'blue.500' }}
+            _hover={{ textDecoration: "none", color: "blue.500" }}
             textDecoration="none"
           >
             Posts
           </Link>
-          
-          <Link 
+
+          <Link
             href="/about"
-            _hover={{ textDecoration: 'none', color: 'blue.500' }}
+            _hover={{ textDecoration: "none", color: "blue.500" }}
             textDecoration="none"
           >
             About
           </Link>
+          <ColorModeButton />
         </Stack>
       </Flex>
     </Box>
-  )
-}
-
-export default Navbar 
+  );
+};

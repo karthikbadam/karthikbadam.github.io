@@ -1,13 +1,13 @@
 import { Container, Heading, VStack, Text, Box, Link, Button, HStack } from "@chakra-ui/react";
 import postsData from "../data/posts.json";
 
-const Posts = () => {
+export const Posts = () => {
   const { posts } = postsData;
 
   return (
     <Container maxW="100ch" py={8}>
       <VStack gap={4} align="stretch">
-        <Heading 
+        <Heading
           size="2xl"
           css={{
             background: "linear-gradient(to right, #63b3ed, #805ad5)",
@@ -56,5 +56,3 @@ const Posts = () => {
     </Container>
   );
 };
-
-export default Posts;
