@@ -10,7 +10,7 @@ This repository contains the source code for my personal website and blog, hoste
 - MDX for writing blog posts
 - D3 & visx for data visualizations
 - Framer Motion for animations
-- React Router DOM for client-side routing
+- React Router DOM for client-side routing (using HashRouter for GitHub Pages compatibility)
 
 ## Project Structure
 
@@ -22,10 +22,17 @@ This repository contains the source code for my personal website and blog, hoste
   - **styles/**: Global styles and theme configuration
   - **App.tsx**, **main.tsx**: Application entry points
 - **public/**: Static assets (favicon, images)
+  - **404.html**: Redirect script to handle direct URL access in GitHub Pages
 - **index.html**: Main HTML template
 - **vite.config.ts**: Vite configuration for MDX, syntax highlighting, and plugins
 - **eslint.config.js**: ESLint configuration with plugins and rules
 - **tsconfig.app.json**, **tsconfig.node.json**: TypeScript configurations
+
+## Routing
+
+This project uses React Router's `HashRouter` instead of `BrowserRouter` to ensure compatibility with GitHub Pages. The HashRouter approach uses URL hashes (e.g., `/#/about` instead of `/about`) which prevents 404 errors on GitHub Pages when users access routes directly or refresh the page.
+
+A `404.html` redirect script is also included to handle cases where users might access direct URLs, redirecting them to the appropriate hash route.
 
 ## Scripts
 

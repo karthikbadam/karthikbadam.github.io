@@ -4,14 +4,28 @@ import {
   VStack,
   Text,
   Box,
-  Link,
+  Link as ChakraLink,
   Button,
   HStack,
 } from "@chakra-ui/react";
+import { Link as RouterLink } from "react-router-dom";
 import postsData from "../data/posts.json";
 
+interface Post {
+  title: string;
+  date: string;
+  abstract: string;
+  link: string;
+  video?: string;
+}
+
 export const Posts = () => {
-  const { posts } = postsData;
+  const { posts } = postsData as { posts: Post[] };
+
+  // Helper function to determine if a link is internal or external
+  const isInternalLink = (url: string): boolean => {
+    return Boolean(url) && !url.startsWith('http') && !url.startsWith('mailto:');
+  };
 
   return (
     <Container maxW="100ch" py={8}>
@@ -25,25 +39,39 @@ export const Posts = () => {
             borderRadius="lg"
             _hover={{ shadow: "md" }}
           >
-            <Link
-              href={post.link}
-              textDecoration="none"
-              _hover={{ textDecoration: "none", color: "blue.fg" }}
-            >
-              <Heading size="md">{post.title}</Heading>
-            </Link>
+            {isInternalLink(post.link) ? (
+              <RouterLink to={post.link} style={{ textDecoration: "none" }}>
+                <Heading size="md">{post.title}</Heading>
+              </RouterLink>
+            ) : (
+              <ChakraLink
+                href={post.link}
+                textDecoration="none"
+                _hover={{ textDecoration: "none", color: "blue.fg" }}
+              >
+                <Heading size="md">{post.title}</Heading>
+              </ChakraLink>
+            )}
             <Text color="gray.fg" mt={2}>
               {post.date}
             </Text>
             <Text mt={4}>{post.abstract}</Text>
             <HStack mt={4} gap={4}>
-              <Link href={post.link} target="_blank" rel="noopener noreferrer">
-                <Button colorScheme="blue" size="sm">
-                  Read More
-                </Button>
-              </Link>
+              {isInternalLink(post.link) ? (
+                <RouterLink to={post.link}>
+                  <Button colorScheme="blue" size="sm">
+                    Read More
+                  </Button>
+                </RouterLink>
+              ) : (
+                <ChakraLink href={post.link} target="_blank" rel="noopener noreferrer">
+                  <Button colorScheme="blue" size="sm">
+                    Read More
+                  </Button>
+                </ChakraLink>
+              )}
               {post.video && (
-                <Link
+                <ChakraLink
                   href={post.video}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -51,7 +79,7 @@ export const Posts = () => {
                   <Button colorScheme="red" size="sm">
                     Watch Video
                   </Button>
-                </Link>
+                </ChakraLink>
               )}
             </HStack>
           </Box>
