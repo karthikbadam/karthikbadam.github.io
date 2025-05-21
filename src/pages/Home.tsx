@@ -116,7 +116,7 @@ export const Home = () => {
               base: "1fr",
               md: "1fr 1fr",
             }}
-            gap={4}
+            gap={6}
           >
             {restPosts.map((post, index) => (
               <Box key={index}>
@@ -198,7 +198,7 @@ const PostCard = ({ post }: PostCardProps) => (
     h="100%"
   >
     <Stack gap={2}>
-      <Heading size="md" fontWeight="medium">
+      <Heading size="sm" fontWeight="medium">
         {post.title}
       </Heading>
       <Text color="gray.focusRing" fontSize="sm" lineClamp={3}>
