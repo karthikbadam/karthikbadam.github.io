@@ -6,6 +6,9 @@ import {
   Box,
   SimpleGrid,
   Link,
+  Stack,
+  Separator,
+  Flex,
 } from "@chakra-ui/react";
 
 export const About = () => {
@@ -15,7 +18,7 @@ export const About = () => {
       company: "Apple",
       period: "2019 - Present",
       description:
-        "Creating interactive tools for data that feeds in Apple Intelligence model training.",
+        "Creating interactive ML tools to augment datasets that feed Apple Intelligence model training.",
     },
     {
       title: "Ph.D. in Computer Science",
@@ -28,13 +31,12 @@ export const About = () => {
 
   return (
     <Container maxW="72ch" py={8}>
-      <VStack gap={8} align="stretch">
+      <VStack gap={4} align="stretch">
         <Heading>About Me</Heading>
-
         <Box>
           <Text fontSize="lg" mb={4}>
             Full-stack engineer building tools for data exploration and ML
-            training. Passionate about crafting intuitive interfaces to make
+            training. Passionate about crafting intuitive interfaces that make
             sense of complex data.
           </Text>
           <Text fontSize="lg" mb={4}>
@@ -49,16 +51,17 @@ export const About = () => {
           <Heading size="lg" mb={4}>
             Experience
           </Heading>
-          <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
             {experiences.map((exp, index) => (
-              <Box key={index} p={4} borderWidth="1px" borderRadius="lg">
+              <Stack key={index} p={4} borderWidth="1px" borderRadius="lg">
                 <Heading size="md">{exp.title}</Heading>
-                <Text fontWeight="bold" mt={2}>
-                  {exp.company}
-                </Text>
-                <Text color="gray.fg">{exp.period}</Text>
-                <Text mt={4}>{exp.description}</Text>
-              </Box>
+                <Flex gap={2}>
+                  <Text fontWeight="medium">{exp.company}</Text>
+                  <Separator orientation="vertical" />
+                  <Text color="gray.fg">{exp.period}</Text>
+                </Flex>
+                <Text mt={2}>{exp.description}</Text>
+              </Stack>
             ))}
           </SimpleGrid>
         </Box>
