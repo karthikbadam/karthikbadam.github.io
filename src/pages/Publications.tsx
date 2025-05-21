@@ -5,6 +5,7 @@ import {
   Heading,
   Link,
   NativeSelect,
+  Separator,
   Tag,
   Text,
   VStack,
@@ -128,13 +129,15 @@ export const Publications = () => {
                     </Flex>
                   )}
                   <Flex gap={2} wrap="wrap">
+                    <Text color="green.fg">{pub.venue}</Text>
                     {pub.award && (
-                      <Text fontSize="sm" color="#6B46C1">
-                        {pub.award}
-                      </Text>
+                      <>
+                        <Separator orientation="vertical" />
+                        <Text color="purple.fg">{pub.award}</Text>
+                      </>
                     )}
                   </Flex>
-                  <Text color="green.focusRing">{pub.venue}</Text>
+
                   <Flex gap={2}>
                     {pub.pdf && (
                       <Link
@@ -146,10 +149,11 @@ export const Publications = () => {
                         borderRadius="md"
                         borderWidth="1px"
                         borderColor="blue.subtle"
-                        color="blue.constrast"
+                        color="white"
                         bg="blue.solid"
                         _hover={{
                           bg: "blue.subtle",
+                          color: "gray.600",
                         }}
                       >
                         PDF
@@ -165,10 +169,11 @@ export const Publications = () => {
                         borderRadius="md"
                         borderWidth="1px"
                         borderColor="orange.subtle"
-                        color="orange.contrast"
+                        color="white"
                         bg="orange.solid"
                         _hover={{
                           bg: "orange.muted",
+                          color: "gray.600",
                         }}
                       >
                         Video

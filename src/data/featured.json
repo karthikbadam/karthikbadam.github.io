@@ -11,7 +11,7 @@
     "date": "May 11, 2025"
   },
   {
-    "title": "Vistrates: A Versatile Tool for Data Analytics",
+    "title": "Vistrates: A Versatile Tool for Data Analytics in the World of On-Device Intelligence",
     "abstract": "Introducing a platform for many activities in data exploration between multiple users on heterogeneous devices. Vistrates is web-based and collaborative by nature, thus supporting data analysis anywhere, anytime, and by anyone.",
     "link": "http://hcil.umd.edu/vistrates/",
     "video": "https://www.youtube.com/watch?v=nMmiWBJoJUc",
@@ -20,16 +20,7 @@
     "date": "Oct 22, 2018"
   },
   {
-    "title": "Exploring Multiple Futures in the Stock Market",
-    "abstract": "A new tool called TimeFork uses interactive graphics and state-of-the-art statistical models to allow traders to investigate multiple parallel universes for predicting the stock market.",
-    "link": "http://hcil.umd.edu/back-to-the-future-exploring-multiple-futures-in-the-stock-market/",
-    "video": "https://www.youtube.com/watch?v=nUfSqqbaD5k",
-    "image": "timefork.png",
-    "type": "Blog Post",
-    "date": "May 12, 2016"
-  },
-  {
-    "title": "Document Reading with Visual Aids",
+    "title": "Elastic Documents: Reading Data-Rich Documents with Generated Visualizations",
     "abstract": "Linking text and tables through contextual visualizations in data-rich documents improves reading comprehension. Our user evaluations have shown the power of this new approach in summarization and comprehension of data-rich documents.",
     "link": "http://hcil.umd.edu/document-reading-with-visual-aids/",
     "video": "https://vimeo.com/289784966",
@@ -37,6 +28,16 @@
     "type": "Blog Post",
     "date": "Oct 21, 2018"
   },
+  {
+    "title": "Exploring Multiple Futures in the Stock Market with Generative Models",
+    "abstract": "A new tool called TimeFork uses interactive graphics and state-of-the-art statistical models to allow traders to investigate multiple parallel universes for predicting the stock market.",
+    "link": "http://hcil.umd.edu/back-to-the-future-exploring-multiple-futures-in-the-stock-market/",
+    "video": "https://www.youtube.com/watch?v=nUfSqqbaD5k",
+    "image": "timefork.png",
+    "type": "Blog Post",
+    "date": "May 12, 2016"
+  },
+
   {
     "title": "When David Meets Goliath: Using Smartwatches and Large Displays Together for Data Analysis",
     "abstract": "New conceptual framework developed at University of Maryland and Technische Universität Dresden helps utilize multiple devices together for visual data analysis.",

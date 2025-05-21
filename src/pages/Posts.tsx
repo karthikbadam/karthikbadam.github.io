@@ -1,4 +1,13 @@
-import { Container, Heading, VStack, Text, Box, Link, Button, HStack } from "@chakra-ui/react";
+import {
+  Container,
+  Heading,
+  VStack,
+  Text,
+  Box,
+  Link,
+  Button,
+  HStack,
+} from "@chakra-ui/react";
 import postsData from "../data/posts.json";
 
 export const Posts = () => {
@@ -7,16 +16,7 @@ export const Posts = () => {
   return (
     <Container maxW="100ch" py={8}>
       <VStack gap={4} align="stretch">
-        <Heading
-          size="2xl"
-          css={{
-            background: "linear-gradient(to right, #63b3ed, #805ad5)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          Posts
-        </Heading>
+        <Heading size="2xl">Posts</Heading>
         {posts.map((post, index) => (
           <Box
             key={index}
@@ -43,7 +43,11 @@ export const Posts = () => {
                 </Button>
               </Link>
               {post.video && (
-                <Link href={post.video} target="_blank" rel="noopener noreferrer">
+                <Link
+                  href={post.video}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Button colorScheme="red" size="sm">
                     Watch Video
                   </Button>

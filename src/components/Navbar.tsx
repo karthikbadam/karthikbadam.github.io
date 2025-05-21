@@ -12,7 +12,7 @@ export const Navbar = () => {
           _hover={{ textDecoration: "none", color: "blue.500" }}
           textDecoration="none"
         >
-          Karthik Badam
+          Home
         </Link>
         <Stack direction="row" gap={8}>
           <Link

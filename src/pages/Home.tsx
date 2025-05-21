@@ -14,15 +14,20 @@ import { useColorModeValue } from "../components/ui/color-mode";
 import featuredData from "../data/featured.json";
 
 export const Home = () => {
-  const highlightColor = useColorModeValue("#948979", "#DFD0B8");
+  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
   const [firstPost, ...restPosts] = featuredData;
 
   // Always call useColorModeValue
   const colorModeImage = useColorModeValue(
-    firstPost.image && typeof firstPost.image === "object" ? firstPost.image.light : undefined,
-    firstPost.image && typeof firstPost.image === "object" ? firstPost.image.dark : undefined
+    firstPost.image && typeof firstPost.image === "object"
+      ? firstPost.image.light
+      : undefined,
+    firstPost.image && typeof firstPost.image === "object"
+      ? firstPost.image.dark
+      : undefined
   );
-  const firstPostImage = typeof firstPost.image === "object" ? colorModeImage : firstPost.image;
+  const firstPostImage =
+    typeof firstPost.image === "object" ? colorModeImage : firstPost.image;
 
   return (
     <Container maxW="container.xl" py={8} px={8} height="calc(100vh - 130px)">
@@ -48,7 +53,8 @@ export const Home = () => {
           </Stack>
           <Stack gap={4}>
             <Heading
-              size="xl"
+              fontWeight="semibold"
+              size="2xl"
               css={{
                 background: highlightColor,
                 WebkitBackgroundClip: "text",
@@ -80,8 +86,8 @@ export const Home = () => {
           <Link href={firstPost.link} _hover={{ textDecoration: "none" }}>
             <Grid
               templateColumns={{ base: "1fr", md: "auto 1fr" }}
-              gap={8}
-              p={6}
+              gap={6}
+              p={4}
               borderWidth="1px"
               borderRadius="xl"
               _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
@@ -90,17 +96,19 @@ export const Home = () => {
               <Image
                 src={`/images/${firstPostImage}`}
                 alt={firstPost.title}
-                borderRadius="lg"
-                objectFit="contain"
+                borderRadius="xl"
+                objectFit="cover"
                 height="200px"
-                width="100%"
+                width="250px"
               />
-              <Stack gap={4}>
-                <Heading size="lg">{firstPost.title}</Heading>
+              <Stack gap={2}>
+                <Heading size="lg" fontWeight="medium">
+                  {firstPost.title}
+                </Heading>
                 <Text color="gray.focusRing" fontSize="md">
                   {firstPost.abstract}
                 </Text>
-                <HStack gap={2}>
+                <HStack gap={2} pt={2}>
                   <Tag.Root>
                     <Tag.Label>{firstPost.type}</Tag.Label>
                   </Tag.Root>
@@ -130,7 +138,7 @@ export const Home = () => {
                 h="100%"
               >
                 <Stack
-                  p={6}
+                  p={4}
                   borderWidth="1px"
                   borderRadius="xl"
                   _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
@@ -139,11 +147,13 @@ export const Home = () => {
                   h="100%"
                 >
                   <Stack gap={2}>
-                    <Heading size="md">{post.title}</Heading>
-                    <Text color="gray.focusRing" fontSize="sm" lineClamp={2}>
+                    <Heading size="md" fontWeight="medium">
+                      {post.title}
+                    </Heading>
+                    <Text color="gray.focusRing" fontSize="sm" lineClamp={3}>
                       {post.abstract}
                     </Text>
-                    <HStack gap={2}>
+                    <HStack gap={2} pt={2}>
                       <Tag.Root>
                         <Tag.Label>{post.type}</Tag.Label>
                       </Tag.Root>
