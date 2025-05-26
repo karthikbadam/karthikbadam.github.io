@@ -19,10 +19,10 @@ const blogPosts = {
   "understanding-embeddings": UnderstandingEmbeddings,
 };
 
-interface MDXComponentProps {
+interface MDXComponentProps extends React.HTMLAttributes<HTMLElement> {
   children?: React.ReactNode;
   className?: string;
-  [key: string]: unknown;
+  href?: string;
 }
 
 const components = {
@@ -61,7 +61,15 @@ const components = {
     return <Box as="pre" p={1} borderRadius="md" {...props} />;
   },
   pre: (props: MDXComponentProps) => (
-    <Code borderRadius="md" overflowX="auto" mb={4} {...props} />
+    <Code 
+      borderRadius="md" 
+      overflowX="auto" 
+      mb={4} 
+      whiteSpace="pre-wrap"
+      wordBreak="break-word"
+      maxW="100%"
+      {...props} 
+    />
   ),
   ul: (props: MDXComponentProps) => (
     <Box as="ul" mb={4} ml={6} listStyleType="disc" {...props} />

@@ -28,6 +28,7 @@ export const Navbar = () => {
           <Link to="/posts" style={{ textDecoration: "none" }}>
             Posts
           </Link>
+          
           <Link to="/about" style={{ textDecoration: "none" }}>
             About
           </Link>

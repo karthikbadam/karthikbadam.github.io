@@ -1,5 +1,20 @@
 [
   {
+    "title": "Exploring Complex Hierarchies",
+    "abstract": "An interactive visualization that renders hierarchical datasets as elegantly-arranged circular nodes in a radial layout. Explore the Unified Astronomy Thesaurus with this custom-designed visualization featuring packed circles, collision resolution, and navigation.",
+    "link": "/packed-radial-tree",
+    "image": {
+      "dark": "packed-radial-tree-dark.png",
+      "light": "packed-radial-tree-light.png"
+    },
+    "type": "Interactive Demo",
+    "date": {
+      "month": "May",
+      "year": 2025
+    },
+    "featured": true
+  },
+  {
     "title": "Understanding Embeddings Through Epic Fantasy",
     "abstract": "A journey through the world of embeddings, illustrated with epic fantasy literature and interactive visualizations. Learn how embeddings transform text into numerical vectors that capture meaning and relationships, using examples from The Wheel of Time, Mistborn, and other fantasy series.",
     "link": "/blog/understanding-embeddings",
@@ -8,8 +23,13 @@
       "light": "understanding-embeddings-light.png"
     },
     "type": "Blog Post",
-    "date": "May 11, 2025"
+    "date": {
+      "month": "April",
+      "year": 2025
+    },
+    "featured": true
   },
+
   {
     "title": "Vistrates: A Versatile Tool for Data Analytics in the World of On-Device Intelligence",
     "abstract": "Introducing a platform for many activities in data exploration between multiple users on heterogeneous devices. Vistrates is web-based and collaborative by nature, thus supporting data analysis anywhere, anytime, and by anyone.",
@@ -17,7 +37,10 @@
     "video": "https://www.youtube.com/watch?v=nMmiWBJoJUc",
     "image": "vistrates.png",
     "type": "Blog Post",
-    "date": "Oct 22, 2018"
+    "date": {
+      "month": "October",
+      "year": 2018
+    }
   },
   {
     "title": "Elastic Documents: Reading Data-Rich Documents with Generated Visualizations",
@@ -26,7 +49,22 @@
     "video": "https://vimeo.com/289784966",
     "name": "elasticdocs",
     "type": "Blog Post",
-    "date": "Oct 21, 2018"
+    "date": {
+      "month": "October",
+      "year": 2018
+    }
+  },
+  {
+    "title": "When David Meets Goliath: Using Smartwatches and Large Displays Together for Data Analysis",
+    "abstract": "New conceptual framework developed at University of Maryland and Technische Universität Dresden helps utilize multiple devices together for visual data analysis.",
+    "link": "http://hcil.umd.edu/when-david-meets-goliath-using-smartwatches-and-large-displays-together-for-data-analysis/",
+    "video": "https://www.youtube.com/watch?v=DYSvA_Hn39o",
+    "name": "DG",
+    "type": "Blog Post",
+    "date": {
+      "month": "April",
+      "year": 2018
+    }
   },
   {
     "title": "TimeFork: Exploring Multiple Futures in the Stock Market with Generative Models",
@@ -35,16 +73,9 @@
     "video": "https://www.youtube.com/watch?v=nUfSqqbaD5k",
     "image": "timefork.png",
     "type": "Blog Post",
-    "date": "May 12, 2016"
-  },
-
-  {
-    "title": "When David Meets Goliath: Using Smartwatches and Large Displays Together for Data Analysis",
-    "abstract": "New conceptual framework developed at University of Maryland and Technische Universität Dresden helps utilize multiple devices together for visual data analysis.",
-    "link": "http://hcil.umd.edu/when-david-meets-goliath-using-smartwatches-and-large-displays-together-for-data-analysis/",
-    "video": "https://www.youtube.com/watch?v=DYSvA_Hn39o",
-    "name": "DG",
-    "type": "Blog Post",
-    "date": "April 18, 2018"
+    "date": {
+      "month": "May",
+      "year": 2016
+    }
   }
 ]

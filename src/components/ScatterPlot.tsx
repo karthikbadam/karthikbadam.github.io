@@ -5,7 +5,7 @@ import { Group } from "@visx/group";
 import { scaleLinear, scaleOrdinal } from "@visx/scale";
 import { Circle } from "@visx/shape";
 import { Text } from "@visx/text";
-import { Tooltip, useTooltip } from "@visx/tooltip";
+import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { schemeCategory10 } from "d3";
 import React, { useMemo } from "react";
 
@@ -38,17 +38,17 @@ const LabelText: React.FC<{
   // Default: label to the right
   let xPos = x + 8;
   let yPos = y + 4;
-  let anchor: 'start' | 'end' = 'start';
+  let anchor: "start" | "end" = "start";
 
   // If too close to right edge, put label to the left
   if (x + labelWidth > innerWidth) {
     xPos = x - 8;
-    anchor = 'end';
+    anchor = "end";
   }
   // If too close to left edge, keep to the right
   if (x - labelWidth < 0) {
     xPos = x + 8;
-    anchor = 'start';
+    anchor = "start";
   }
   // If too close to bottom, nudge up
   if (y > innerHeight) {
@@ -66,7 +66,7 @@ const LabelText: React.FC<{
       fill="#666"
       cursor="default"
       style={{
-        fontSize: '0.8em'
+        fontSize: "0.8em",
       }}
       textAnchor={anchor}
     >
@@ -90,7 +90,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
   const NUM_SAMPLE_POINTS = 8;
   const labeledPoints = useMemo(() => {
     if (data.length <= NUM_SAMPLE_POINTS) return data;
-    
+
     // Group points by category
     const pointsByCategory = data.reduce((acc, point) => {
       if (!acc[point.category]) {
@@ -103,8 +103,8 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
     // Sample points from each category
     const categories = Object.keys(pointsByCategory);
     const pointsPerCategory = Math.ceil(NUM_SAMPLE_POINTS / categories.length);
-    
-    return categories.flatMap(category => {
+
+    return categories.flatMap((category) => {
       const points = pointsByCategory[category];
       return points.slice(0, pointsPerCategory);
     });
@@ -113,7 +113,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
   const xScale = scaleLinear({
     domain: [
       Math.min(...data.map((d) => d.x)),
-      Math.max(...data.map((d) => d.x)),      
+      Math.max(...data.map((d) => d.x)),
     ],
     nice: true,
     range: [0, innerWidth],
@@ -136,6 +136,13 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
 
   const { tooltipData, tooltipLeft, tooltipTop, showTooltip, hideTooltip } =
     useTooltip<Point>();
+
+  const { containerRef, containerBounds, TooltipInPortal } = useTooltipInPortal(
+    {
+      scroll: true,
+      detectBounds: true,
+    }
+  );
 
   // Generate grid lines
   const xGridLines = xScale
@@ -173,7 +180,14 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
       style={{ width: "100%", maxWidth: width, margin: "0 auto" }}
       position="relative"
     >
-      <svg width={width} height={height}>
+      <svg
+        width="100%"
+        height="100%"
+        preserveAspectRatio="xMidYMid meet"
+        viewBox={`0 0 ${width} ${height}`}
+        style={{ userSelect: "none" }}
+        ref={containerRef}
+      >
         <Group left={margin.left} top={margin.top}>
           {/* Grid Lines */}
           <g className="grid-lines">
@@ -241,8 +255,8 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
                 if (coords) {
                   showTooltip({
                     tooltipData: point,
-                    tooltipLeft: coords.x,
-                    tooltipTop: coords.y,
+                    tooltipLeft: event.clientX - containerBounds.left,
+                    tooltipTop: event.clientY - containerBounds.top,
                   });
                 }
               }}
@@ -270,7 +284,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
 
       {/* Tooltip */}
       {tooltipData && (
-        <Tooltip
+        <TooltipInPortal
           left={tooltipLeft}
           top={tooltipTop}
           style={{
@@ -291,7 +305,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
             <br />
             Position: ({tooltipData.x.toFixed(2)}, {tooltipData.y.toFixed(2)})
           </div>
-        </Tooltip>
+        </TooltipInPortal>
       )}
     </Box>
   );
