@@ -12,11 +12,14 @@ import {
 } from "@chakra-ui/react";
 import { FormEvent, useState } from "react";
 import { Page } from "../components/Page";
+import { useColorModeValue } from "../components/ui/color-mode";
 import publicationsData from "../data/publications.json";
 
 export const Publications = () => {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
+
+  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
 
   // Get unique types and years for filters
   const types = [
@@ -53,10 +56,26 @@ export const Publications = () => {
     setSelectedYear(e.currentTarget.value);
   };
 
+  // Helper function to highlight author name
+  const renderAuthors = (authors: string[]) => {
+    return authors.map((author, idx) => (
+      <span key={idx}>
+        {author === "Sriram Karthik Badam" ? (
+          <Text as="span" color={highlightColor} fontWeight="semibold">
+            {author}
+          </Text>
+        ) : (
+          author
+        )}
+        {idx < authors.length - 1 && ", "}
+      </span>
+    ));
+  };
+
   return (
     <Page>
-      <Container maxW="100ch" py={8}>
-        <VStack gap={8} align="stretch">
+      <Container maxW="100ch" pb={4}>
+        <VStack gap={4} align="stretch">
           <Heading>Publications</Heading>
 
           {/* Filters */}
@@ -91,18 +110,17 @@ export const Publications = () => {
 
           {/* Publications List by Type */}
           {Object.entries(groupedPublications).map(([type, pubs]) => (
-            <Box key={type}>
-              <Heading size="lg" mb={4}>
+            <Box key={type} fontSize='sm'>
+              <Heading size="md" mb={2}>
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </Heading>
               {pubs.map((pub, index) => (
                 <Box
                   key={index}
-                  p={6}
+                  p={4}
                   borderWidth="1px"
                   borderRadius="lg"
                   borderColor="gray.muted"
-                  _hover={{ shadow: "md" }}
                   mb={2}
                 >
                   <VStack align="stretch" gap={2}>
@@ -120,18 +138,10 @@ export const Publications = () => {
                       </a>
                       <Text fontWeight="semibold">{pub.year}</Text>
                     </Flex>
-                    <Text>{pub.authors.join(", ")}</Text>
-                    {pub.keywords && pub.keywords.length > 0 && (
-                      <Flex gap={2} wrap="wrap">
-                        {pub.keywords.map((keyword, idx) => (
-                          <Tag.Root key={idx} fontSize="sm">
-                            <Tag.Label>{keyword}</Tag.Label>
-                          </Tag.Root>
-                        ))}
-                      </Flex>
-                    )}
+                    <Text>{renderAuthors(pub.authors)}</Text>
+                   
                     <Flex gap={2} wrap="wrap">
-                      <Text color="green.fg">{pub.venue}</Text>
+                      <Text color={highlightColor} fontWeight="semibold">{pub.venue}</Text>
                       {pub.award && (
                         <>
                           <Separator orientation="vertical" />
@@ -153,10 +163,6 @@ export const Publications = () => {
                           borderColor="blue.subtle"
                           color="white"
                           bg="blue.solid"
-                          _hover={{
-                            bg: "blue.subtle",
-                            color: "gray.600",
-                          }}
                         >
                           PDF
                         </Link>
@@ -173,34 +179,20 @@ export const Publications = () => {
                           borderColor="orange.subtle"
                           color="white"
                           bg="orange.solid"
-                          _hover={{
-                            bg: "orange.muted",
-                            color: "gray.600",
-                          }}
                         >
                           Video
                         </Link>
                       )}
-                      {pub.bibtex && (
-                        <Link
-                          href={pub.bibtex}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          px={2}
-                          py={1}
-                          borderRadius="md"
-                          borderWidth="1px"
-                          borderColor="gray.subtle"
-                          color="gray.contrast"
-                          bg="gray.solid"
-                          _hover={{
-                            bg: "gray.muted",
-                          }}
-                        >
-                          BibTeX
-                        </Link>
-                      )}
                     </Flex>
+                    {pub.keywords && pub.keywords.length > 0 && (
+                      <Flex gap={2} wrap="wrap">
+                        {pub.keywords.map((keyword, idx) => (
+                          <Tag.Root key={idx} fontSize="sm">
+                            <Tag.Label>{keyword}</Tag.Label>
+                          </Tag.Root>
+                        ))}
+                      </Flex>
+                    )}
                   </VStack>
                 </Box>
               ))}

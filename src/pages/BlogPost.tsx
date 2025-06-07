@@ -97,7 +97,7 @@ export const BlogPost: React.FC = () => {
 
   return (
     <Page>
-      <Container maxW="72ch" py={8}>
+      <Container maxW="72ch" pb={4}>
         <Box as="article" className="mdx-content">
           <Post components={components}></Post>
         </Box>

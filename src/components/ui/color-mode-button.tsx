@@ -23,6 +23,8 @@ export const ColorModeButton = React.forwardRef<HTMLButtonElement, ColorModeButt
               height: "5",
             },
           }}
+          variant='subtle'
+          bgColor='transparent'
         >
           <ColorModeIcon />
         </IconButton>

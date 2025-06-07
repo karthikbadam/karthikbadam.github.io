@@ -8,6 +8,7 @@ import { Text } from "@visx/text";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { schemeCategory10 } from "d3";
 import React, { useMemo } from "react";
+import { useColorModeValue } from "./ui/color-mode";
 
 interface Point {
   x: number;
@@ -85,6 +86,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
   const margin = { top: 40, right: 20, bottom: 40, left: 20 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
+  const gridColor = useColorModeValue("#dedede", "#222");
 
   // Sample points across categories, ensuring representation from each category
   const NUM_SAMPLE_POINTS = 8;
@@ -154,7 +156,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
         y1={0}
         x2={xScale(tick)}
         y2={innerHeight}
-        stroke="#222"
+        stroke={gridColor}
         strokeWidth={1}
         strokeDasharray="2,2"
       />
@@ -169,7 +171,7 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
         y1={yScale(tick)}
         x2={innerWidth}
         y2={yScale(tick)}
-        stroke="#222"
+        stroke={gridColor}
         strokeWidth={1}
         strokeDasharray="2,2"
       />

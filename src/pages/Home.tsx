@@ -23,10 +23,12 @@ interface Post {
   type: string;
   link: string;
   video?: string;
-  image?: string | {
-    light: string;
-    dark: string;
-  };
+  image?:
+    | string
+    | {
+        light: string;
+        dark: string;
+      };
   bibtex?: string;
   pdf?: string;
   date?: {
@@ -38,16 +40,18 @@ interface Post {
 
 export const Home = () => {
   const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
-  const featuredPosts = (featuredData as Post[]).filter(post => post.featured);
-  const restPosts = (featuredData as Post[]).filter(post => !post.featured);
+  const featuredPosts = (featuredData as Post[]).filter(
+    (post) => post.featured
+  );
+  const restPosts = (featuredData as Post[]).filter((post) => !post.featured);
 
   return (
     <Page>
-      <Container maxW="container.xl" py={8} px={8}>
+      <Container maxW="container.xl" px={8}>
         <Grid
           templateColumns={{ base: "1fr", md: "1fr 3fr" }}
           gap="100px"
-          height="100%"
+          height="calc(100vh - 100px)"
         >
           <VStack align="start" gap={6} width="100%">
             <Stack width="100%" position="relative" mt={10}>
@@ -88,53 +92,61 @@ export const Home = () => {
                 </Tag.Root>
               </HStack>
               <Text fontSize="md" color="gray.fg" lineHeight="tall">
-                Creating tools to explore, explain, and augment datasets that feed
-                into large language and vision models.
+                Creating tools to explore, explain, and augment datasets that
+                feed into large language and vision models.
               </Text>
             </Stack>
           </VStack>
-          <Stack gap={4}>
-            <Heading size="xl">Featured Works</Heading>
-            
-            {/* Featured Posts as Large Cards - Side by Side */}
-            {featuredPosts.length > 0 && (
-              <Grid
-                templateColumns={{
-                  base: "1fr",
-                  md: featuredPosts.length === 1 ? "1fr" : "1fr 1fr",
-                }}
-                gap={6}
-              >
-                {featuredPosts.map((post, index) => (
-                  <FeaturedPostCard key={index} post={post} />
-                ))}
-              </Grid>
-            )}
+          <Stack py={2}>
+            <Stack gap={4} maxW={{ base: "100%", lg: "80ch" }} overflow="auto" mx='auto'>
+              <Heading size="xl">Featured Works</Heading>
+              {/* Featured Posts as Large Cards - Side by Side */}
+              {featuredPosts.length > 0 && (
+                <Grid
+                  templateColumns={{
+                    base: "1fr",
+                    md: featuredPosts.length === 1 ? "1fr" : "1fr 1fr",
+                  }}
+                  gap={6}
+                >
+                  {featuredPosts.map((post, index) => (
+                    <FeaturedPostCard key={index} post={post} />
+                  ))}
+                </Grid>
+              )}
 
-            {/* Grid for Smaller Cards */}
-            {restPosts.length > 0 && (
-              <Grid
-                templateColumns={{
-                  base: "1fr",
-                  md: "1fr 1fr",
-                }}
-                gap={6}
-              >
-                {restPosts.map((post, index) => (
-                  <Box key={index}>
-                    {post.link.startsWith('http') ? (
-                      <ChakraLink href={post.link} _hover={{ textDecoration: "none" }} h="100%">
-                        <PostCard post={post} />
-                      </ChakraLink>
-                    ) : (
-                      <RouterLink to={post.link} style={{ textDecoration: "none" }}>
-                        <PostCard post={post} />
-                      </RouterLink>
-                    )}
-                  </Box>
-                ))}
-              </Grid>
-            )}
+              {/* Grid for Smaller Cards */}
+              {restPosts.length > 0 && (
+                <Grid
+                  templateColumns={{
+                    base: "1fr",
+                    md: "1fr 1fr",
+                  }}
+                  gap={6}
+                >
+                  {restPosts.map((post, index) => (
+                    <Box key={index}>
+                      {post.link.startsWith("http") ? (
+                        <ChakraLink
+                          href={post.link}
+                          _hover={{ textDecoration: "none" }}
+                          h="100%"
+                        >
+                          <PostCard post={post} />
+                        </ChakraLink>
+                      ) : (
+                        <RouterLink
+                          to={post.link}
+                          style={{ textDecoration: "none" }}
+                        >
+                          <PostCard post={post} />
+                        </RouterLink>
+                      )}
+                    </Box>
+                  ))}
+                </Grid>
+              )}
+            </Stack>
           </Stack>
         </Grid>
       </Container>
@@ -149,20 +161,19 @@ interface FeaturedPostCardProps {
 
 const FeaturedPostCard = ({ post }: FeaturedPostCardProps) => {
   const colorModeImage = useColorModeValue(
-    post.image && typeof post.image === "object"
-      ? post.image.light
-      : undefined,
-    post.image && typeof post.image === "object"
-      ? post.image.dark
-      : undefined
+    post.image && typeof post.image === "object" ? post.image.light : undefined,
+    post.image && typeof post.image === "object" ? post.image.dark : undefined
   );
   const postImage =
-    post && typeof post.image === "object" ? colorModeImage : 
-    post && typeof post.image === "string" ? post.image : undefined;
+    post && typeof post.image === "object"
+      ? colorModeImage
+      : post && typeof post.image === "string"
+      ? post.image
+      : undefined;
 
   return (
     <Box>
-      {post.link.startsWith('http') ? (
+      {post.link.startsWith("http") ? (
         <ChakraLink href={post.link} _hover={{ textDecoration: "none" }}>
           <FeaturedCard post={post} image={postImage} />
         </ChakraLink>
@@ -217,7 +228,9 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
         )}
         {post.date && (
           <Tag.Root>
-            <Tag.Label>{post.date.month} {post.date.year}</Tag.Label>
+            <Tag.Label>
+              {post.date.month} {post.date.year}
+            </Tag.Label>
           </Tag.Root>
         )}
       </HStack>
@@ -240,7 +253,7 @@ const PostCard = ({ post }: PostCardProps) => (
     h="100%"
   >
     <Stack gap={2}>
-      <Heading size="sm" fontWeight="medium">
+      <Heading size="md" fontWeight="medium">
         {post.title}
       </Heading>
       <Text color="gray.focusRing" fontSize="sm" lineClamp={3}>
@@ -257,7 +270,9 @@ const PostCard = ({ post }: PostCardProps) => (
         )}
         {post.date && (
           <Tag.Root>
-            <Tag.Label>{post.date.month} {post.date.year}</Tag.Label>
+            <Tag.Label>
+              {post.date.month} {post.date.year}
+            </Tag.Label>
           </Tag.Root>
         )}
       </HStack>
