@@ -16,6 +16,7 @@ import {
 } from "@kvis/packed-radial-tree";
 import { useEffect, useState } from "react";
 import { useColorMode } from "../../components/ui/color-mode";
+import { Page } from "../../components/Page";
 
 const parseUATData = async (): Promise<TreeNode> => {
   try {
@@ -148,82 +149,79 @@ export function PackedRadialTreeDemo() {
 
   if (loading) {
     return (
-      <Box
-        minH="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap={4}>
-          <Heading>Loading UAT Dataset...</Heading>
-          <Text color="gray.fg">
-            Parsing hierarchical astronomy taxonomy data
-          </Text>
-        </VStack>
-      </Box>
+      <Page>
+        <Box
+          minH="50vh"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <VStack gap={4}>
+            <Heading>Loading UAT Dataset...</Heading>
+            <Text color="gray.fg">
+              Parsing hierarchical astronomy taxonomy data
+            </Text>
+          </VStack>
+        </Box>
+      </Page>
     );
   }
 
   return (
-    // TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h
-    <Grid
-      templateColumns={{ base: "1fr", lg: "2fr 1fr" }}
-      maxH="calc(100vh - 70px)"
-      overflowY="auto"
-    >
-      {/* Left Column - Visualization (Full Height) */}
-      <Box h="76vh" px={4} pt={4}>
-        {uatData && (
-          <PackedRadialTree
-            data={uatData}
-            onNodeSelect={handleNodeSelect}
-            options={config}
-          />
-        )}
-      </Box>
+    <Page>
+      {/* TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h */}
+      <Grid
+        templateColumns={{ base: "1fr", lg: "3fr 2fr" }}
+        overflowY="auto"
+        px={7}
+      >
+        {/* Left Column - Visualization (Full Height) */}
+        <Box h="75vh">
+          {uatData && (
+            <PackedRadialTree
+              data={uatData}
+              onNodeSelect={handleNodeSelect}
+              options={config}
+            />
+          )}
+        </Box>
 
-      {/* Right Column - Content */}
-      <Box px={4} py={8}>
-        <Stack gap={10}>
-          {/* Header */}
-          <Box>
-            <Heading as="h1" size="2xl">
-              Packed Radial Tree
-            </Heading>
-            <Text fontSize="xs" color="gray.focusRing" mb={4}>
-              Custom-designed visualization by Karthik Badam, published May 26,
-              2025.
-            </Text>
-            <Text fontSize="sm" color="gray.fg">
-              Packed Radial Tree is an interactive visualization that renders
-              hierarchical datasets as elegantly arranged circular nodes in a
-              radial layout. Leaves at each level are packed around their
-              parents. Branches are balanced around the radial space. Finally,
-              collisions are resolved to provide an overall packed look to this
-              visualization.
-            </Text>
-          </Box>
-
-          {/* Selected Node Details */}
-          {selectedNode ? (
+        {/* Right Column - Content */}
+        <Box
+          maxW="72ch"
+          mx="auto"
+          maxH="calc(100vh - 120px)"
+          overflow="auto"
+          px={8}
+        >
+          <Stack gap={10}>
+            {/* Header */}
             <Box>
-              <Heading as="h2" size="md" mb={1}>
-                Selected Concept
+              <Heading as="h1" size="2xl">
+                Packed Radial Tree
               </Heading>
-              <VStack gap={4} align="stretch">
-                <HStack wrap="wrap" gap={8}>
-                  <Box>
-                    <Text
-                      fontSize="xs"
-                      fontWeight="semibold"
-                      mb={1}
-                      color="gray.focusRing"
-                    >
-                      NAME
-                    </Text>
-                    <Text fontSize="sm">{selectedNode.label}</Text>
-                  </Box>
-                  {selectedNode.metrics?.depth && (
+              <Text fontSize="xs" color="gray.focusRing" mb={4}>
+                Custom-designed visualization by Karthik Badam, published May
+                26, 2025.
+              </Text>
+              <Text fontSize="sm" color="gray.fg">
+                Packed Radial Tree is an interactive visualization that renders
+                hierarchical datasets as elegantly arranged circular nodes in a
+                radial layout. Leaves at each level are packed around their
+                parents. Branches are balanced around the radial space. Finally,
+                collisions are resolved to provide an overall packed look to
+                this visualization.
+              </Text>
+            </Box>
+
+            {/* Selected Node Details */}
+            {selectedNode ? (
+              <Box>
+                <Heading as="h2" size="md" mb={1}>
+                  Selected Concept
+                </Heading>
+                <VStack gap={4} align="stretch">
+                  <HStack wrap="wrap" gap={8}>
                     <Box>
                       <Text
                         fontSize="xs"
@@ -231,123 +229,136 @@ export function PackedRadialTreeDemo() {
                         mb={1}
                         color="gray.focusRing"
                       >
-                        DEPTH
+                        NAME
                       </Text>
-                      <Badge colorScheme="blue" size="sm">
-                        {selectedNode.metrics.depth}
-                      </Badge>
+                      <Text fontSize="sm">{selectedNode.label}</Text>
                     </Box>
-                  )}
-                  <Box>
-                    <Text
-                      fontSize="xs"
-                      fontWeight="semibold"
-                      mb={1}
-                      color="gray.focusRing"
-                    >
-                      CHILDREN
-                    </Text>
-                    <Badge colorScheme="green" size="sm">
-                      {selectedNode.children?.length || 0}
-                    </Badge>
-                  </Box>
-                </HStack>
-
-                {descendants.length > 0 && (
-                  <>
+                    {selectedNode.metrics?.depth && (
+                      <Box>
+                        <Text
+                          fontSize="xs"
+                          fontWeight="semibold"
+                          mb={1}
+                          color="gray.focusRing"
+                        >
+                          DEPTH
+                        </Text>
+                        <Badge colorScheme="blue" size="sm">
+                          {selectedNode.metrics.depth}
+                        </Badge>
+                      </Box>
+                    )}
                     <Box>
                       <Text
                         fontSize="xs"
                         fontWeight="semibold"
-                        mb={2}
+                        mb={1}
                         color="gray.focusRing"
                       >
-                        DESCENDANT CONCEPTS ({descendants.length}
-                        {getDescendants(selectedNode).length > 20
-                          ? `/${getDescendants(selectedNode).length}`
-                          : ""}
-                        )
+                        CHILDREN
                       </Text>
-                      <Box
-                        maxH="150px"
-                        overflowY="auto"
-                        p={2}
-                        borderRadius="md"
-                        border="1px solid"
-                        borderColor="gray.muted"
-                      >
-                        <VStack gap={1} align="stretch">
-                          {descendants.map((desc, index) => (
-                            <Text key={index} fontSize="sm" lineHeight="1.3">
-                              {desc.label}
-                            </Text>
-                          ))}
-                        </VStack>
-                      </Box>
+                      <Badge colorScheme="green" size="sm">
+                        {selectedNode.children?.length || 0}
+                      </Badge>
                     </Box>
-                  </>
-                )}
-              </VStack>
-            </Box>
-          ) : (
+                  </HStack>
+
+                  {descendants.length > 0 && (
+                    <>
+                      <Box>
+                        <Text
+                          fontSize="xs"
+                          fontWeight="semibold"
+                          mb={2}
+                          color="gray.focusRing"
+                        >
+                          DESCENDANT CONCEPTS ({descendants.length}
+                          {getDescendants(selectedNode).length > 20
+                            ? `/${getDescendants(selectedNode).length}`
+                            : ""}
+                          )
+                        </Text>
+                        <Box
+                          maxH="150px"
+                          overflowY="auto"
+                          p={2}
+                          borderRadius="md"
+                          border="1px solid"
+                          borderColor="gray.muted"
+                        >
+                          <VStack gap={1} align="stretch">
+                            {descendants.map((desc, index) => (
+                              <Text key={index} fontSize="sm" lineHeight="1.3">
+                                {desc.label}
+                              </Text>
+                            ))}
+                          </VStack>
+                        </Box>
+                      </Box>
+                    </>
+                  )}
+                </VStack>
+              </Box>
+            ) : (
+              <Box>
+                <Heading as="h2" size="md" mb={1}>
+                  Interaction Guide
+                </Heading>
+                <VStack gap={2} align="stretch">
+                  <Text fontSize="sm">
+                    • <strong>Click</strong> any node to select and explore
+                  </Text>
+                  <Text fontSize="sm">
+                    • <strong>Hover</strong> for detailed tooltips
+                  </Text>
+                  <Text fontSize="sm">
+                    • <strong>Zoom</strong> with mouse wheel or trackpad
+                  </Text>
+                  <Text fontSize="sm">
+                    • <strong>Pan</strong> by dragging the background
+                  </Text>
+                </VStack>
+              </Box>
+            )}
+
+            {/* Dataset Description */}
             <Box>
-              <Heading as="h2" size="md" mb={1}>
-                Interaction Guide
+              <Heading as="h2" size="md" mb={2}>
+                About the Dataset
               </Heading>
-              <VStack gap={2} align="stretch">
-                <Text fontSize="sm">
-                  • <strong>Click</strong> any node to select and explore
+              <Text fontSize="sm" color="gray.fg" mb={4}>
+                Unified Astronomy Thesaurus (UAT) is a controlled vocabulary of
+                astronomical terms developed by the American Astronomical
+                Society. This hierarchical taxonomy contains thousands of
+                astronomy concepts organized into 11 levels of depth,
+                representing the complex relationships between astronomical
+                phenomena, objects, and processes.
+              </Text>
+            </Box>
+
+            {/* Visualization Explanation */}
+            <Box>
+              <Heading as="h3" size="md" mb={2}>
+                How It Works
+              </Heading>
+              <VStack gap={3} align="stretch">
+                <Text fontSize="sm" color="gray.fg">
+                  <strong>Circle Size:</strong> Represents the number of
+                  descendant concepts
                 </Text>
-                <Text fontSize="sm">
-                  • <strong>Hover</strong> for detailed tooltips
+                <Text fontSize="sm" color="gray.fg">
+                  <strong>Radial Layout:</strong> Parent-child relationships
+                  shown through positioning
                 </Text>
-                <Text fontSize="sm">
-                  • <strong>Zoom</strong> with mouse wheel or trackpad
-                </Text>
-                <Text fontSize="sm">
-                  • <strong>Pan</strong> by dragging the background
+                <Text fontSize="sm" color="gray.fg">
+                  <strong>Color Encoding:</strong> Visual distinction between
+                  concept categories
                 </Text>
               </VStack>
             </Box>
-          )}
-
-          {/* Dataset Description */}
-          <Box>
-            <Heading as="h2" size="md" mb={2}>
-              About the Dataset
-            </Heading>
-            <Text fontSize="sm" color="gray.fg" mb={4}>
-              Unified Astronomy Thesaurus (UAT) is a controlled vocabulary of
-              astronomical terms developed by the American Astronomical Society.
-              This hierarchical taxonomy contains thousands of astronomy
-              concepts organized into 11 levels of depth, representing the
-              complex relationships between astronomical phenomena, objects, and
-              processes.
-            </Text>
-          </Box>
-
-          {/* Visualization Explanation */}
-          <Box>
-            <Heading as="h3" size="md" mb={2}>
-              How It Works
-            </Heading>
-            <VStack gap={3} align="stretch">
-              <Text fontSize="sm" color="gray.fg">
-                <strong>Circle Size:</strong> Represents the number of
-                descendant concepts
-              </Text>
-              <Text fontSize="sm" color="gray.fg">
-                <strong>Radial Layout:</strong> Parent-child relationships shown
-                through positioning
-              </Text>
-              <Text fontSize="sm" color="gray.fg">
-                <strong>Color Encoding:</strong> Visual distinction between
-                concept categories
-              </Text>
-            </VStack>
-          </Box>
-        </Stack>
-      </Box>
-    </Grid>
+          </Stack>
+        </Box>
+      </Grid>
+    </Page>
   );
 }
