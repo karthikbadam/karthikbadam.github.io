@@ -1,19 +1,18 @@
 import {
+  Box,
+  Link as ChakraLink,
   Container,
   Grid,
   Heading,
   HStack,
   Image,
-  Link as ChakraLink,
   Stack,
   Tag,
   Text,
-  VStack,
-  Box,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
-import { useColorModeValue } from "../components/ui/color-mode";
 import { Page } from "../components/Page";
+import { useColorModeValue } from "../components/ui/color-mode";
 import featuredData from "../data/featured.json";
 
 // Define types for the post data
@@ -49,12 +48,20 @@ export const Home = () => {
     <Page>
       <Container maxW="container.xl" px={8}>
         <Grid
-          templateColumns={{ base: "1fr", md: "1fr 3fr" }}
+          templateColumns={{ base: "1fr", md: "300px 1fr" }}
           gap="100px"
-          height="calc(100vh - 100px)"
+          minHeight={{ base: "auto", md: "calc(100vh - 100px)" }}
+          mx="auto"
+          w="fit-content"
         >
-          <VStack align="start" gap={6} width="100%">
-            <Stack width="100%" position="relative" mt={10}>
+          <Stack
+            gap={6}
+            position={{ base: "static", md: "sticky" }}
+            top={{ base: "auto", md: "0" }}
+            height={{ base: "auto", md: "fit-content" }}
+            alignSelf={{ base: "stretch", md: "start" }}
+          >
+            <Stack position="relative" mt={10}>
               <Image
                 src="/profile.jpg"
                 alt="Karthik Badam"
@@ -96,9 +103,9 @@ export const Home = () => {
                 feed into large language and vision models.
               </Text>
             </Stack>
-          </VStack>
+          </Stack>
           <Stack py={2}>
-            <Stack gap={4} maxW={{ base: "100%", lg: "80ch" }} overflow="auto" mx='auto'>
+            <Stack gap={4} maxW={{ base: "100%", lg: "80ch" }}>
               <Heading size="xl">Featured Works</Heading>
               {/* Featured Posts as Large Cards - Side by Side */}
               {featuredPosts.length > 0 && (

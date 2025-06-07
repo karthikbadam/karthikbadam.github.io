@@ -36,12 +36,12 @@ export const About = () => {
         <VStack gap={4} align="stretch">
           <Heading>About Me</Heading>
           <Box>
-            <Text fontSize="lg" mb={4}>
+            <Text fontSize="md" mb={4}>
               Full-stack engineer building tools for data exploration and ML
               training. Passionate about crafting intuitive interfaces that make
               sense of complex data.
             </Text>
-            <Text fontSize="lg" mb={4}>
+            <Text fontSize="md" mb={4}>
               Get in touch:{" "}
               <Link href="mailto:karthikbadam7@gmail.com" color="blue.500">
                 karthikbadam7@gmail.com
@@ -62,7 +62,9 @@ export const About = () => {
                     <Separator orientation="vertical" />
                     <Text color="gray.fg">{exp.period}</Text>
                   </Flex>
-                  <Text mt={2}>{exp.description}</Text>
+                  <Text mt={2} fontSize="sm">
+                    {exp.description}
+                  </Text>
                 </Stack>
               ))}
             </SimpleGrid>
