@@ -40,7 +40,7 @@ export const Page = ({ children }: PageProps) => {
 
           <Flex gap={4} fontSize="xs">
             <Link
-              href="mailto:karthik_badam@gmail.com"
+              href="mailto:karthikbadam7@gmail.com"
             >
               Email
             </Link>
