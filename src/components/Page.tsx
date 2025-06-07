@@ -10,7 +10,7 @@ export const Page = ({ children }: PageProps) => {
   return (
     <Grid
       templateRows="auto 1fr auto"
-      minHeight="100vh"
+      height="100vh"
       width="100%"
     >
       {/* Header */}
@@ -22,7 +22,7 @@ export const Page = ({ children }: PageProps) => {
       <Box
         as="main"
         overflow="auto"
-        flex="1"
+        height="100%"
       >
         {children}
       </Box>
