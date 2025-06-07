@@ -11,6 +11,7 @@ import {
 } from "@chakra-ui/react";
 import React from "react";
 import { useParams } from "react-router-dom";
+import { Page } from "../components/Page";
 
 // Import all blog posts
 import UnderstandingEmbeddings from "../content/blog/understanding-embeddings.mdx";
@@ -86,17 +87,21 @@ export const BlogPost: React.FC = () => {
 
   if (!Post) {
     return (
-      <Container maxW="72ch" py={8}>
-        <Text>Blog post not found</Text>
-      </Container>
+      <Page>
+        <Container maxW="72ch" py={8}>
+          <Text>Blog post not found</Text>
+        </Container>
+      </Page>
     );
   }
 
   return (
-    <Container maxW="72ch" py={8}>
-      <Box as="article" className="mdx-content">
-        <Post components={components}></Post>
-      </Box>
-    </Container>
+    <Page>
+      <Container maxW="72ch" py={8}>
+        <Box as="article" className="mdx-content">
+          <Post components={components}></Post>
+        </Box>
+      </Container>
+    </Page>
   );
 };
