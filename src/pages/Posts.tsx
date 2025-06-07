@@ -10,6 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import postsData from "../data/posts.json";
+import { Page } from "../components/Page";
 
 interface Post {
   title: string;
@@ -28,7 +29,8 @@ export const Posts = () => {
   };
 
   return (
-    <Container maxW="100ch" py={8}>
+    <Page>
+      <Container maxW="100ch" py={8}>
       <VStack gap={4} align="stretch">
         <Heading size="2xl">Posts</Heading>
         {posts.map((post, index) => (
@@ -85,6 +87,7 @@ export const Posts = () => {
           </Box>
         ))}
       </VStack>
-    </Container>
+      </Container>
+    </Page>
   );
 };

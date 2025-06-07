@@ -10,6 +10,7 @@ import {
   Separator,
   Flex,
 } from "@chakra-ui/react";
+import { Page } from "../components/Page";
 
 export const About = () => {
   const experiences = [
@@ -30,7 +31,8 @@ export const About = () => {
   ];
 
   return (
-    <Container maxW="72ch" py={8}>
+    <Page>
+      <Container maxW="72ch" py={8}>
       <VStack gap={4} align="stretch">
         <Heading>About Me</Heading>
         <Box>
@@ -66,6 +68,7 @@ export const About = () => {
           </SimpleGrid>
         </Box>
       </VStack>
-    </Container>
+      </Container>
+    </Page>
   );
 };

@@ -1,7 +1,6 @@
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import { BlogPost } from "./pages/BlogPost";
 import { Provider } from "./components/ui/provider";
-import { Navbar } from "./components/Navbar";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Posts } from "./pages/Posts";
@@ -12,7 +11,6 @@ function App() {
   return (
     <Provider>
       <Router>
-        <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/publications" element={<Publications />} />
