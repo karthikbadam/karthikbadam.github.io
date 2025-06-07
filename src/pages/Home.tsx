@@ -13,6 +13,7 @@ import {
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import { useColorModeValue } from "../components/ui/color-mode";
+import { Page } from "../components/Page";
 import featuredData from "../data/featured.json";
 
 // Define types for the post data
@@ -41,101 +42,103 @@ export const Home = () => {
   const restPosts = (featuredData as Post[]).filter(post => !post.featured);
 
   return (
-    <Container maxW="container.xl" py={8} px={8}>
-      <Grid
-        templateColumns={{ base: "1fr", md: "1fr 3fr" }}
-        gap="100px"
-        height="100%"
-      >
-        <VStack align="start" gap={6} width="100%">
-          <Stack width="100%" position="relative" mt={10}>
-            <Image
-              src="/profile.jpg"
-              alt="Karthik Badam"
-              borderRadius="full"
-              width="100%"
-              maxWidth="150px"
-              height="auto"
-              objectFit="cover"
-              boxShadow="2xl"
-              transition="transform 0.3s"
-              _hover={{ transform: "scale(1.05)" }}
-            />
-          </Stack>
+    <Page>
+      <Container maxW="container.xl" py={8} px={8}>
+        <Grid
+          templateColumns={{ base: "1fr", md: "1fr 3fr" }}
+          gap="100px"
+          height="100%"
+        >
+          <VStack align="start" gap={6} width="100%">
+            <Stack width="100%" position="relative" mt={10}>
+              <Image
+                src="/profile.jpg"
+                alt="Karthik Badam"
+                borderRadius="full"
+                width="100%"
+                maxWidth="150px"
+                height="auto"
+                objectFit="cover"
+                boxShadow="2xl"
+                transition="transform 0.3s"
+                _hover={{ transform: "scale(1.05)" }}
+              />
+            </Stack>
+            <Stack gap={4}>
+              <Heading
+                fontWeight="semibold"
+                size="2xl"
+                css={{
+                  background: highlightColor,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Karthik Badam
+              </Heading>
+              <HStack gap={2} wrap="wrap">
+                <Tag.Root>
+                  <Tag.Label>Full-Stack Engineer</Tag.Label>
+                </Tag.Root>
+                <Tag.Root>
+                  <Tag.Label>Apple</Tag.Label>
+                </Tag.Root>
+                <Tag.Root>
+                  <Tag.Label>Machine Learning</Tag.Label>
+                </Tag.Root>
+              </HStack>
+              <Text fontSize="md" color="gray.fg" lineHeight="tall">
+                Creating tools to explore, explain, and augment datasets that feed
+                into large language and vision models.
+              </Text>
+            </Stack>
+          </VStack>
           <Stack gap={4}>
-            <Heading
-              fontWeight="semibold"
-              size="2xl"
-              css={{
-                background: highlightColor,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              Karthik Badam
-            </Heading>
-            <HStack gap={2} wrap="wrap">
-              <Tag.Root>
-                <Tag.Label>Full-Stack Engineer</Tag.Label>
-              </Tag.Root>
-              <Tag.Root>
-                <Tag.Label>Apple</Tag.Label>
-              </Tag.Root>
-              <Tag.Root>
-                <Tag.Label>Machine Learning</Tag.Label>
-              </Tag.Root>
-            </HStack>
-            <Text fontSize="md" color="gray.fg" lineHeight="tall">
-              Creating tools to explore, explain, and augment datasets that feed
-              into large language and vision models.
-            </Text>
-          </Stack>
-        </VStack>
-        <Stack gap={4}>
-          <Heading size="xl">Featured Works</Heading>
-          
-          {/* Featured Posts as Large Cards - Side by Side */}
-          {featuredPosts.length > 0 && (
-            <Grid
-              templateColumns={{
-                base: "1fr",
-                md: featuredPosts.length === 1 ? "1fr" : "1fr 1fr",
-              }}
-              gap={6}
-            >
-              {featuredPosts.map((post, index) => (
-                <FeaturedPostCard key={index} post={post} />
-              ))}
-            </Grid>
-          )}
+            <Heading size="xl">Featured Works</Heading>
+            
+            {/* Featured Posts as Large Cards - Side by Side */}
+            {featuredPosts.length > 0 && (
+              <Grid
+                templateColumns={{
+                  base: "1fr",
+                  md: featuredPosts.length === 1 ? "1fr" : "1fr 1fr",
+                }}
+                gap={6}
+              >
+                {featuredPosts.map((post, index) => (
+                  <FeaturedPostCard key={index} post={post} />
+                ))}
+              </Grid>
+            )}
 
-          {/* Grid for Smaller Cards */}
-          {restPosts.length > 0 && (
-            <Grid
-              templateColumns={{
-                base: "1fr",
-                md: "1fr 1fr",
-              }}
-              gap={6}
-            >
-              {restPosts.map((post, index) => (
-                <Box key={index}>
-                  {post.link.startsWith('http') ? (
-                    <ChakraLink href={post.link} _hover={{ textDecoration: "none" }} h="100%">
-                      <PostCard post={post} />
-                    </ChakraLink>
-                  ) : (
-                    <RouterLink to={post.link} style={{ textDecoration: "none" }}>
-                      <PostCard post={post} />
-                    </RouterLink>
-                  )}
-                </Box>
-              ))}
-            </Grid>
-          )}
-        </Stack>
-      </Grid>
-    </Container>
+            {/* Grid for Smaller Cards */}
+            {restPosts.length > 0 && (
+              <Grid
+                templateColumns={{
+                  base: "1fr",
+                  md: "1fr 1fr",
+                }}
+                gap={6}
+              >
+                {restPosts.map((post, index) => (
+                  <Box key={index}>
+                    {post.link.startsWith('http') ? (
+                      <ChakraLink href={post.link} _hover={{ textDecoration: "none" }} h="100%">
+                        <PostCard post={post} />
+                      </ChakraLink>
+                    ) : (
+                      <RouterLink to={post.link} style={{ textDecoration: "none" }}>
+                        <PostCard post={post} />
+                      </RouterLink>
+                    )}
+                  </Box>
+                ))}
+              </Grid>
+            )}
+          </Stack>
+        </Grid>
+      </Container>
+    </Page>
   );
 };
 
