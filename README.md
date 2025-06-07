@@ -5,7 +5,7 @@ This repository contains the source code for my personal website and blog, hoste
 ## Built With
 
 - Vite (https://vitejs.dev/)
-- React 19 + TypeScript
+- React 18 + TypeScript
 - Chakra UI (https://chakra-ui.com/)
 - MDX for writing blog posts
 - D3 & visx for data visualizations
