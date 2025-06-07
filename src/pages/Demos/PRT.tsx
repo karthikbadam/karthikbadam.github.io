@@ -199,7 +199,7 @@ export function PackedRadialTreeDemo() {
               hierarchical datasets as elegantly arranged circular nodes in a
               radial layout. Leaves at each level are packed around their
               parents. Branches are balanced around the radial space. Finally,
-              collisons are resolved to provide a overall packed look to this
+              collisions are resolved to provide an overall packed look to this
               visualization.
             </Text>
           </Box>
