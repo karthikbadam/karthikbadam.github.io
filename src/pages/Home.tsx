@@ -94,10 +94,20 @@ export const Home = () => {
         <Stack gap={4}>
           <Heading size="xl">Featured Works</Heading>
           
-          {/* Featured Posts as Large Cards */}
-          {featuredPosts.map((post, index) => (
-            <FeaturedPostCard key={index} post={post} />
-          ))}
+          {/* Featured Posts as Large Cards - Side by Side */}
+          {featuredPosts.length > 0 && (
+            <Grid
+              templateColumns={{
+                base: "1fr",
+                md: featuredPosts.length === 1 ? "1fr" : "1fr 1fr",
+              }}
+              gap={6}
+            >
+              {featuredPosts.map((post, index) => (
+                <FeaturedPostCard key={index} post={post} />
+              ))}
+            </Grid>
+          )}
 
           {/* Grid for Smaller Cards */}
           {restPosts.length > 0 && (
@@ -169,28 +179,28 @@ interface FeaturedCardProps {
 }
 
 const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
-  <Grid
-    templateColumns={{ base: "1fr", md: "auto 1fr" }}
-    gap={6}
+  <Stack
+    gap={4}
     p={4}
     borderWidth="1px"
     borderRadius="xl"
     _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
     transition="all 0.3s"
+    h="100%"
   >
     <Image
       src={`/images/${image}`}
       alt={post.title}
       borderRadius="xl"
       objectFit="cover"
-      width={{ base: "100%", md: "200px" }}
-      height={{ base: "200px", md: "150px" }}
+      width="100%"
+      height="200px"
     />
-    <Stack gap={2}>
+    <Stack gap={2} flex="1">
       <Heading size="md" fontWeight="medium">
         {post.title}
       </Heading>
-      <Text color="gray.focusRing" fontSize="sm">
+      <Text color="gray.focusRing" fontSize="sm" lineClamp={3}>
         {post.abstract}
       </Text>
       <HStack gap={2} pt={2}>
@@ -209,7 +219,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
         )}
       </HStack>
     </Stack>
-  </Grid>
+  </Stack>
 );
 
 interface PostCardProps {
