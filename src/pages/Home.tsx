@@ -41,7 +41,7 @@ export const Home = () => {
   const restPosts = (featuredData as Post[]).filter(post => !post.featured);
 
   return (
-    <Container maxW="container.xl" py={8} px={8} height="calc(100vh - 130px)">
+    <Container maxW="container.xl" py={8} px={8}>
       <Grid
         templateColumns={{ base: "1fr", md: "1fr 3fr" }}
         gap="100px"
