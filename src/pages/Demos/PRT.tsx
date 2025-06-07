@@ -171,12 +171,12 @@ export function PackedRadialTreeDemo() {
     <Page>
       {/* TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h */}
       <Grid
-        templateColumns={{ base: "1fr", lg: "2fr 1fr" }}
-        maxH="calc(100vh - 200px)"
+        templateColumns={{ base: "1fr", lg: "3fr 2fr" }}
         overflowY="auto"
+        px={7}
       >
         {/* Left Column - Visualization (Full Height) */}
-        <Box h="76vh" px={4} pt={4}>
+        <Box h="75vh">
           {uatData && (
             <PackedRadialTree
               data={uatData}
@@ -187,7 +187,13 @@ export function PackedRadialTreeDemo() {
         </Box>
 
         {/* Right Column - Content */}
-        <Box px={4} py={8}>
+        <Box
+          maxW="72ch"
+          mx="auto"
+          maxH="calc(100vh - 120px)"
+          overflow="auto"
+          px={8}
+        >
           <Stack gap={10}>
             {/* Header */}
             <Box>
@@ -195,16 +201,16 @@ export function PackedRadialTreeDemo() {
                 Packed Radial Tree
               </Heading>
               <Text fontSize="xs" color="gray.focusRing" mb={4}>
-                Custom-designed visualization by Karthik Badam, published May 26,
-                2025.
+                Custom-designed visualization by Karthik Badam, published May
+                26, 2025.
               </Text>
               <Text fontSize="sm" color="gray.fg">
                 Packed Radial Tree is an interactive visualization that renders
                 hierarchical datasets as elegantly arranged circular nodes in a
                 radial layout. Leaves at each level are packed around their
                 parents. Branches are balanced around the radial space. Finally,
-                collisions are resolved to provide an overall packed look to this
-                visualization.
+                collisions are resolved to provide an overall packed look to
+                this visualization.
               </Text>
             </Box>
 
@@ -322,11 +328,11 @@ export function PackedRadialTreeDemo() {
               </Heading>
               <Text fontSize="sm" color="gray.fg" mb={4}>
                 Unified Astronomy Thesaurus (UAT) is a controlled vocabulary of
-                astronomical terms developed by the American Astronomical Society.
-                This hierarchical taxonomy contains thousands of astronomy
-                concepts organized into 11 levels of depth, representing the
-                complex relationships between astronomical phenomena, objects, and
-                processes.
+                astronomical terms developed by the American Astronomical
+                Society. This hierarchical taxonomy contains thousands of
+                astronomy concepts organized into 11 levels of depth,
+                representing the complex relationships between astronomical
+                phenomena, objects, and processes.
               </Text>
             </Box>
 
@@ -341,8 +347,8 @@ export function PackedRadialTreeDemo() {
                   descendant concepts
                 </Text>
                 <Text fontSize="sm" color="gray.fg">
-                  <strong>Radial Layout:</strong> Parent-child relationships shown
-                  through positioning
+                  <strong>Radial Layout:</strong> Parent-child relationships
+                  shown through positioning
                 </Text>
                 <Text fontSize="sm" color="gray.fg">
                   <strong>Color Encoding:</strong> Visual distinction between

@@ -1,8 +1,22 @@
 {
   "posts": [
     {
-      "title": "Vistrates: A Versatile Tool for Data Analytics",
-      "abstract": "Introducing a new platform for many activities in data exploration between multiple users on heterogeneous devices. Vistrates is web-based and collaborative by nature, thus supporting data analysis anywhere, anytime, and by anyone.",
+      "title": "Exploring Complex Hierarchies",
+      "abstract": "An interactive visualization that renders hierarchical datasets as elegantly-arranged circular nodes in a radial layout. Explore the Unified Astronomy Thesaurus with this custom-designed visualization featuring packed circles, collision resolution, and navigation.",
+      "link": "/packed-radial-tree",
+      "type": "Interactive Demo",
+      "date": "May 2025"
+    },
+    {
+      "title": "Understanding Embeddings Through Epic Fantasy",
+      "abstract": "A journey through the world of embeddings, illustrated with epic fantasy literature and interactive visualizations. Learn how embeddings transform text into numerical vectors that capture meaning and relationships, using examples from The Wheel of Time, Mistborn, and other fantasy series.",
+      "link": "/blog/understanding-embeddings",
+      "type": "Blog Post",
+      "date": "April 2025"
+    },
+    {
+      "title": "Vistrates: A Versatile Tool for Data Analytics in the World of On-Device Intelligence",
+      "abstract": "Introducing a platform for many activities in data exploration between multiple users on heterogeneous devices. Vistrates is web-based and collaborative by nature, thus supporting data analysis anywhere, anytime, and by anyone.",
       "link": "http://hcil.umd.edu/vistrates/",
       "video": "https://www.youtube.com/watch?v=nMmiWBJoJUc",
       "name": "vistrates",
@@ -10,7 +24,7 @@
       "date": "Oct 22, 2018"
     },
     {
-      "title": "Document Reading with Visual Aids",
+      "title": "Elastic Documents: Reading Data-Rich Documents with Generated Visualizations",
       "abstract": "Linking text and tables through contextual visualizations in data-rich documents improves reading comprehension. Our user evaluations have shown the power of this new approach in summarization and comprehension of data-rich documents.",
       "link": "http://hcil.umd.edu/document-reading-with-visual-aids/",
       "video": "https://vimeo.com/289784966",
@@ -45,7 +59,7 @@
       "date": "Oct 23, 2016"
     },
     {
-      "title": "Back to the Future: Exploring Multiple Futures in the Stock Market",
+      "title": "TimeFork: Exploring Multiple Futures in the Stock Market with Generative Models",
       "abstract": "A new tool called TimeFork uses interactive graphics and state-of-the-art statistical models to allow traders to investigate multiple parallel universes for predicting the stock market.",
       "link": "http://hcil.umd.edu/back-to-the-future-exploring-multiple-futures-in-the-stock-market/",
       "video": "https://www.youtube.com/watch?v=nUfSqqbaD5k",

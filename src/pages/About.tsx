@@ -32,7 +32,7 @@ export const About = () => {
 
   return (
     <Page>
-      <Container maxW="72ch" py={8}>
+      <Container maxW="72ch" pb={4}>
         <VStack gap={4} align="stretch">
           <Heading>About Me</Heading>
           <Box>

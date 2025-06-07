@@ -1,6 +1,109 @@
 [
   {
     "authors": [
+      "Anna Vilanova",
+      "Marco Angelini",
+      "Sriram Karthik Badam",
+      "Jean-Daniel Fekete"
+    ],
+    "title": "Uncertainty and Quality for Progressive Data Analysis",
+    "venue": "Progressive Data Analysis: Roadmap and Research Agenda (Chapter 6)",
+    "year": "2024",
+    "type": "Book Chapter",
+    "pdf": "/files/PDAV-Book-Web.pdf",
+    "video": "",
+    "name": "uncertainty-progressive-analysis",
+    "keywords": [
+      "Progressive Analysis",
+      "Uncertainty",
+      "Data Quality",
+      "Visual Analytics"
+    ]
+  },
+  {
+    "authors": [
+      "Weihang Wang",
+      "Sriram Karthik Badam",
+      "Niklas Elmqvist"
+    ],
+    "title": "Topology-Aware Space Distortion for Structured Visualization Spaces",
+    "venue": "Information Visualization Journal",
+    "year": "2022",
+    "type": "Journal",
+    "pdf": "/files/zoomhalo.pdf",
+    "video": "",
+    "name": "topology-distortion",
+    "keywords": [
+      "Visualization",
+      "Space Distortion",
+      "Topology"
+    ]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Senthil K. Chandrasegaran",
+      "Niklas Elmqvist"
+    ],
+    "title": "Integrating Annotations Into Multidimensional Visual Dashboards",
+    "venue": "Information Visualization Journal",
+    "year": "2022",
+    "type": "Journal",
+    "pdf": "/files/facetnotes.pdf",
+    "video": "",
+    "name": "annotations-dashboards",
+    "keywords": [
+      "Visual Analytics",
+      "Dashboards",
+      "Annotations",
+      "Multidimensional Data"
+    ]
+  },
+  {
+    "authors": [
+      "Sriram Karthik Badam",
+      "Niklas Elmqvist"
+    ],
+    "title": "Effects of Screen-Responsive Visualization on Data Comprehension",
+    "venue": "Information Visualization Journal",
+    "year": "2021",
+    "type": "Journal",
+    "pdf": "/files/touchinsight.pdf",
+    "video": "",
+    "name": "screen-responsive-effects",
+    "keywords": [
+      "Responsive Visualization",
+      "Data Comprehension",
+      "Mobile Visualization",
+      "Screen Size"
+    ]
+  },
+  {
+    "authors": [
+      "Ninger Zhou",
+      "Lorraine G. Kisselburgh",
+      "Senthil K. Chandrasegaran",
+      "Sriram Karthik Badam",
+      "Niklas Elmqvist",
+      "Karthik Ramani"
+    ],
+    "title": "Using Social Interaction Trace Data and Context to Predict Collaboration Quality and Creative Fluency in Collaborative Design Learning Environments",
+    "venue": "International Journal of Human-Computer Studies",
+    "year": "2020",
+    "type": "Journal",
+    "pdf": "/files/social-interaction-traces.pdf",
+    "video": "",
+    "name": "social-interaction-prediction",
+    "keywords": [
+      "Collaboration",
+      "Design Learning",
+      "Social Interaction",
+      "Machine Learning",
+      "Creative Fluency"
+    ]
+  },
+  {
+    "authors": [
       "Sriram Karthik Badam",
       "Andreas Mathisen",
       "Roman Rädle",
@@ -13,7 +116,6 @@
     "type": "Journal",
     "pdf": "/files/vistrates.pdf",
     "video": "https://www.youtube.com/watch?v=nMmiWBJoJUc",
-    "bibtex": "",
     "name": "vistrates",
     "keywords": [
       "Visual Analytics",
@@ -33,7 +135,6 @@
     "type": "Journal",
     "video": "",
     "pdf": "/files/elastic-documents.pdf",
-    "bibtex": "",
     "name": "elasticdocs",
     "keywords": [
       "Document reading"
@@ -52,7 +153,6 @@
     "type": "Journal",
     "video": "",
     "pdf": "/files/datasite.pdf",
-    "bibtex": "",
     "name": "datasite",
     "keywords": [
       "Exploratory analysis", "proactive visualization"
@@ -71,7 +171,6 @@
     "type": "Workshop",
     "pdf": "/files/unified.pdf",
     "video": "",
-    "bibtex": "",
     "name": "unified",
     "keywords": [
       "Visual analytics",
@@ -93,7 +192,6 @@
     "type": "Workshop",
     "pdf": "/files/mixing-modalities.pdf",
     "video": "",
-    "bibtex": "",
     "name": "mixing-modalities",
     "keywords": [
       "Multimodal interaction",
@@ -110,13 +208,12 @@
       "Sriram Karthik Badam",
       "Niklas Elmqvist"
     ],
-    "title": "Design Considerations for Mid-Air Interaction with Holographic Projections",
+    "title": "Design Considerations for Mid-Air Interaction With Holographic Projections",
     "venue": "Mid-Air Haptics and Displays Workshop at ACM CHI",
     "year": "2016",
     "type": "Workshop",
     "pdf": "/files/mid-air.pdf",
     "video": "",
-    "bibtex": "",
     "name": "mid-air",
     "keywords": [
       "Multimodal interaction",
@@ -131,11 +228,10 @@
       "Sriram Karthik Badam",
       "Niklas Elmqvist"
     ],
-    "title": "VisHive: Supporting Web-based Visualization through Ad-hoc Computational Clusters of Mobile Devices",
+    "title": "VisHive: Supporting Web-Based Visualization Through Ad-Hoc Computational Clusters of Mobile Devices",
     "venue": "Information Visualization Journal",
     "year": "2018",
     "type": "Journal",
-    "bibtex": "",
     "video": "",
     "pdf": "/files/vishive.pdf",
     "name": "vishive",
@@ -155,13 +251,12 @@
       "Raimund Dachselt"
     ],
     "equal": "true",
-    "title": "Combining Smartwatches with a Large Vertical Display for Visual Data Exploration",
+    "title": "Combining Smartwatches With a Large Vertical Display for Visual Data Exploration",
     "venue": "ACM Human Factors in Computing Systems (CHI)",
     "year": "2018",
     "type": "Conference",
     "pdf": "/files/nui-visualization.pdf",
     "video": "https://youtu.be/DYSvA_Hn39o",
-    "bibtex": "",
     "award": "Honorable Mention (TOP 4%)",
     "name": "DG",
     "keywords": [
@@ -186,7 +281,6 @@
     "type": "Journal",
     "pdf": "/files/visfer.pdf",
     "video": "https://youtu.be/KG1YqwlePGA",
-    "bibtex": "",
     "name": "visfer",
     "keywords": [
       "Visual Analytics",
@@ -209,7 +303,6 @@
     "type": "Journal",
     "pdf": "/files/InsightsFeed.pdf",
     "video": "https://www.youtube.com/watch?v=GVhNR5dyccE",
-    "bibtex": "",
     "name": "progressive",
     "keywords": [
       "Visual Analytics",
@@ -234,7 +327,6 @@
     "type": "Journal",
     "pdf": "/files/gthelper.pdf",
     "video": "https://www.dropbox.com/s/pjeyosgfbgrfeis/EuroVis_submission_307.mp4?dl=0",
-    "bibtex": "",
     "name": "gthelper",
     "keywords": [
       "Grounded Theory",
@@ -252,13 +344,12 @@
       "Alex Endert",
       "Niklas Elmqvist"
     ],
-    "title": "Supporting Team-First Visual Analytics through Group Activity Representations",
+    "title": "Supporting Team-First Visual Analytics Through Group Activity Representations",
     "venue": "Graphics Interface",
     "year": "2017",
     "type": "Conference",
     "pdf": "/files/group-awareness.pdf",
     "video": "https://www.youtube.com/watch?v=jb20SzgYhbA",
-    "bibtex": "",
     "name": "ga",
     "keywords": [
       "Visual Analytics",
@@ -285,7 +376,6 @@
     "type": "Conference",
     "pdf": "/files/merge-study.pdf",
     "video": "",
-    "bibtex": "",
     "name": "merge",
     "keywords": [
       "User Study",
@@ -310,7 +400,6 @@
     "type": "Conference",
     "pdf": "/files/multi-user.pdf",
     "video": "https://www.youtube.com/watch?v=xd7G_q8nocc",
-    "bibtex": "",
     "name": "proxemiclens",
     "keywords": [
       "Proxemics",
@@ -339,7 +428,6 @@
     "type": "Conference",
     "pdf": "/files/timefork.pdf",
     "video": "https://www.youtube.com/watch?v=nUfSqqbaD5k",
-    "bibtex": "https://scholar.googleusercontent.com/citations?view_op=export_citations&user=ExY_mkUAAAAJ&s=ExY_mkUAAAAJ:bEWYMUwI8FkC&citsig=AMstHGQAAAAAWBWHBeg-ztWfyWcitNGpk61uzR8yZ-aE&hl=en&cit_fmt=0",
     "name": "timefork",
     "keywords": [
       "Visual Analytics",
@@ -362,7 +450,6 @@
     "type": "Conference",
     "pdf": "/files/polychrome.pdf",
     "video": "https://www.youtube.com/watch?v=0izPWZs7jHU",
-    "bibtex": "https://scholar.googleusercontent.com/citations?view_op=export_citations&user=ExY_mkUAAAAJ&s=ExY_mkUAAAAJ:bEWYMUwI8FkC&citsig=AMstHGQAAAAAWBWHBeg-ztWfyWcitNGpk61uzR8yZ-aE&hl=en&cit_fmt=0",
     "name": "polychrome",
     "keywords": [
       "Co-browsing",
@@ -389,7 +476,6 @@
     "type": "Conference",
     "pdf": "/files/skWiki_case_study.pdf",
     "video": "https://www.youtube.com/watch?v=zHG_53Hv9hA",
-    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:4f8GCfQbOogJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ7i3jHXsvi5RqvUgBlUA5Q-TpfbvCC&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "skwikistudy",
     "keywords": [
       "User Study",
@@ -415,7 +501,6 @@
     "type": "Conference",
     "pdf": "/files/sketch-media.pdf",
     "video": "https://www.dropbox.com/s/uff5290s5rx4lei/sketch-media-avi.mov?dl=0",
-    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:7MjtVaadzPMJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ8PLm5rBwHsra9Qc5hipOtyxfXtkdQ&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "sketchmedia",
     "keywords": [
       "Sketching",
@@ -443,7 +528,6 @@
     "type": "Conference",
     "pdf": "/files/skwiki.pdf",
     "video": "https://www.youtube.com/watch?v=zHG_53Hv9hA",
-    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:oc707uRfWRQJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ86yWnio0ONJhs3sRZq5kOPtH8-TGd&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "skwiki",
     "keywords": [
       "User Study",
@@ -473,7 +557,6 @@
     "type": "Journal",
     "pdf": "/files/vizscribe.pdf",
     "video": "https://vimeo.com/169905057",
-    "bibtex": "",
     "name": "vizscribe",
     "keywords": [
       "Protocol Analysis",
@@ -495,7 +578,6 @@
     "type": "Journal",
     "pdf": "/files/munin.pdf",
     "video": "https://www.youtube.com/watch?v=ZKIXSdUm6-s",
-    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:CPJihiRlBtsJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBQ_aRyqEQZI7eif2DXVs6IaWIKATPZN&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "munin",
     "keywords": [
       "Multi-Display Environments",
@@ -520,7 +602,6 @@
     "type": "Journal",
     "pdf": "/files/beyond-desktop.pdf",
     "video": "https://www.youtube.com/watch?v=0izPWZs7jHU",
-    "bibtex": "https://scholar.googleusercontent.com/scholar.bib?q=info:hRHLfkhAjygJ:scholar.google.com/&output=citation&scisig=AAGBfm0AAAAAWBRAKuJCktzRDUUql6xsTRG60vTAir9o&scisf=4&ct=citation&cd=-1&hl=en",
     "name": "beyondDesktopVis",
     "keywords": [
       "Immersion",
@@ -544,7 +625,6 @@
     "type": "Journal",
     "pdf": "/files/dui-design.pdf",
     "video": "",
-    "bibtex": "https://scholar.googleusercontent.com/citations?view_op=export_citations&user=ExY_mkUAAAAJ&s=ExY_mkUAAAAJ:bEWYMUwI8FkC&citsig=AMstHGQAAAAAWBWHBeg-ztWfyWcitNGpk61uzR8yZ-aE&hl=en&cit_fmt=0",
     "name": "dui",
     "keywords": [
       "Distributed User Interfaces",
