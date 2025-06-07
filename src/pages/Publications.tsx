@@ -12,6 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { FormEvent, useState } from "react";
 import publicationsData from "../data/publications.json";
+import { Page } from "../components/Page";
 
 export const Publications = () => {
   const [selectedType, setSelectedType] = useState<string>("all");
@@ -53,7 +54,8 @@ export const Publications = () => {
   };
 
   return (
-    <Container maxW="100ch" py={8}>
+    <Page>
+      <Container maxW="100ch" py={8}>
       <VStack gap={8} align="stretch">
         <Heading>Publications</Heading>
 
@@ -205,6 +207,7 @@ export const Publications = () => {
           </Box>
         ))}
       </VStack>
-    </Container>
+      </Container>
+    </Page>
   );
 };

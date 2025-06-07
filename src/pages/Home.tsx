@@ -13,6 +13,7 @@ import {
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import { useColorModeValue } from "../components/ui/color-mode";
+import { Page } from "../components/Page";
 import featuredData from "../data/featured.json";
 
 // Define types for the post data
@@ -41,7 +42,8 @@ export const Home = () => {
   const restPosts = (featuredData as Post[]).filter(post => !post.featured);
 
   return (
-    <Container maxW="container.xl" py={8} px={8} height="calc(100vh - 130px)">
+    <Page>
+      <Container maxW="container.xl" py={8} px={8} height="calc(100vh - 130px)">
       <Grid
         templateColumns={{ base: "1fr", md: "1fr 3fr" }}
         gap="100px"
@@ -135,7 +137,8 @@ export const Home = () => {
           )}
         </Stack>
       </Grid>
-    </Container>
+      </Container>
+    </Page>
   );
 };
 

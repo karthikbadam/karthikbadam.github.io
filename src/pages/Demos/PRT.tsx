@@ -16,6 +16,7 @@ import {
 } from "@kvis/packed-radial-tree";
 import { useEffect, useState } from "react";
 import { useColorMode } from "../../components/ui/color-mode";
+import { Page } from "../../components/Page";
 
 const parseUATData = async (): Promise<TreeNode> => {
   try {
@@ -148,29 +149,32 @@ export function PackedRadialTreeDemo() {
 
   if (loading) {
     return (
-      <Box
-        minH="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack gap={4}>
-          <Heading>Loading UAT Dataset...</Heading>
-          <Text color="gray.fg">
-            Parsing hierarchical astronomy taxonomy data
-          </Text>
-        </VStack>
-      </Box>
+      <Page>
+        <Box
+          minH="100vh"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <VStack gap={4}>
+            <Heading>Loading UAT Dataset...</Heading>
+            <Text color="gray.fg">
+              Parsing hierarchical astronomy taxonomy data
+            </Text>
+          </VStack>
+        </Box>
+      </Page>
     );
   }
 
   return (
     // TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h
-    <Grid
+    <Page>
+      <Grid
       templateColumns={{ base: "1fr", lg: "2fr 1fr" }}
       maxH="calc(100vh - 70px)"
       overflowY="auto"
-    >
+      >
       {/* Left Column - Visualization (Full Height) */}
       <Box h="76vh" px={4} pt={4}>
         {uatData && (
@@ -348,6 +352,7 @@ export function PackedRadialTreeDemo() {
           </Box>
         </Stack>
       </Box>
-    </Grid>
+      </Grid>
+    </Page>
   );
 }
