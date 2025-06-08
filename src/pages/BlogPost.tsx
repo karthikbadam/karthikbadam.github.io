@@ -12,6 +12,8 @@ import {
 import React from "react";
 import { useParams } from "react-router-dom";
 import { Page } from "../components/Page";
+import { accent } from "../theme";
+import { useColorModeValue } from "../components/ui/color-mode";
 
 // Import all blog posts
 import UnderstandingEmbeddings from "../content/blog/understanding-embeddings.mdx";
@@ -26,8 +28,10 @@ interface MDXComponentProps extends React.HTMLAttributes<HTMLElement> {
   href?: string;
 }
 
-const components = {
-  h1: (props: HeadingProps) => <Heading as="h1" size="2xl" mb={8} {...props} />,
+const createComponents = (headingColor: string) => ({
+  h1: (props: HeadingProps) => (
+    <Heading as="h1" size="2xl" mb={8} color={headingColor} {...props} />
+  ),
   h2: (props: HeadingProps) => (
     <Heading
       as="h2"
@@ -79,10 +83,12 @@ const components = {
     <Box as="ol" mb={4} ml={6} listStyleType="decimal" {...props} />
   ),
   li: (props: MDXComponentProps) => <ListItem mb={2} {...props} />,
-};
+});
 
 export const BlogPost: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const headingColor = useColorModeValue(accent.light, accent.dark);
+  const components = createComponents(headingColor);
   const Post = blogPosts[slug as keyof typeof blogPosts];
 
   if (!Post) {

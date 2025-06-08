@@ -1,25 +1,24 @@
 import {
   Box,
+  Button,
   Container,
   Flex,
   Heading,
   Link,
   NativeSelect,
   Separator,
+  Stack,
   Tag,
   Text,
   VStack,
 } from "@chakra-ui/react";
 import { FormEvent, useState } from "react";
 import { Page } from "../components/Page";
-import { useColorModeValue } from "../components/ui/color-mode";
 import publicationsData from "../data/publications.json";
 
 export const Publications = () => {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
-
-  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
 
   // Get unique types and years for filters
   const types = [
@@ -61,7 +60,7 @@ export const Publications = () => {
     return authors.map((author, idx) => (
       <span key={idx}>
         {author === "Sriram Karthik Badam" ? (
-          <Text as="span" color={highlightColor} fontWeight="semibold">
+          <Text as="span" color="accent" fontWeight="medium">
             {author}
           </Text>
         ) : (
@@ -76,7 +75,7 @@ export const Publications = () => {
     <Page>
       <Container maxW="100ch" pb={4}>
         <VStack gap={4} align="stretch">
-          <Heading>Publications</Heading>
+          <Heading color="accent">Publications</Heading>
 
           {/* Filters */}
           <Flex gap={4} wrap="wrap">
@@ -110,8 +109,8 @@ export const Publications = () => {
 
           {/* Publications List by Type */}
           {Object.entries(groupedPublications).map(([type, pubs]) => (
-            <Box key={type} fontSize='sm'>
-              <Heading size="md" mb={2}>
+            <Box key={type} fontSize="sm">
+              <Heading size="md" mb={2} color="accentSubtle">
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </Heading>
               {pubs.map((pub, index) => (
@@ -123,48 +122,59 @@ export const Publications = () => {
                   borderColor="gray.muted"
                   mb={2}
                 >
-                  <VStack align="stretch" gap={2}>
-                    <Flex justify="space-between" align="center">
-                      <a
-                        href={pub.pdf}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          textDecoration: "none",
-                          color: "inherit",
-                        }}
-                      >
-                        <Heading size="md">{pub.title}</Heading>
-                      </a>
-                      <Text fontWeight="semibold">{pub.year}</Text>
-                    </Flex>
-                    <Text>{renderAuthors(pub.authors)}</Text>
-                   
-                    <Flex gap={2} wrap="wrap">
-                      <Text color={highlightColor} fontWeight="semibold">{pub.venue}</Text>
-                      {pub.award && (
+                  <Flex justify="space-between" gap={4}>
+                    <Stack gap={2}>
+                      <Heading size="md" color="accent">
+                        {pub.title}
+                      </Heading>
+                      <Flex>
+                        <Text>{renderAuthors(pub.authors)}</Text>
+                      </Flex>
+                      <Flex gap={2} wrap="wrap">
+                        <Text>{pub.venue}</Text>
+                        {pub.award && (
+                          <>
+                            <Separator orientation="vertical" />
+                            <Text color="purple.fg">
+                              {pub.award}
+                            </Text>
+                          </>
+                        )}
                         <>
                           <Separator orientation="vertical" />
-                          <Text color="purple.fg">{pub.award}</Text>
+                          <Text>{pub.year}</Text>
                         </>
+                      </Flex>
+                      {pub.keywords && pub.keywords.length > 0 && (
+                        <Flex gap={2} wrap="wrap">
+                          {pub.keywords.map((keyword, idx) => (
+                            <Tag.Root key={idx} fontSize="sm">
+                              <Tag.Label>{keyword}</Tag.Label>
+                            </Tag.Root>
+                          ))}
+                        </Flex>
                       )}
-                    </Flex>
-
-                    <Flex gap={2}>
+                    </Stack>
+                    <Stack>
                       {pub.pdf && (
                         <Link
                           href={pub.pdf}
                           target="_blank"
                           rel="noopener noreferrer"
-                          px={2}
-                          py={1}
-                          borderRadius="md"
-                          borderWidth="1px"
-                          borderColor="blue.subtle"
-                          color="white"
-                          bg="blue.solid"
                         >
-                          PDF
+                          <Button
+                            size="sm"
+                            minW="70px"
+                            variant="outline"
+                            color="accent"
+                            borderColor="accent"
+                            _hover={{
+                              bg: "accentSubtle",
+                              color: "gray.contrast",
+                            }}
+                          >
+                            PDF
+                          </Button>
                         </Link>
                       )}
                       {pub.video && (
@@ -172,28 +182,24 @@ export const Publications = () => {
                           href={pub.video}
                           target="_blank"
                           rel="noopener noreferrer"
-                          px={2}
-                          py={1}
-                          borderRadius="md"
-                          borderWidth="1px"
-                          borderColor="orange.subtle"
-                          color="white"
-                          bg="orange.solid"
                         >
-                          Video
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            minW="70px"
+                            color="accent"
+                            borderColor="accent"
+                            _hover={{
+                              bg: "accentSubtle",
+                              color: "gray.contrast",
+                            }}
+                          >
+                            Video
+                          </Button>
                         </Link>
                       )}
-                    </Flex>
-                    {pub.keywords && pub.keywords.length > 0 && (
-                      <Flex gap={2} wrap="wrap">
-                        {pub.keywords.map((keyword, idx) => (
-                          <Tag.Root key={idx} fontSize="sm">
-                            <Tag.Label>{keyword}</Tag.Label>
-                          </Tag.Root>
-                        ))}
-                      </Flex>
-                    )}
-                  </VStack>
+                    </Stack>
+                  </Flex>
                 </Box>
               ))}
             </Box>
