@@ -1,18 +1,16 @@
 import {
+  Box,
+  Button,
+  Link as ChakraLink,
   Container,
   Heading,
-  VStack,
-  Text,
-  Box,
-  Link as ChakraLink,
-  Button,
   HStack,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
 import postsData from "../data/posts.json";
-import { useColorModeValue } from "../components/ui/color-mode";
-import { accentSubtle, accent } from "../theme";
 
 interface Post {
   title: string;
@@ -24,9 +22,7 @@ interface Post {
 
 export const Posts = () => {
   const { posts } = postsData as { posts: Post[] };
-  const highlightColor = useColorModeValue(accentSubtle.light, accentSubtle.dark);
-  const buttonHoverBg = useColorModeValue(accent.light, accent.dark);
-  
+
   // Helper function to determine if a link is internal or external
   const isInternalLink = (url: string): boolean => {
     return (
@@ -38,7 +34,7 @@ export const Posts = () => {
     <Page>
       <Container maxW="100ch" pb={4}>
         <VStack gap={4} align="stretch">
-          <Heading color={highlightColor}>Posts</Heading>
+          <Heading color="accent">Posts</Heading>
           {posts.map((post, index) => (
             <Box
               key={index}
@@ -47,7 +43,7 @@ export const Posts = () => {
               borderRadius="lg"
               fontSize="sm"
             >
-              <Heading size="md" color={highlightColor}>
+              <Heading size="md" color="accent">
                 {post.title}
               </Heading>
               <Text color="gray.fg" mt={2}>
@@ -60,9 +56,9 @@ export const Posts = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      color={highlightColor}
-                      borderColor={highlightColor}
-                      _hover={{ bg: buttonHoverBg, color: "white" }}
+                      color="accent"
+                      borderColor="accent"
+                      _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
                     >
                       Read More
                     </Button>
@@ -76,9 +72,9 @@ export const Posts = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      color={highlightColor}
-                      borderColor={highlightColor}
-                      _hover={{ bg: buttonHoverBg, color: "white" }}
+                      color="accent"
+                      borderColor="accent"
+                      _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
                     >
                       Read More
                     </Button>
@@ -93,9 +89,9 @@ export const Posts = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      color={highlightColor}
-                      borderColor={highlightColor}
-                      _hover={{ bg: buttonHoverBg, color: "white" }}
+                      color="accent"
+                      borderColor="accent"
+                      _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
                     >
                       Watch Video
                     </Button>

@@ -15,9 +15,8 @@ import {
   TreeNode,
 } from "@kvis/packed-radial-tree";
 import { useEffect, useState } from "react";
-import { useColorMode, useColorModeValue } from "../../components/ui/color-mode";
-import { accent } from "../../theme";
 import { Page } from "../../components/Page";
+import { useColorMode } from "../../components/ui/color-mode";
 
 const parseUATData = async (): Promise<TreeNode> => {
   try {
@@ -105,8 +104,7 @@ export function PackedRadialTreeDemo() {
   const [uatData, setUatData] = useState<TreeNode | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const { colorMode } = useColorMode();
-  const headingColor = useColorModeValue(accent.light, accent.dark);
-
+  
   const config: Partial<PackedTreeOptions> = {
     maxDepth: 2,
     isInterleaved: true,
@@ -159,7 +157,7 @@ export function PackedRadialTreeDemo() {
           justifyContent="center"
         >
           <VStack gap={4}>
-            <Heading color={headingColor}>
+            <Heading color='accent'>
               Loading UAT Dataset...
             </Heading>
             <Text color="gray.fg">
@@ -201,7 +199,7 @@ export function PackedRadialTreeDemo() {
           <Stack gap={10}>
             {/* Header */}
             <Box>
-              <Heading as="h1" size="2xl" color={headingColor}>
+              <Heading as="h1" size="2xl" color='accent'>
                 Packed Radial Tree
               </Heading>
               <Text fontSize="xs" color="gray.focusRing" mb={4}>
@@ -225,7 +223,6 @@ export function PackedRadialTreeDemo() {
                   as="h2"
                   size="md"
                   mb={1}
-                  color={headingColor}
                 >
                   Selected Concept
                 </Heading>
@@ -314,7 +311,6 @@ export function PackedRadialTreeDemo() {
                   as="h2"
                   size="md"
                   mb={1}
-                  color={headingColor}
                 >
                   Interaction Guide
                 </Heading>
