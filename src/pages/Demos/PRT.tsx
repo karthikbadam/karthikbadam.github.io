@@ -12,7 +12,6 @@ import {
   Wrap,
   WrapItem,
 } from "@chakra-ui/react";
-import { ExternalLinkIcon } from "@chakra-ui/icons";
 import {
   createSampleOntology,
   PackedRadialTree,
@@ -22,6 +21,7 @@ import {
 import { useEffect, useState } from "react";
 import { Page } from "../../components/Page";
 import { useColorMode } from "../../components/ui/color-mode";
+import { LuExternalLink } from "react-icons/lu";
 
 const parseUATData = async (): Promise<TreeNode> => {
   try {
@@ -109,7 +109,7 @@ export function PackedRadialTreeDemo() {
   const [uatData, setUatData] = useState<TreeNode | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const { colorMode } = useColorMode();
-  
+
   const config: Partial<PackedTreeOptions> = {
     maxDepth: 2,
     isInterleaved: true,
@@ -134,7 +134,7 @@ export function PackedRadialTreeDemo() {
   };
 
   const googleSearch = (term: string) =>
-    `https://www.google.com/search?q=${encodeURIComponent(`${term} astronomy`)}`;
+    `https://www.google.com/search?q=${encodeURIComponent(term)}`;
 
   const getDescendants = (node: TreeNode): TreeNode[] => {
     if (!node.children) return [];
@@ -166,9 +166,7 @@ export function PackedRadialTreeDemo() {
           justifyContent="center"
         >
           <VStack gap={4}>
-            <Heading color='accent'>
-              Loading UAT Dataset...
-            </Heading>
+            <Heading color="accent">Loading UAT Dataset...</Heading>
             <Text color="gray.fg">
               Parsing hierarchical astronomy taxonomy data
             </Text>
@@ -182,7 +180,7 @@ export function PackedRadialTreeDemo() {
     <Page>
       {/* TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h */}
       <Grid
-        templateColumns={{ base: "1fr", lg: "3fr 2fr" }}
+        templateColumns={{ base: "1fr", lg: "2fr 50ch" }}
         overflowY="auto"
         px={7}
       >
@@ -201,36 +199,32 @@ export function PackedRadialTreeDemo() {
         <Box
           maxW="72ch"
           mx="auto"
+          pr={10}
           maxH="calc(100vh - 120px)"
           overflow="auto"
-          px={8}
         >
-          <Stack gap={10}>
+          <Stack gap={6}>
             {/* Header */}
             <Box>
-              <Heading as="h1" size="2xl" color='accent'>
+              <Heading as="h1" size="2xl" color="accent">
                 Packed Radial Tree
               </Heading>
-              <Text fontSize="xs" color="gray.focusRing" mb={4}>
-                Custom-designed visualization by Karthik Badam, published May
-                26, 2025.
+              <Text fontSize="sm" color="gray.focusRing" mb={4}>
+                Custom-designed visualization by Karthik Badam, May 26, 2025.
               </Text>
               <Text fontSize="sm" color="gray.fg">
-                Packed Radial Tree is an interactive way to learn astronomy
-                concepts using the Unified Astronomy Thesaurus. Each circle is a
-                topic, and clicking reveals related ideas so you can explore how
-                they connect across the universe.
+                Explore and learn astronomy concepts from the Unified Astronomy
+                Thesaurus (UAT) using this visualization. Each circle is a
+                concept in the thesaurus. Pick a circle to reveal the concepts
+                within the broader area. Double click to the drill down the
+                hierarchy.
               </Text>
             </Box>
 
             {/* Selected Node Details */}
             {selectedNode ? (
               <Box>
-                <Heading
-                  as="h2"
-                  size="md"
-                  mb={1}
-                >
+                <Heading as="h2" size="md" mb={1}>
                   Selected Concept
                 </Heading>
                 <VStack gap={4} align="stretch">
@@ -247,9 +241,11 @@ export function PackedRadialTreeDemo() {
                       <Text fontSize="sm">
                         {selectedNode.label}{" "}
                         <Link
-                          href={googleSearch(selectedNode.label)}
-                          isExternal
-                          color="blue.500"
+                          href={
+                            selectedNode.label &&
+                            googleSearch(selectedNode.label)
+                          }
+                          color="accent"
                         >
                           (search)
                         </Link>
@@ -300,32 +296,27 @@ export function PackedRadialTreeDemo() {
                             : ""}
                           )
                         </Text>
-                        <Box
-                          maxH="150px"
-                          overflowY="auto"
-                          p={2}
-                          borderRadius="md"
-                          border="1px solid"
-                          borderColor="gray.muted"
-                        >
-                          <Wrap spacing={2} shouldWrapChildren>
-                            {descendants.map((desc) => (
-                              <WrapItem key={desc.id}>
+                        <Wrap>
+                          {descendants.map((desc) => (
+                            <WrapItem key={desc.id}>
+                              <Link
+                                as={Link}
+                                href={desc.label && googleSearch(desc.label)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
                                 <Button
-                                  as={Link}
-                                  href={googleSearch(desc.label)}
-                                  isExternal
                                   size="sm"
                                   variant="outline"
                                   colorScheme="blue"
-                                  rightIcon={<ExternalLinkIcon />}
                                 >
                                   {desc.label}
+                                  <LuExternalLink />
                                 </Button>
-                              </WrapItem>
-                            ))}
-                          </Wrap>
-                        </Box>
+                              </Link>
+                            </WrapItem>
+                          ))}
+                        </Wrap>
                       </Box>
                     </>
                   )}
@@ -336,20 +327,20 @@ export function PackedRadialTreeDemo() {
                 <Heading as="h2" size="md" mb={1}>
                   Top-level Concepts
                 </Heading>
-                <Wrap spacing={2} shouldWrapChildren>
+                <Wrap gap={2}>
                   {topLevelNodes.map((node) => (
                     <WrapItem key={node.id}>
-                      <Button
+                      <Link
                         as={Link}
-                        href={googleSearch(node.label)}
-                        isExternal
-                        size="sm"
-                        variant="outline"
-                        colorScheme="blue"
-                        rightIcon={<ExternalLinkIcon />}
+                        href={node.label && googleSearch(node.label)}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        {node.label}
-                      </Button>
+                        <Button size="sm" variant="outline" colorScheme="blue">
+                          {node.label}
+                          <LuExternalLink />
+                        </Button>
+                      </Link>
                     </WrapItem>
                   ))}
                 </Wrap>
@@ -382,12 +373,12 @@ export function PackedRadialTreeDemo() {
               <Heading as="h2" size="md" mb={2}>
                 About the Dataset
               </Heading>
-              <Text fontSize="sm" color="gray.fg" mb={4}>
+              <Text fontSize="sm" color="gray.fg">
                 Unified Astronomy Thesaurus (UAT) is a controlled vocabulary of
                 astronomical terms developed by the American Astronomical
                 Society. This graph visualizes that hierarchy so you can study
-                how thousands of concepts relate across 11 levels of depth,
-                from broad processes to specific phenomena.
+                how thousands of concepts relate across 11 levels of depth, from
+                broad processes to specific phenomena.
               </Text>
             </Box>
 
