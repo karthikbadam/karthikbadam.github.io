@@ -1,4 +1,4 @@
-import { Box, Text, Flex, Link, Grid } from "@chakra-ui/react";
+import { Box, Text, Flex, Link } from "@chakra-ui/react";
 import { ReactNode } from "react";
 import { Navbar } from "./Navbar";
 
@@ -8,14 +8,14 @@ interface PageProps {
 
 export const Page = ({ children }: PageProps) => {
   return (
-    <Grid templateRows="auto 1fr auto" height="100vh" width="100%">
+    <Flex direction="column" height="100vh" width="100%">
       {/* Header */}
-      <Box as="header">
+      <Box as="header" flex="none">
         <Navbar />
       </Box>
 
       {/* Main Content */}
-      <Box as="main" overflow="auto" height="100%">
+      <Box as="main" flex="1" overflowY="auto">
         {children}
       </Box>
 
@@ -61,6 +61,6 @@ export const Page = ({ children }: PageProps) => {
           </Flex>
         </Flex>
       </Box>
-    </Grid>
+    </Flex>
   );
 };

@@ -1,17 +1,16 @@
 import {
+  Box,
+  Button,
+  Link as ChakraLink,
   Container,
   Heading,
-  VStack,
-  Text,
-  Box,
-  Link as ChakraLink,
-  Button,
   HStack,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
 import postsData from "../data/posts.json";
-import { useColorModeValue } from "../components/ui/color-mode";
 
 interface Post {
   title: string;
@@ -23,7 +22,6 @@ interface Post {
 
 export const Posts = () => {
   const { posts } = postsData as { posts: Post[] };
-  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
 
   // Helper function to determine if a link is internal or external
   const isInternalLink = (url: string): boolean => {
@@ -36,7 +34,7 @@ export const Posts = () => {
     <Page>
       <Container maxW="100ch" pb={4}>
         <VStack gap={4} align="stretch">
-          <Heading>Posts</Heading>
+          <Heading color="accent">Posts</Heading>
           {posts.map((post, index) => (
             <Box
               key={index}
@@ -45,7 +43,7 @@ export const Posts = () => {
               borderRadius="lg"
               fontSize="sm"
             >
-              <Heading size="md" color={highlightColor}>
+              <Heading size="md" color="accent">
                 {post.title}
               </Heading>
               <Text color="gray.fg" mt={2}>
@@ -55,7 +53,13 @@ export const Posts = () => {
               <HStack mt={2} gap={4}>
                 {isInternalLink(post.link) ? (
                   <RouterLink to={post.link}>
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      color="accent"
+                      borderColor="accent"
+                      _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
+                    >
                       Read More
                     </Button>
                   </RouterLink>
@@ -65,7 +69,13 @@ export const Posts = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      color="accent"
+                      borderColor="accent"
+                      _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
+                    >
                       Read More
                     </Button>
                   </ChakraLink>
@@ -76,7 +86,13 @@ export const Posts = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      color="accent"
+                      borderColor="accent"
+                      _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
+                    >
                       Watch Video
                     </Button>
                   </ChakraLink>
