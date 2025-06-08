@@ -13,13 +13,14 @@ import {
 import { FormEvent, useState } from "react";
 import { Page } from "../components/Page";
 import { useColorModeValue } from "../components/ui/color-mode";
+import { accent } from "../theme";
 import publicationsData from "../data/publications.json";
 
 export const Publications = () => {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
 
-  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
+  const highlightColor = useColorModeValue(accent.light, accent.dark);
 
   // Get unique types and years for filters
   const types = [

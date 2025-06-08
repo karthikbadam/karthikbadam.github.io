@@ -13,6 +13,7 @@ import {
 import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
 import { useColorModeValue } from "../components/ui/color-mode";
+import { accent } from "../theme";
 import featuredData from "../data/featured.json";
 
 // Define types for the post data
@@ -38,7 +39,7 @@ interface Post {
 }
 
 export const Home = () => {
-  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
+  const highlightColor = useColorModeValue(accent.light, accent.dark);
   const featuredPosts = (featuredData as Post[]).filter(
     (post) => post.featured
   );

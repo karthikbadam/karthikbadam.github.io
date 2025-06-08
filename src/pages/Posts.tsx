@@ -12,6 +12,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
 import postsData from "../data/posts.json";
 import { useColorModeValue } from "../components/ui/color-mode";
+import { accent } from "../theme";
 
 interface Post {
   title: string;
@@ -23,8 +24,9 @@ interface Post {
 
 export const Posts = () => {
   const { posts } = postsData as { posts: Post[] };
-  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
-
+  const highlightColor = useColorModeValue(accent.light, accent.dark);
+  const buttonTextColor = useColorModeValue("white", "gray.800");
+  
   // Helper function to determine if a link is internal or external
   const isInternalLink = (url: string): boolean => {
     return (
@@ -55,7 +57,12 @@ export const Posts = () => {
               <HStack mt={2} gap={4}>
                 {isInternalLink(post.link) ? (
                   <RouterLink to={post.link}>
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      bg={highlightColor}
+                      color={buttonTextColor}
+                      _hover={{ bg: highlightColor }}
+                    >
                       Read More
                     </Button>
                   </RouterLink>
@@ -65,7 +72,12 @@ export const Posts = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      bg={highlightColor}
+                      color={buttonTextColor}
+                      _hover={{ bg: highlightColor }}
+                    >
                       Read More
                     </Button>
                   </ChakraLink>
@@ -76,7 +88,12 @@ export const Posts = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      bg={highlightColor}
+                      color={buttonTextColor}
+                      _hover={{ bg: highlightColor }}
+                    >
                       Watch Video
                     </Button>
                   </ChakraLink>
