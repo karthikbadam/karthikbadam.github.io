@@ -1,7 +1,6 @@
 import {
   Badge,
   Box,
-  Grid,
   Heading,
   HStack,
   Stack,
@@ -17,6 +16,7 @@ import {
 import { useEffect, useState } from "react";
 import { useColorMode } from "../../components/ui/color-mode";
 import { Page } from "../../components/Page";
+import { TwoPanelWithScroll } from "../../components/TwoPanelWithScroll";
 
 const parseUATData = async (): Promise<TreeNode> => {
   try {
@@ -169,32 +169,21 @@ export function PackedRadialTreeDemo() {
 
   return (
     <Page>
-      {/* TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h */}
-      <Grid
-        templateColumns={{ base: "1fr", lg: "3fr 2fr" }}
-        overflowY="auto"
-        px={7}
-      >
-        {/* Left Column - Visualization (Full Height) */}
-        <Box h="75vh">
-          {uatData && (
-            <PackedRadialTree
-              data={uatData}
-              onNodeSelect={handleNodeSelect}
-              options={config}
-            />
-          )}
-        </Box>
-
-        {/* Right Column - Content */}
-        <Box
-          maxW="72ch"
-          mx="auto"
-          maxH="calc(100vh - 120px)"
-          overflow="auto"
-          px={8}
-        >
-          <Stack gap={10}>
+      <TwoPanelWithScroll
+        left={
+          <Box h="75vh">
+            {uatData && (
+              <PackedRadialTree
+                data={uatData}
+                onNodeSelect={handleNodeSelect}
+                options={config}
+              />
+            )}
+          </Box>
+        }
+        right={
+          <Box maxW="72ch" mx="auto" maxH="calc(100vh - 120px)" overflow="auto" px={8}>
+            <Stack gap={10}>
             {/* Header */}
             <Box>
               <Heading as="h1" size="2xl">
@@ -357,8 +346,9 @@ export function PackedRadialTreeDemo() {
               </VStack>
             </Box>
           </Stack>
-        </Box>
-      </Grid>
-    </Page>
-  );
+          </Box>
+          }
+        />
+      </Page>
+    );
 }
