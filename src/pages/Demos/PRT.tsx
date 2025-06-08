@@ -217,8 +217,8 @@ export function PackedRadialTreeDemo() {
                 Explore and learn astronomy concepts from the Unified Astronomy
                 Thesaurus (UAT) using this visualization. Each circle is a
                 concept in the thesaurus. Pick a circle to reveal the concepts
-                within the broader area. Double click to the drill down the
-                hierarchy.
+                within the broader area. Double click to see the hierarchy under
+                a specific concept.
               </Text>
             </Box>
 
