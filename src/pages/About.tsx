@@ -11,8 +11,14 @@ import {
   Flex,
 } from "@chakra-ui/react";
 import { Page } from "../components/Page";
+import { useColorModeValue } from "../components/ui/color-mode";
+import { accentSubtle } from "../theme";
 
 export const About = () => {
+  const subtleHeadingColor = useColorModeValue(
+    accentSubtle.light,
+    accentSubtle.dark
+  );
   const experiences = [
     {
       title: "Staff Full Stack Engineer",
@@ -34,7 +40,7 @@ export const About = () => {
     <Page>
       <Container maxW="72ch" pb={4}>
         <VStack gap={4} align="stretch">
-          <Heading>About Me</Heading>
+          <Heading color={subtleHeadingColor}>About Me</Heading>
           <Box>
             <Text fontSize="md" mb={4}>
               Full-stack engineer building tools for data exploration and ML
@@ -50,13 +56,13 @@ export const About = () => {
           </Box>
 
           <Box>
-            <Heading size="lg" mb={4}>
+            <Heading size="lg" mb={4} color={subtleHeadingColor}>
               Experience
             </Heading>
             <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
               {experiences.map((exp, index) => (
                 <Stack key={index} p={4} borderWidth="1px" borderRadius="lg">
-                  <Heading size="md">{exp.title}</Heading>
+                  <Heading size="md" color={subtleHeadingColor}>{exp.title}</Heading>
                   <Flex gap={2}>
                     <Text fontWeight="medium">{exp.company}</Text>
                     <Separator orientation="vertical" />

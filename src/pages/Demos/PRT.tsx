@@ -15,7 +15,8 @@ import {
   TreeNode,
 } from "@kvis/packed-radial-tree";
 import { useEffect, useState } from "react";
-import { useColorMode } from "../../components/ui/color-mode";
+import { useColorMode, useColorModeValue } from "../../components/ui/color-mode";
+import { accent } from "../../theme";
 import { Page } from "../../components/Page";
 
 const parseUATData = async (): Promise<TreeNode> => {
@@ -104,6 +105,7 @@ export function PackedRadialTreeDemo() {
   const [uatData, setUatData] = useState<TreeNode | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const { colorMode } = useColorMode();
+  const headingColor = useColorModeValue(accent.light, accent.dark);
 
   const config: Partial<PackedTreeOptions> = {
     maxDepth: 2,
@@ -157,7 +159,9 @@ export function PackedRadialTreeDemo() {
           justifyContent="center"
         >
           <VStack gap={4}>
-            <Heading>Loading UAT Dataset...</Heading>
+            <Heading color={headingColor}>
+              Loading UAT Dataset...
+            </Heading>
             <Text color="gray.fg">
               Parsing hierarchical astronomy taxonomy data
             </Text>
@@ -197,7 +201,7 @@ export function PackedRadialTreeDemo() {
           <Stack gap={10}>
             {/* Header */}
             <Box>
-              <Heading as="h1" size="2xl">
+              <Heading as="h1" size="2xl" color={headingColor}>
                 Packed Radial Tree
               </Heading>
               <Text fontSize="xs" color="gray.focusRing" mb={4}>
@@ -217,7 +221,12 @@ export function PackedRadialTreeDemo() {
             {/* Selected Node Details */}
             {selectedNode ? (
               <Box>
-                <Heading as="h2" size="md" mb={1}>
+                <Heading
+                  as="h2"
+                  size="md"
+                  mb={1}
+                  color={headingColor}
+                >
                   Selected Concept
                 </Heading>
                 <VStack gap={4} align="stretch">
@@ -301,7 +310,12 @@ export function PackedRadialTreeDemo() {
               </Box>
             ) : (
               <Box>
-                <Heading as="h2" size="md" mb={1}>
+                <Heading
+                  as="h2"
+                  size="md"
+                  mb={1}
+                  color={headingColor}
+                >
                   Interaction Guide
                 </Heading>
                 <VStack gap={2} align="stretch">

@@ -2,10 +2,11 @@ import { Box, Flex } from "@chakra-ui/react";
 import { Link, useLocation } from "react-router-dom";
 import { ColorModeButton } from "./ui/color-mode-button";
 import { useColorModeValue } from "./ui/color-mode";
+import { accent } from "../theme";
 
 export const Navbar = () => {
   const location = useLocation();
-  const activeLinkColor = useColorModeValue("#6e5d44", "#DFD0B8");
+  const activeLinkColor = useColorModeValue(accent.light, accent.dark);
   const inactiveLinkColor = useColorModeValue("gray.600", "gray.400");
 
   const getLinkStyle = (path: string) => ({
