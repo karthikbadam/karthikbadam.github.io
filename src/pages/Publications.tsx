@@ -13,13 +13,17 @@ import {
 import { FormEvent, useState } from "react";
 import { Page } from "../components/Page";
 import { useColorModeValue } from "../components/ui/color-mode";
+import { accent, accentSubtle } from "../theme";
 import publicationsData from "../data/publications.json";
 
 export const Publications = () => {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
 
-  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
+  const highlightColor = useColorModeValue(accent.light, accent.dark);
+  const subtleHeadingColor = useColorModeValue(accentSubtle.light, accentSubtle.dark);
+  const buttonColor = useColorModeValue(accentSubtle.light, accentSubtle.dark);
+  const buttonHoverBg = useColorModeValue(accent.light, accent.dark);
 
   // Get unique types and years for filters
   const types = [
@@ -76,7 +80,7 @@ export const Publications = () => {
     <Page>
       <Container maxW="100ch" pb={4}>
         <VStack gap={4} align="stretch">
-          <Heading>Publications</Heading>
+          <Heading color={subtleHeadingColor}>Publications</Heading>
 
           {/* Filters */}
           <Flex gap={4} wrap="wrap">
@@ -111,7 +115,7 @@ export const Publications = () => {
           {/* Publications List by Type */}
           {Object.entries(groupedPublications).map(([type, pubs]) => (
             <Box key={type} fontSize='sm'>
-              <Heading size="md" mb={2}>
+              <Heading size="md" mb={2} color={subtleHeadingColor}>
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </Heading>
               {pubs.map((pub, index) => (
@@ -134,7 +138,7 @@ export const Publications = () => {
                           color: "inherit",
                         }}
                       >
-                        <Heading size="md">{pub.title}</Heading>
+                        <Heading size="md" color={buttonColor}>{pub.title}</Heading>
                       </a>
                       <Text fontWeight="semibold">{pub.year}</Text>
                     </Flex>
@@ -160,9 +164,9 @@ export const Publications = () => {
                           py={1}
                           borderRadius="md"
                           borderWidth="1px"
-                          borderColor="blue.subtle"
-                          color="white"
-                          bg="blue.solid"
+                          borderColor={buttonColor}
+                          color={buttonColor}
+                          _hover={{ bg: buttonHoverBg, color: "white" }}
                         >
                           PDF
                         </Link>
@@ -176,9 +180,9 @@ export const Publications = () => {
                           py={1}
                           borderRadius="md"
                           borderWidth="1px"
-                          borderColor="orange.subtle"
-                          color="white"
-                          bg="orange.solid"
+                          borderColor={buttonColor}
+                          color={buttonColor}
+                          _hover={{ bg: buttonHoverBg, color: "white" }}
                         >
                           Video
                         </Link>

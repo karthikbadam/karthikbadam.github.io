@@ -4,17 +4,12 @@ import {
   ChakraProvider,
   createSystem,
   defaultConfig,
-  defineConfig,
 } from "@chakra-ui/react";
 import { ColorModeProvider } from "./color-mode-provider";
 import type { ColorModeProviderProps } from "./color-mode";
-import { textStyles } from "./textStyles";
+import { theme } from "../../theme";
 
-const config = defineConfig({
-  theme: { textStyles },
-});
-
-const system = createSystem(defaultConfig, config);
+const system = createSystem(defaultConfig, theme);
 
 export function Provider(props: ColorModeProviderProps) {
   return (

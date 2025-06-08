@@ -13,6 +13,7 @@ import {
 import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
 import { useColorModeValue } from "../components/ui/color-mode";
+import { accent, accentSubtle } from "../theme";
 import featuredData from "../data/featured.json";
 
 // Define types for the post data
@@ -38,7 +39,8 @@ interface Post {
 }
 
 export const Home = () => {
-  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
+  const highlightColor = useColorModeValue(accent.light, accent.dark);
+  const subtleHeadingColor = useColorModeValue(accentSubtle.light, accentSubtle.dark);
   const featuredPosts = (featuredData as Post[]).filter(
     (post) => post.featured
   );
@@ -106,7 +108,9 @@ export const Home = () => {
           </Stack>
           <Stack py={2}>
             <Stack gap={4} maxW={{ base: "100%", lg: "80ch" }}>
-              <Heading size="xl">Featured Works</Heading>
+              <Heading size="xl" color={subtleHeadingColor}>
+                Featured Works
+              </Heading>
               {/* Featured Posts as Large Cards - Side by Side */}
               {featuredPosts.length > 0 && (
                 <Grid

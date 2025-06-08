@@ -12,6 +12,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
 import postsData from "../data/posts.json";
 import { useColorModeValue } from "../components/ui/color-mode";
+import { accentSubtle, accent } from "../theme";
 
 interface Post {
   title: string;
@@ -23,8 +24,9 @@ interface Post {
 
 export const Posts = () => {
   const { posts } = postsData as { posts: Post[] };
-  const highlightColor = useColorModeValue("#6e5d44", "#DFD0B8");
-
+  const highlightColor = useColorModeValue(accentSubtle.light, accentSubtle.dark);
+  const buttonHoverBg = useColorModeValue(accent.light, accent.dark);
+  
   // Helper function to determine if a link is internal or external
   const isInternalLink = (url: string): boolean => {
     return (
@@ -36,7 +38,7 @@ export const Posts = () => {
     <Page>
       <Container maxW="100ch" pb={4}>
         <VStack gap={4} align="stretch">
-          <Heading>Posts</Heading>
+          <Heading color={highlightColor}>Posts</Heading>
           {posts.map((post, index) => (
             <Box
               key={index}
@@ -55,7 +57,13 @@ export const Posts = () => {
               <HStack mt={2} gap={4}>
                 {isInternalLink(post.link) ? (
                   <RouterLink to={post.link}>
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      color={highlightColor}
+                      borderColor={highlightColor}
+                      _hover={{ bg: buttonHoverBg, color: "white" }}
+                    >
                       Read More
                     </Button>
                   </RouterLink>
@@ -65,7 +73,13 @@ export const Posts = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      color={highlightColor}
+                      borderColor={highlightColor}
+                      _hover={{ bg: buttonHoverBg, color: "white" }}
+                    >
                       Read More
                     </Button>
                   </ChakraLink>
@@ -76,7 +90,13 @@ export const Posts = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      color={highlightColor}
+                      borderColor={highlightColor}
+                      _hover={{ bg: buttonHoverBg, color: "white" }}
+                    >
                       Watch Video
                     </Button>
                   </ChakraLink>
