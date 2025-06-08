@@ -13,8 +13,8 @@ import {
 import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
 import { useColorModeValue } from "../components/ui/color-mode";
-import { accent, accentSubtle } from "../theme";
 import featuredData from "../data/featured.json";
+import { accent } from "../theme";
 
 // Define types for the post data
 interface Post {
@@ -40,7 +40,6 @@ interface Post {
 
 export const Home = () => {
   const highlightColor = useColorModeValue(accent.light, accent.dark);
-  const subtleHeadingColor = useColorModeValue(accentSubtle.light, accentSubtle.dark);
   const featuredPosts = (featuredData as Post[]).filter(
     (post) => post.featured
   );
@@ -50,7 +49,7 @@ export const Home = () => {
     <Page>
       <Container maxW="container.xl" px={8}>
         <Grid
-          templateColumns={{ base: "1fr", md: "300px 1fr" }}
+          templateColumns={{ base: "1fr", md: "320px 1fr" }}
           gap="100px"
           minHeight={{ base: "auto", md: "calc(100vh - 100px)" }}
           mx="auto"
@@ -72,7 +71,6 @@ export const Home = () => {
                 maxWidth="150px"
                 height="auto"
                 objectFit="cover"
-                boxShadow="2xl"
                 transition="transform 0.3s"
                 _hover={{ transform: "scale(1.05)" }}
               />
@@ -108,7 +106,7 @@ export const Home = () => {
           </Stack>
           <Stack py={2}>
             <Stack gap={4} maxW={{ base: "100%", lg: "80ch" }}>
-              <Heading size="xl" color={subtleHeadingColor}>
+              <Heading size="xl" color="accent">
                 Featured Works
               </Heading>
               {/* Featured Posts as Large Cards - Side by Side */}
@@ -222,10 +220,10 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       height="200px"
     />
     <Stack gap={2} flex="1">
-      <Heading size="md" fontWeight="medium">
+      <Heading size="md" fontWeight="medium" color="accent">
         {post.title}
       </Heading>
-      <Text color="gray.focusRing" fontSize="sm" lineClamp={3}>
+      <Text fontSize="sm" lineClamp={3} color="gray.focusRing">
         {post.abstract}
       </Text>
       <HStack gap={2} pt={2}>
@@ -264,10 +262,10 @@ const PostCard = ({ post }: PostCardProps) => (
     h="100%"
   >
     <Stack gap={2}>
-      <Heading size="md" fontWeight="medium">
+      <Heading size="md" fontWeight="medium" color="accent">
         {post.title}
       </Heading>
-      <Text color="gray.focusRing" fontSize="sm" lineClamp={3}>
+      <Text color="gray.focusRing" fontSize="sm" lineClamp={2}>
         {post.abstract}
       </Text>
       <HStack gap={2} pt={2}>
