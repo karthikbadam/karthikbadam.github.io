@@ -1,12 +1,16 @@
 import {
   Badge,
   Box,
+  Button,
   Grid,
   Heading,
   HStack,
+  Link,
   Stack,
   Text,
   VStack,
+  Wrap,
+  WrapItem,
 } from "@chakra-ui/react";
 import {
   createSampleOntology,
@@ -17,6 +21,7 @@ import {
 import { useEffect, useState } from "react";
 import { Page } from "../../components/Page";
 import { useColorMode } from "../../components/ui/color-mode";
+import { LuExternalLink } from "react-icons/lu";
 
 const parseUATData = async (): Promise<TreeNode> => {
   try {
@@ -104,7 +109,7 @@ export function PackedRadialTreeDemo() {
   const [uatData, setUatData] = useState<TreeNode | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const { colorMode } = useColorMode();
-  
+
   const config: Partial<PackedTreeOptions> = {
     maxDepth: 2,
     isInterleaved: true,
@@ -128,6 +133,9 @@ export function PackedRadialTreeDemo() {
     setSelectedNode(node);
   };
 
+  const googleSearch = (term: string) =>
+    `https://www.google.com/search?q=${encodeURIComponent(term)}`;
+
   const getDescendants = (node: TreeNode): TreeNode[] => {
     if (!node.children) return [];
 
@@ -146,6 +154,7 @@ export function PackedRadialTreeDemo() {
   };
 
   const descendants = selectedNode ? getDescendants(selectedNode) : [];
+  const topLevelNodes = uatData?.children ? uatData.children.slice(0, 20) : [];
 
   if (loading) {
     return (
@@ -157,9 +166,7 @@ export function PackedRadialTreeDemo() {
           justifyContent="center"
         >
           <VStack gap={4}>
-            <Heading color='accent'>
-              Loading UAT Dataset...
-            </Heading>
+            <Heading color="accent">Loading UAT Dataset...</Heading>
             <Text color="gray.fg">
               Parsing hierarchical astronomy taxonomy data
             </Text>
@@ -173,7 +180,7 @@ export function PackedRadialTreeDemo() {
     <Page>
       {/* TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h */}
       <Grid
-        templateColumns={{ base: "1fr", lg: "3fr 2fr" }}
+        templateColumns={{ base: "1fr", lg: "2fr 50ch" }}
         overflowY="auto"
         px={7}
       >
@@ -192,38 +199,32 @@ export function PackedRadialTreeDemo() {
         <Box
           maxW="72ch"
           mx="auto"
+          pr={10}
           maxH="calc(100vh - 120px)"
           overflow="auto"
-          px={8}
         >
-          <Stack gap={10}>
+          <Stack gap={6}>
             {/* Header */}
             <Box>
-              <Heading as="h1" size="2xl" color='accent'>
+              <Heading as="h1" size="2xl" color="accent">
                 Packed Radial Tree
               </Heading>
-              <Text fontSize="xs" color="gray.focusRing" mb={4}>
-                Custom-designed visualization by Karthik Badam, published May
-                26, 2025.
+              <Text fontSize="sm" color="gray.focusRing" mb={4}>
+                Custom-designed visualization by Karthik Badam, May 26, 2025.
               </Text>
               <Text fontSize="sm" color="gray.fg">
-                Packed Radial Tree is an interactive visualization that renders
-                hierarchical datasets as elegantly arranged circular nodes in a
-                radial layout. Leaves at each level are packed around their
-                parents. Branches are balanced around the radial space. Finally,
-                collisions are resolved to provide an overall packed look to
-                this visualization.
+                Explore and learn astronomy concepts from the Unified Astronomy
+                Thesaurus (UAT) using this visualization. Each circle is a
+                concept in the thesaurus. Pick a circle to reveal the concepts
+                within the broader area. Double click to the drill down the
+                hierarchy.
               </Text>
             </Box>
 
             {/* Selected Node Details */}
             {selectedNode ? (
               <Box>
-                <Heading
-                  as="h2"
-                  size="md"
-                  mb={1}
-                >
+                <Heading as="h2" size="md" mb={1}>
                   Selected Concept
                 </Heading>
                 <VStack gap={4} align="stretch">
@@ -237,7 +238,18 @@ export function PackedRadialTreeDemo() {
                       >
                         NAME
                       </Text>
-                      <Text fontSize="sm">{selectedNode.label}</Text>
+                      <Text fontSize="sm">
+                        {selectedNode.label}{" "}
+                        <Link
+                          href={
+                            selectedNode.label &&
+                            googleSearch(selectedNode.label)
+                          }
+                          color="accent"
+                        >
+                          (search)
+                        </Link>
+                      </Text>
                     </Box>
                     {selectedNode.metrics?.depth && (
                       <Box>
@@ -284,22 +296,27 @@ export function PackedRadialTreeDemo() {
                             : ""}
                           )
                         </Text>
-                        <Box
-                          maxH="150px"
-                          overflowY="auto"
-                          p={2}
-                          borderRadius="md"
-                          border="1px solid"
-                          borderColor="gray.muted"
-                        >
-                          <VStack gap={1} align="stretch">
-                            {descendants.map((desc, index) => (
-                              <Text key={index} fontSize="sm" lineHeight="1.3">
-                                {desc.label}
-                              </Text>
-                            ))}
-                          </VStack>
-                        </Box>
+                        <Wrap>
+                          {descendants.map((desc) => (
+                            <WrapItem key={desc.id}>
+                              <Link
+                                as={Link}
+                                href={desc.label && googleSearch(desc.label)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  colorScheme="blue"
+                                >
+                                  {desc.label}
+                                  <LuExternalLink />
+                                </Button>
+                              </Link>
+                            </WrapItem>
+                          ))}
+                        </Wrap>
                       </Box>
                     </>
                   )}
@@ -307,42 +324,61 @@ export function PackedRadialTreeDemo() {
               </Box>
             ) : (
               <Box>
-                <Heading
-                  as="h2"
-                  size="md"
-                  mb={1}
-                >
-                  Interaction Guide
+                <Heading as="h2" size="md" mb={1}>
+                  Top-level Concepts
                 </Heading>
-                <VStack gap={2} align="stretch">
-                  <Text fontSize="sm">
-                    • <strong>Click</strong> any node to select and explore
-                  </Text>
-                  <Text fontSize="sm">
-                    • <strong>Hover</strong> for detailed tooltips
-                  </Text>
-                  <Text fontSize="sm">
-                    • <strong>Zoom</strong> with mouse wheel or trackpad
-                  </Text>
-                  <Text fontSize="sm">
-                    • <strong>Pan</strong> by dragging the background
-                  </Text>
-                </VStack>
+                <Wrap gap={2}>
+                  {topLevelNodes.map((node) => (
+                    <WrapItem key={node.id}>
+                      <Link
+                        as={Link}
+                        href={node.label && googleSearch(node.label)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button size="sm" variant="outline" colorScheme="blue">
+                          {node.label}
+                          <LuExternalLink />
+                        </Button>
+                      </Link>
+                    </WrapItem>
+                  ))}
+                </Wrap>
               </Box>
             )}
+
+            {/* Interaction Guide */}
+            <Box>
+              <Heading as="h2" size="md" mb={1}>
+                Interaction Guide
+              </Heading>
+              <VStack gap={2} align="stretch">
+                <Text fontSize="sm">
+                  • <strong>Click</strong> any node to select and explore
+                </Text>
+                <Text fontSize="sm">
+                  • <strong>Hover</strong> for detailed tooltips
+                </Text>
+                <Text fontSize="sm">
+                  • <strong>Zoom</strong> with mouse wheel or trackpad
+                </Text>
+                <Text fontSize="sm">
+                  • <strong>Pan</strong> by dragging the background
+                </Text>
+              </VStack>
+            </Box>
 
             {/* Dataset Description */}
             <Box>
               <Heading as="h2" size="md" mb={2}>
                 About the Dataset
               </Heading>
-              <Text fontSize="sm" color="gray.fg" mb={4}>
+              <Text fontSize="sm" color="gray.fg">
                 Unified Astronomy Thesaurus (UAT) is a controlled vocabulary of
                 astronomical terms developed by the American Astronomical
-                Society. This hierarchical taxonomy contains thousands of
-                astronomy concepts organized into 11 levels of depth,
-                representing the complex relationships between astronomical
-                phenomena, objects, and processes.
+                Society. This graph visualizes that hierarchy so you can study
+                how thousands of concepts relate across 11 levels of depth, from
+                broad processes to specific phenomena.
               </Text>
             </Box>
 
