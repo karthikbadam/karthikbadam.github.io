@@ -15,8 +15,8 @@ import {
   TreeNode,
 } from "@kvis/packed-radial-tree";
 import { useEffect, useState } from "react";
-import { useColorMode } from "../../components/ui/color-mode";
 import { Page } from "../../components/Page";
+import { useColorMode } from "../../components/ui/color-mode";
 
 const parseUATData = async (): Promise<TreeNode> => {
   try {
@@ -104,7 +104,7 @@ export function PackedRadialTreeDemo() {
   const [uatData, setUatData] = useState<TreeNode | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const { colorMode } = useColorMode();
-
+  
   const config: Partial<PackedTreeOptions> = {
     maxDepth: 2,
     isInterleaved: true,
@@ -157,7 +157,9 @@ export function PackedRadialTreeDemo() {
           justifyContent="center"
         >
           <VStack gap={4}>
-            <Heading>Loading UAT Dataset...</Heading>
+            <Heading color='accent'>
+              Loading UAT Dataset...
+            </Heading>
             <Text color="gray.fg">
               Parsing hierarchical astronomy taxonomy data
             </Text>
@@ -197,7 +199,7 @@ export function PackedRadialTreeDemo() {
           <Stack gap={10}>
             {/* Header */}
             <Box>
-              <Heading as="h1" size="2xl">
+              <Heading as="h1" size="2xl" color='accent'>
                 Packed Radial Tree
               </Heading>
               <Text fontSize="xs" color="gray.focusRing" mb={4}>
@@ -217,7 +219,11 @@ export function PackedRadialTreeDemo() {
             {/* Selected Node Details */}
             {selectedNode ? (
               <Box>
-                <Heading as="h2" size="md" mb={1}>
+                <Heading
+                  as="h2"
+                  size="md"
+                  mb={1}
+                >
                   Selected Concept
                 </Heading>
                 <VStack gap={4} align="stretch">
@@ -301,7 +307,11 @@ export function PackedRadialTreeDemo() {
               </Box>
             ) : (
               <Box>
-                <Heading as="h2" size="md" mb={1}>
+                <Heading
+                  as="h2"
+                  size="md"
+                  mb={1}
+                >
                   Interaction Guide
                 </Heading>
                 <VStack gap={2} align="stretch">

@@ -1,6 +1,6 @@
 [
   {
-    "title": "Exploring Complex Hierarchies",
+    "title": "Explore Complex Hierarchies using a Packed Radial Tree",
     "abstract": "An interactive visualization that renders hierarchical datasets as elegantly-arranged circular nodes in a radial layout. Explore the Unified Astronomy Thesaurus with this custom-designed visualization featuring packed circles, collision resolution, and navigation.",
     "link": "/packed-radial-tree",
     "image": {
@@ -55,7 +55,7 @@
     }
   },
   {
-    "title": "When David Meets Goliath: Using Smartwatches and Large Displays Together for Data Analysis",
+    "title": "Using Smartwatches and Large Displays Together for Data Analysis",
     "abstract": "New conceptual framework developed at University of Maryland and Technische Universität Dresden helps utilize multiple devices together for visual data analysis.",
     "link": "http://hcil.umd.edu/when-david-meets-goliath-using-smartwatches-and-large-displays-together-for-data-analysis/",
     "video": "https://www.youtube.com/watch?v=DYSvA_Hn39o",
