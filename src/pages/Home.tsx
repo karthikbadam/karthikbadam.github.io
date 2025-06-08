@@ -48,15 +48,9 @@ export const Home = () => {
   return (
     <Page>
       <Container maxW="container.xl" px={8}>
-        <TwoPanelWithScroll
-          left={
-            <Stack
-              gap={6}
-              position={{ base: "static", md: "sticky" }}
-              top={{ base: "auto", md: "0" }}
-              height={{ base: "auto", md: "fit-content" }}
-              alignSelf={{ base: "stretch", md: "start" }}
-            >
+        <TwoPanelWithScroll>
+          <TwoPanelWithScroll.LeftPanel>
+            <Stack gap={6}>
               <Stack position="relative" mt={10}>
                 <Image
                   src="/profile.jpg"
@@ -100,8 +94,8 @@ export const Home = () => {
                 </Text>
               </Stack>
             </Stack>
-          }
-          right={
+          </TwoPanelWithScroll.LeftPanel>
+          <TwoPanelWithScroll.RightPanel>
             <Stack py={2}>
               <Stack gap={4} maxW={{ base: "100%", lg: "80ch" }}>
                 <Heading size="xl">Featured Works</Heading>
@@ -153,8 +147,8 @@ export const Home = () => {
                 )}
               </Stack>
             </Stack>
-          }
-        />
+          </TwoPanelWithScroll.RightPanel>
+        </TwoPanelWithScroll>
       </Container>
     </Page>
   );

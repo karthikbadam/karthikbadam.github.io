@@ -169,8 +169,8 @@ export function PackedRadialTreeDemo() {
 
   return (
     <Page>
-      <TwoPanelWithScroll
-        left={
+      <TwoPanelWithScroll>
+        <TwoPanelWithScroll.LeftPanel>
           <Box h="75vh">
             {uatData && (
               <PackedRadialTree
@@ -180,8 +180,8 @@ export function PackedRadialTreeDemo() {
               />
             )}
           </Box>
-        }
-        right={
+        </TwoPanelWithScroll.LeftPanel>
+        <TwoPanelWithScroll.RightPanel>
           <Box maxW="72ch" mx="auto" maxH="calc(100vh - 120px)" overflow="auto" px={8}>
             <Stack gap={10}>
             {/* Header */}
@@ -347,8 +347,8 @@ export function PackedRadialTreeDemo() {
             </Box>
           </Stack>
           </Box>
-          }
-        />
+        </TwoPanelWithScroll.RightPanel>
+      </TwoPanelWithScroll>
       </Page>
     );
 }

@@ -1,38 +1,48 @@
 import { Box, Grid } from "@chakra-ui/react";
-import { ReactNode } from "react";
-
-interface TwoPanelWithScrollProps {
-  left: ReactNode;
-  right: ReactNode;
-}
+import { ReactNode, FC } from "react";
 
 /**
- * Layout with a sticky left panel and scrollable right panel on larger screens.
- * On small screens both panels scroll naturally.
+ * Compound layout component with a sticky left panel and scrollable right panel
+ * on larger screens. On small screens both panels scroll naturally.
  */
-export const TwoPanelWithScroll = ({ left, right }: TwoPanelWithScrollProps) => {
+interface PanelProps {
+  children: ReactNode;
+}
+
+interface TwoPanelWithScrollCompound extends FC<PanelProps> {
+  LeftPanel: FC<PanelProps>;
+  RightPanel: FC<PanelProps>;
+}
+
+export const TwoPanelWithScroll: TwoPanelWithScrollCompound = ({ children }) => (
+  <Grid
+    templateColumns={{ base: "1fr", md: "300px 1fr" }}
+    gap={{ base: 8, md: "100px" }}
+    minHeight={{ base: "auto", md: "calc(100vh - 100px)" }}
+    mx="auto"
+    w="fit-content"
+  >
+    {children}
+  </Grid>
+);
+
+TwoPanelWithScroll.LeftPanel = function LeftPanel({ children }: PanelProps) {
   return (
-    <Grid
-      templateColumns={{ base: "1fr", md: "300px 1fr" }}
-      gap={{ base: 8, md: "100px" }}
-      minHeight={{ base: "auto", md: "calc(100vh - 100px)" }}
-      mx="auto"
-      w="fit-content"
+    <Box
+      position={{ base: "static", md: "sticky" }}
+      top={{ base: "auto", md: 0 }}
+      height={{ base: "auto", md: "fit-content" }}
+      alignSelf={{ base: "stretch", md: "start" }}
     >
-      <Box
-        position={{ base: "static", md: "sticky" }}
-        top={{ base: "auto", md: 0 }}
-        height={{ base: "auto", md: "fit-content" }}
-        alignSelf={{ base: "stretch", md: "start" }}
-      >
-        {left}
-      </Box>
-      <Box
-        overflowY="auto"
-        maxH={{ base: "auto", md: "calc(100vh - 100px)" }}
-      >
-        {right}
-      </Box>
-    </Grid>
+      {children}
+    </Box>
+  );
+};
+
+TwoPanelWithScroll.RightPanel = function RightPanel({ children }: PanelProps) {
+  return (
+    <Box overflowY="auto" maxH={{ base: "auto", md: "calc(100vh - 100px)" }}>
+      {children}
+    </Box>
   );
 };
