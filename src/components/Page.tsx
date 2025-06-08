@@ -8,16 +8,14 @@ interface PageProps {
 
 export const Page = ({ children }: PageProps) => {
   return (
-    <Grid templateRows="auto 1fr auto" height="100vh" width="100%">
+    <Grid templateRows="auto 1fr auto" minHeight="100vh" width="100%">
       {/* Header */}
       <Box as="header">
         <Navbar />
       </Box>
 
       {/* Main Content */}
-      <Box as="main" overflow="auto" height="100%">
-        {children}
-      </Box>
+      <Box as="main">{children}</Box>
 
       {/* Footer */}
       <Box
