@@ -180,9 +180,10 @@ export function PackedRadialTreeDemo() {
     <Page>
       {/* TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h */}
       <Grid
-        templateColumns={{ base: "1fr", lg: "2fr 50ch" }}
+        templateColumns={{ base: "1fr", lg: "2fr 55ch" }}
         overflowY="auto"
         px={7}
+        gap={6}
       >
         {/* Left Column - Visualization (Full Height) */}
         <Box h="75vh">
