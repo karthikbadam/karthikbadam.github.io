@@ -1,6 +1,6 @@
 [
   {
-    "title": "Explore Complex Hierarchies using a Packed Radial Tree",
+    "title": "Explore Complex Hierarchies",
     "abstract": "An interactive visualization that renders hierarchical datasets as elegantly-arranged circular nodes in a radial layout. Explore the Unified Astronomy Thesaurus with this custom-designed visualization featuring packed circles, collision resolution, and navigation.",
     "link": "/packed-radial-tree",
     "image": {
@@ -15,7 +15,7 @@
     "featured": true
   },
   {
-    "title": "Understanding Embeddings Through Epic Fantasy",
+    "title": "Understand Embeddings Through Epic Fantasy",
     "abstract": "A journey through the world of embeddings, illustrated with epic fantasy literature and interactive visualizations. Learn how embeddings transform text into numerical vectors that capture meaning and relationships, using examples from The Wheel of Time, Mistborn, and other fantasy series.",
     "link": "/blog/understanding-embeddings",
     "image": {

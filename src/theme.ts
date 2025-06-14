@@ -2,12 +2,12 @@ import { defineConfig } from "@chakra-ui/react";
 import { textStyles } from "./components/ui/textStyles";
 
 export const accent = {
-  light: "#6e5d44",
+  light: "#0c5c72",
   dark: "#DFD0B8",
 };
 
 export const accentSubtle = {
-  light: "#A08E74",
+  light: "#a1a1aa",
   dark: "#E8E0D0",
 };
 
