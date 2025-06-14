@@ -1,2 +1,3 @@
 @import './styles/mdx.css';
-@import './styles/prism-theme.css';
+@import './styles/prism-light.css';
+@import './styles/prism-dark.css';
