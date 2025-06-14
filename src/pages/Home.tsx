@@ -106,9 +106,7 @@ export const Home = () => {
           </Stack>
           <Stack py={2}>
             <Stack gap={4} maxW={{ base: "100%", lg: "80ch" }}>
-              <Heading size="xl" color="accent">
-                Featured Works
-              </Heading>
+              <Heading color="accent">Featured Works</Heading>
               {/* Featured Posts as Large Cards - Side by Side */}
               {featuredPosts.length > 0 && (
                 <Grid
@@ -220,7 +218,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       height="200px"
     />
     <Stack gap={2} flex="1">
-      <Heading size="md" fontWeight="medium" color="accent">
+      <Heading size="md" fontWeight="semibold" color="accent">
         {post.title}
       </Heading>
       <Text fontSize="sm" lineClamp={3} color="gray.focusRing">
@@ -262,7 +260,7 @@ const PostCard = ({ post }: PostCardProps) => (
     h="100%"
   >
     <Stack gap={2}>
-      <Heading size="md" fontWeight="medium" color="accent">
+      <Heading size="md" fontWeight="semibold" color="accent">
         {post.title}
       </Heading>
       <Text color="gray.focusRing" fontSize="sm" lineClamp={2}>
