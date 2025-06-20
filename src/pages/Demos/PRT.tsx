@@ -2,7 +2,6 @@ import {
   Badge,
   Box,
   Button,
-  Grid,
   Heading,
   HStack,
   Link,
@@ -20,6 +19,7 @@ import {
 } from "@kvis/packed-radial-tree";
 import { useEffect, useState } from "react";
 import { Page } from "../../components/Page";
+import { TwoPanelWithScroll } from "../../components/TwoPanelWithScroll";
 import { useColorMode } from "../../components/ui/color-mode";
 import { LuExternalLink } from "react-icons/lu";
 
@@ -178,15 +178,9 @@ export function PackedRadialTreeDemo() {
 
   return (
     <Page>
-      {/* TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h */}
-      <Grid
-        templateColumns={{ base: "1fr", lg: "2fr 55ch" }}
-        overflowY="auto"
-        px={7}
-        gap={6}
-      >
+      <TwoPanelWithScroll leftWidth="2fr" rightWidth="55ch" px={7} gap={6}>
         {/* Left Column - Visualization (Full Height) */}
-        <Box h="75vh">
+        <TwoPanelWithScroll.LeftPanel h="75vh">
           {uatData && (
             <PackedRadialTree
               data={uatData}
@@ -194,10 +188,10 @@ export function PackedRadialTreeDemo() {
               options={config}
             />
           )}
-        </Box>
+        </TwoPanelWithScroll.LeftPanel>
 
         {/* Right Column - Content */}
-        <Box
+        <TwoPanelWithScroll.RightPanel
           maxW="72ch"
           mx="auto"
           pr={10}
@@ -404,8 +398,8 @@ export function PackedRadialTreeDemo() {
               </VStack>
             </Box>
           </Stack>
-        </Box>
-      </Grid>
+        </TwoPanelWithScroll.RightPanel>
+      </TwoPanelWithScroll>
     </Page>
   );
 }

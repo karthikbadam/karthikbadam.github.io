@@ -12,6 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
+import { TwoPanelWithScroll } from "../components/TwoPanelWithScroll";
 import { useColorModeValue } from "../components/ui/color-mode";
 import featuredData from "../data/featured.json";
 import { accent } from "../theme";
@@ -48,20 +49,8 @@ export const Home = () => {
   return (
     <Page>
       <Container maxW="container.xl" px={8}>
-        <Grid
-          templateColumns={{ base: "1fr", md: "320px 1fr" }}
-          gap="100px"
-          minHeight={{ base: "auto", md: "calc(100vh - 100px)" }}
-          mx="auto"
-          w="fit-content"
-        >
-          <Stack
-            gap={6}
-            position={{ base: "static", md: "sticky" }}
-            top={{ base: "auto", md: "0" }}
-            height={{ base: "auto", md: "fit-content" }}
-            alignSelf={{ base: "stretch", md: "start" }}
-          >
+        <TwoPanelWithScroll leftWidth="320px" rightWidth="1fr" gap="100px">
+          <TwoPanelWithScroll.LeftPanel gap={6}>
             <Stack position="relative" mt={10}>
               <Image
                 src="/profile.jpg"
@@ -103,8 +92,8 @@ export const Home = () => {
                 feed into large language and vision models.
               </Text>
             </Stack>
-          </Stack>
-          <Stack py={2}>
+          </TwoPanelWithScroll.LeftPanel>
+          <TwoPanelWithScroll.RightPanel py={2}>
             <Stack gap={4} maxW={{ base: "100%", lg: "80ch" }}>
               <Heading color="accent">Featured Works</Heading>
               {/* Featured Posts as Large Cards - Side by Side */}
@@ -154,8 +143,8 @@ export const Home = () => {
                 </Grid>
               )}
             </Stack>
-          </Stack>
-        </Grid>
+          </TwoPanelWithScroll.RightPanel>
+        </TwoPanelWithScroll>
       </Container>
     </Page>
   );
