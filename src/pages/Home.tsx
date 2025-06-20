@@ -51,7 +51,7 @@ export const Home = () => {
       <Container maxW="container.xl" px={8}>
         <TwoPanelWithScroll leftWidth="320px" rightWidth="1fr" gap="100px">
           <TwoPanelWithScroll.LeftPanel gap={6}>
-            <Stack position="relative" mt={10}>
+            <Stack position="relative" mt={10} mb={6}>
               <Image
                 src="/profile.jpg"
                 alt="Karthik Badam"
@@ -207,7 +207,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       height="200px"
     />
     <Stack gap={2} flex="1">
-      <Heading size="md" fontWeight="semibold" color="accent">
+      <Heading size="sm" fontWeight="medium">
         {post.title}
       </Heading>
       <Text fontSize="sm" lineClamp={3} color="gray.focusRing">
@@ -249,7 +249,7 @@ const PostCard = ({ post }: PostCardProps) => (
     h="100%"
   >
     <Stack gap={2}>
-      <Heading size="md" fontWeight="semibold" color="accent">
+      <Heading size="sm" fontWeight="medium">
         {post.title}
       </Heading>
       <Text color="gray.focusRing" fontSize="sm" lineClamp={2}>

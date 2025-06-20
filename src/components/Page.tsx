@@ -15,7 +15,7 @@ export const Page = ({ children }: PageProps) => {
       </Box>
 
       {/* Main Content */}
-      <Box as="main" flex="1" overflowY="auto">
+      <Box py={2} as="main" flex="1" overflowY="auto">
         {children}
       </Box>
 

@@ -38,7 +38,7 @@ const createComponents = (headingColor: string) => ({
       size="lg"
       mb={2}
       mt={8}
-      color="gray.focusRing"
+      color="accentSubtle"
       {...props}
     />
   ),
@@ -48,7 +48,7 @@ const createComponents = (headingColor: string) => ({
       size="md"
       mb={2}
       mt={8}
-      color="gray.focusRing"
+      color="accentSubtle"
       {...props}
     />
   ),

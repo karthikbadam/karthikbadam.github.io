@@ -13,7 +13,7 @@ In the world of Natural Language Processing (NLP), embeddings are like magical s
 
 ## What are Embeddings?
 
-Imagine you're in the Great Library of Tar Valon or the archives of the White Tower. Each book has its own unique characteristics: some are about the One Power, others about Allomancy, some focus on the history of Middle-earth, while others emphasize the Cosmere's magic systems. Embeddings work similarly - they capture these characteristics as numbers, allowing us to understand relationships between different pieces of text.
+Imagine you're in the Great Library of Tar Valon or the archives of the White Tower. Each book has its own unique characteristics: some are about the One Power, others about Allomancy, some focus on the history of Middle-earth, while others emphasize the Cosmere's magic systems. Embeddings work similarly by capturing these characteristics as numbers, allowing us to understand relationships between different pieces of text.
 
 ## Word2Vec: The Basic Magic System
 
@@ -34,7 +34,7 @@ print(model.wv.similarity('Kaladin', 'Frodo'))  # Similar heroes
 print(model.wv.similarity('Kaladin', 'Sauron'))  # Hero vs Villain
 ```
 
-Let's visualize how Word2Vec might represent some epic fantasy characters:
+If we show the Word2Vec numbers for some epic fantasy characters, they might look like this:
 
 <ScatterPlot
   data={[
@@ -48,7 +48,7 @@ Let's visualize how Word2Vec might represent some epic fantasy characters:
   title="Word2Vec: Character Relationships"
 />
 
-As we can see in the visualization, heroes naturally cluster together, while mentors form their own distinct group, and villains are cast far into the shadows. This mirrors how Word2Vec captures semantic relationships - characters with similar roles and traits end up closer in the embedding space, just like how similar words in a sentence tend to have similar embeddings.
+Heroes might naturally cluster together, while mentors form their own distinct group, and villains are cast far into the shadows. This captures how Word2Vec represents semantic relationships.
 
 ## BERT: The Advanced Magic System
 
@@ -96,11 +96,11 @@ Let's see how BERT might represent different fantasy concepts:
   title="BERT: Concept Relationships"
 />
 
-Looking at BERT's embeddings, we can see a clear separation between magic systems and artifacts, while maintaining relationships within each category. This is like how a skilled channeler can distinguish between different weaves of the One Power while understanding their underlying connections.
+If we plot BERT's embeddings, we might see a clear separation between magic systems and artifacts, while maintaining relationships within each category. This is like how a skilled channeler can distinguish between different weaves of the One Power while understanding their underlying connections.
 
 ## Visualizing Embeddings: The Art of Pattern Weaving
 
-Visualizing high-dimensional embeddings is like weaving the One Power into a spell or creating surges in the Cosmere - it transforms abstract concepts into tangible effects. Let's explore two powerful techniques:
+Visualizing high-dimensional embeddings is like weaving the One Power into a spell or creating surges in the Cosmere - it transforms abstract concepts into tangible effects. There are many ways to do this. Let's explore two powerful techniques:
 
 ### t-SNE: The Delicate Weave
 
@@ -195,10 +195,12 @@ umap_3d_results = reducer_3d.fit_transform(embeddings)
   title="UMAP: Fantasy Series Clustering"
 />
 
-In contrast to t-SNE, UMAP is like a powerful surge of Stormlight - it maintains both local and global structure more effectively. The clusters are more evenly distributed, and the relationships between different fantasy worlds are more clearly preserved. This makes it particularly useful when we need to understand both the fine details and the broader picture of our data.
+In contrast to t-SNE, UMAP is like a powerful surge of Stormlight. It can maintain both local and global structure more effectively. The clusters are more evenly distributed, and the relationships between different fantasy worlds are more clearly preserved. This makes it particularly useful when we need to understand both the fine details and the broader picture of our data.
 
 ## Conclusion
 
 Embeddings are powerful tools that help us understand and work with text in ways that were once thought impossible. Just as epic fantasy literature transports us to worlds of complex magic systems and deep lore, embeddings transform our understanding of language into a mathematical space where we can discover new relationships and insights.
 
-Remember, the next time you're reading about the Cosmere or Middle-earth, think about how each character, magic system, and artifact could be represented as an embedding - a point in a high-dimensional space that captures its essence and relationships with other elements in the story. The visualization techniques we've explored are like different ways of channeling the One Power or using Stormlight - each with its own strengths and characteristics, but all serving to make the abstract tangible and the complex understandable. 
+## Author's Note
+
+The embeddings and visualizations shown in this article are fictional. They are meant to represent the idea in a simple way. I would personally love to revisit this article with real embeddings and live magical weavings (i.e., charts) in the future!

@@ -19,7 +19,7 @@ export const Navbar = () => {
   });
 
   return (
-    <Box px={{ base: 4, md: 10 }} py={2} fontSize="sm">
+    <Box px={{ base: 4, md: 8 }} py={2} fontSize="sm">
       <Flex h={10} alignItems="center" justifyContent="space-between">
         <Link
           to="/"
