@@ -2,10 +2,10 @@ import {
   Badge,
   Box,
   Button,
-  Grid,
   Heading,
   HStack,
   Link,
+  List,
   Stack,
   Text,
   VStack,
@@ -19,9 +19,10 @@ import {
   TreeNode,
 } from "@kvis/packed-radial-tree";
 import { useEffect, useState } from "react";
-import { Page } from "../../components/Page";
-import { useColorMode } from "../../components/ui/color-mode";
 import { LuExternalLink } from "react-icons/lu";
+import { Page } from "../../components/Page";
+import { TwoPanelWithScroll } from "../../components/TwoPanelWithScroll";
+import { useColorMode } from "../../components/ui/color-mode";
 
 const parseUATData = async (): Promise<TreeNode> => {
   try {
@@ -119,6 +120,7 @@ export function PackedRadialTreeDemo() {
     showLabels: true,
     showTooltips: true,
     colorMode,
+    sizeRange: [3, 60],
   };
 
   // Load UAT data
@@ -150,7 +152,7 @@ export function PackedRadialTreeDemo() {
     };
 
     traverse(node);
-    return descendants.slice(0, 20); // Limit to first 20 for display
+    return descendants.slice(0, 10); // Limit to first 10 for display
   };
 
   const descendants = selectedNode ? getDescendants(selectedNode) : [];
@@ -178,15 +180,9 @@ export function PackedRadialTreeDemo() {
 
   return (
     <Page>
-      {/* TODO: Fix the height hardcoding - inconsistent height values between Grid maxH and Box h */}
-      <Grid
-        templateColumns={{ base: "1fr", lg: "2fr 55ch" }}
-        overflowY="auto"
-        px={7}
-        gap={6}
-      >
+      <TwoPanelWithScroll leftWidth="2fr" rightWidth="1fr" px={6} gap={6}>
         {/* Left Column - Visualization (Full Height) */}
-        <Box h="75vh">
+        <TwoPanelWithScroll.LeftPanel h="72vh">
           {uatData && (
             <PackedRadialTree
               data={uatData}
@@ -194,21 +190,14 @@ export function PackedRadialTreeDemo() {
               options={config}
             />
           )}
-        </Box>
-
+        </TwoPanelWithScroll.LeftPanel>
         {/* Right Column - Content */}
-        <Box
-          maxW="72ch"
-          mx="auto"
-          pr={10}
-          maxH="calc(100vh - 120px)"
-          overflow="auto"
-        >
-          <Stack gap={6}>
+        <TwoPanelWithScroll.RightPanel>
+          <Stack gap={6} maxW="72ch">
             {/* Header */}
             <Box>
-              <Heading as="h1" size="2xl" color="accent">
-                Packed Radial Tree
+              <Heading as="h1" size="2xl" color="accent" mb={2}>
+                Explore Astronomy Concepts with a Packed Radial Tree
               </Heading>
               <Text fontSize="sm" color="gray.focusRing" mb={4}>
                 Custom-designed visualization by Karthik Badam, May 26, 2025.
@@ -225,7 +214,7 @@ export function PackedRadialTreeDemo() {
             {/* Selected Node Details */}
             {selectedNode ? (
               <Box>
-                <Heading as="h2" size="md" mb={1}>
+                <Heading as="h2" size="md" mb={1} color="accentSubtle">
                   Selected Concept
                 </Heading>
                 <VStack gap={4} align="stretch">
@@ -291,11 +280,7 @@ export function PackedRadialTreeDemo() {
                           mb={2}
                           color="gray.focusRing"
                         >
-                          DESCENDANT CONCEPTS ({descendants.length}
-                          {getDescendants(selectedNode).length > 20
-                            ? `/${getDescendants(selectedNode).length}`
-                            : ""}
-                          )
+                          DESCENDANT CONCEPTS ({descendants.length})
                         </Text>
                         <Wrap>
                           {descendants.map((desc) => (
@@ -325,7 +310,7 @@ export function PackedRadialTreeDemo() {
               </Box>
             ) : (
               <Box>
-                <Heading as="h2" size="md" mb={1}>
+                <Heading as="h2" size="md" mb={1} color="accentSubtle">
                   Top-level Concepts
                 </Heading>
                 <Wrap gap={2}>
@@ -350,28 +335,47 @@ export function PackedRadialTreeDemo() {
 
             {/* Interaction Guide */}
             <Box>
-              <Heading as="h2" size="md" mb={1}>
+              <Heading as="h2" size="md" mb={1} color="accentSubtle">
                 Interaction Guide
               </Heading>
-              <VStack gap={2} align="stretch">
-                <Text fontSize="sm">
-                  • <strong>Click</strong> any node to select and explore
-                </Text>
-                <Text fontSize="sm">
-                  • <strong>Hover</strong> for detailed tooltips
-                </Text>
-                <Text fontSize="sm">
-                  • <strong>Zoom</strong> with mouse wheel or trackpad
-                </Text>
-                <Text fontSize="sm">
-                  • <strong>Pan</strong> by dragging the background
-                </Text>
-              </VStack>
+              <List.Root fontSize="sm" ml={4} gap={1}>
+                <List.Item>
+                  <Text as="span" fontWeight="semibold">
+                    Click
+                  </Text>{" "}
+                  any node to select. Click again to unselect.
+                </List.Item>
+                <List.Item>
+                  <Text as="span" fontWeight="semibold">
+                    Double-Click
+                  </Text>{" "}
+                  any node to zoom into the sub-hierarchy. Use the navigation
+                  buttons on top left to return to root.
+                </List.Item>
+                <List.Item>
+                  <Text as="span" fontWeight="semibold">
+                    Hover
+                  </Text>{" "}
+                  for detailed tooltips.
+                </List.Item>
+                <List.Item>
+                  <Text as="span" fontWeight="semibold">
+                    Zoom
+                  </Text>{" "}
+                  with mouse wheel or trackpad.
+                </List.Item>
+                <List.Item>
+                  <Text as="span" fontWeight="semibold">
+                    Pan
+                  </Text>{" "}
+                  by dragging the background.
+                </List.Item>
+              </List.Root>
             </Box>
 
             {/* Dataset Description */}
             <Box>
-              <Heading as="h2" size="md" mb={2}>
+              <Heading as="h2" size="md" mb={2} color="accentSubtle">
                 About the Dataset
               </Heading>
               <Text fontSize="sm" color="gray.fg">
@@ -385,10 +389,10 @@ export function PackedRadialTreeDemo() {
 
             {/* Visualization Explanation */}
             <Box>
-              <Heading as="h3" size="md" mb={2}>
+              <Heading as="h3" size="md" mb={2} color="accentSubtle">
                 How It Works
               </Heading>
-              <VStack gap={3} align="stretch">
+              <VStack gap={1} align="stretch">
                 <Text fontSize="sm" color="gray.fg">
                   <strong>Circle Size:</strong> Represents the number of
                   descendant concepts
@@ -404,8 +408,8 @@ export function PackedRadialTreeDemo() {
               </VStack>
             </Box>
           </Stack>
-        </Box>
-      </Grid>
+        </TwoPanelWithScroll.RightPanel>
+      </TwoPanelWithScroll>
     </Page>
   );
 }
