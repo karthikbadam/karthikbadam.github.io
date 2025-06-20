@@ -1,6 +1,6 @@
 [
   {
-    "title": "Explore Complex Hierarchies",
+    "title": "Explore Astronomy Concepts",
     "abstract": "An interactive visualization that renders hierarchical datasets as elegantly-arranged circular nodes in a radial layout. Explore the Unified Astronomy Thesaurus with this custom-designed visualization featuring packed circles, collision resolution, and navigation.",
     "link": "/packed-radial-tree",
     "image": {
