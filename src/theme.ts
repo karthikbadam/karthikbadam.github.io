@@ -7,7 +7,7 @@ export const accent = {
 };
 
 export const accentSubtle = {
-  light: "#a1a1aa",
+  light: "#0c5c72",
   dark: "#E8E0D0",
 };
 
