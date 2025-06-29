@@ -5,5 +5,5 @@ import { useColorMode } from "./color-mode";
 
 export function ColorModeIcon() {
   const { colorMode } = useColorMode();
-  return colorMode === "dark" ? <LuSun /> : <LuMoon />;
+  return colorMode === "dark" ? <LuMoon /> : <LuSun />;
 }
