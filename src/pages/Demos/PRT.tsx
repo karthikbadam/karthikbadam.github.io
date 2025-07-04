@@ -31,7 +31,7 @@ import { useCallback, useMemo } from "react";
 const HeaderSection = () => (
   <Box>
     <Heading as="h1" size="2xl" color="accent" mb={2}>
-      Explore Astronomy Concepts with a <br /> Packed Radial Tree
+      Explore Astronomy Concepts with a Packed Radial Tree
     </Heading>
     <Text fontSize="sm" color="gray.focusRing" mb={4}>
       Custom-designed visualization by Karthik Badam, May 26, 2025.
