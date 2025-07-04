@@ -66,17 +66,16 @@ const NodeDetails = ({ selectedNode, descendants }: NodeDetailsProps) => (
           >
             NAME
           </Text>
-          <Text fontSize="sm">
-            {selectedNode.label}{" "}
-            <Link
-              href={selectedNode.label && googleSearch(selectedNode.label)}
-              color="accent"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              (search)
-            </Link>
-          </Text>
+          <Link
+            href={selectedNode.label && googleSearch(selectedNode.label)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Text fontSize="sm" mr={1}>
+              {selectedNode.label}{" "}
+            </Text>
+            <LuExternalLink />
+          </Link>
         </Box>
         {selectedNode.metrics?.depth && (
           <Box>
@@ -126,7 +125,7 @@ const NodeDetails = ({ selectedNode, descendants }: NodeDetailsProps) => (
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button size="sm" variant="outline" colorScheme="blue">
+                  <Button size="sm" variant="outline">
                     {desc.label}
                     <LuExternalLink />
                   </Button>
@@ -157,7 +156,7 @@ const TopLevelConcepts = ({ topLevelNodes }: TopLevelConceptsProps) => (
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Button size="sm" variant="outline" colorScheme="blue">
+            <Button size="sm" variant="outline">
               {node.label}
               <LuExternalLink />
             </Button>
@@ -289,24 +288,22 @@ export function PackedRadialTreeDemo() {
     [colorMode]
   );
 
-  const handleNodeSelect = useCallback(
-    (node: TreeNode | undefined) => {
-      if (selectedNode?.id === node?.id) {
-        setSelectedNode(undefined);
-      } else if (!selectedNode) {
-        setSelectedNode(node);
+  const handleNodeSelect = useCallback((node: TreeNode | undefined) => {
+    setSelectedNode((current) => {
+      if (current?.id === node?.id) {
+        return undefined;
+      } else {
+        return node;
       }
-    },
-    [selectedNode]
-  );
+    });
+  }, []);
 
   const descendants = useMemo(
     () => (selectedNode ? getDescendants(selectedNode) : []),
     [selectedNode]
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const topLevelNodes = useMemo(() => getTopLevelNodes(uatData), [loading]);
+  const topLevelNodes = useMemo(() => getTopLevelNodes(uatData), [uatData]);
 
   if (loading) {
     return <LoadingState />;
