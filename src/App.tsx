@@ -6,6 +6,7 @@ import { About } from "./pages/About";
 import { Posts } from "./pages/Posts";
 import { Publications } from "./pages/Publications";
 import { PackedRadialTreeDemo } from "./pages/Demos/PRT";
+import { AstroDemo } from "./pages/Demos/AstroDemo";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/posts" element={<Posts />} />
           <Route path="/about" element={<About />} />
           <Route path="/packed-radial-tree" element={<PackedRadialTreeDemo />} />
+          <Route path="/astro-demo" element={<AstroDemo />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
         </Routes>
       </Router>
