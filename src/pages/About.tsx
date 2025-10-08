@@ -37,9 +37,9 @@ export const About = () => {
           <Heading color="accent">About Me</Heading>
           <Box>
             <Text fontSize="md" mb={4}>
-              Full-stack engineer building tools for data exploration and ML
-              training. Passionate about crafting intuitive interfaces that make
-              sense of complex data.
+              Full-stack engineer building tools for exploratory data analysis
+              and ML training. Passionate about crafting intuitive interfaces
+              that make sense of complex data.
             </Text>
             <Text fontSize="md" mb={4}>
               Get in touch:{" "}
