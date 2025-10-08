@@ -88,8 +88,9 @@ export const Home = () => {
                 </Tag.Root>
               </HStack>
               <Text fontSize="md" color="gray.fg" lineHeight="tall">
-                Creating tools to explore, explain, and augment datasets that
-                feed into large language and vision models.
+                Full-stack engineer building tools for exploratory data analysis
+                and ML training. Passionate about crafting intuitive interfaces
+                that make sense of complex data.
               </Text>
             </Stack>
           </TwoPanelWithScroll.LeftPanel>
