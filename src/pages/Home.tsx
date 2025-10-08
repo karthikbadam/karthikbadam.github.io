@@ -87,7 +87,7 @@ export const Home = () => {
                   <Tag.Label>Machine Learning</Tag.Label>
                 </Tag.Root>
               </HStack>
-              <Text fontSize="md" color="gray.fg" lineHeight="tall">
+              <Text fontSize="sm" color="gray.fg" lineHeight="tall">
                 Full-stack engineer building tools for exploratory data analysis
                 and ML training. Passionate about crafting intuitive interfaces
                 that make sense of complex data.
