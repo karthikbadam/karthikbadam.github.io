@@ -4,7 +4,6 @@ import { Group } from "@visx/group";
 import { scaleLinear, scaleOrdinal } from "@visx/scale";
 import { Bar } from "@visx/shape";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
-import { schemeCategory10 } from "d3";
 import React, { useMemo } from "react";
 import { useColorModeValue } from "./ui/color-mode";
 import type { AggregatedBucket } from "@/hooks/useTraceData";
@@ -23,8 +22,8 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
   const margin = { top: 20, right: 120, bottom: 60, left: 60 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
-  const gridColor = useColorModeValue("#dedede", "#222");
-  const axisColor = useColorModeValue("#666", "#aaa");
+  const gridColor = useColorModeValue("#E2E8F0", "#2D3748"); // gray.200 / gray.700
+  const axisColor = useColorModeValue("#4A5568", "#A0AEC0"); // gray.600 / gray.400
 
   // Get all span types for color scale
   const spanTypes = useMemo(() => {
@@ -35,9 +34,16 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
     return Array.from(types);
   }, [data]);
 
+  // D3 Observable 10 color scheme
+  const color1 = useColorModeValue("#6b8dd6", "#2f4a9e"); // Blue (lighter for light, darker for dark)
+  const color2 = useColorModeValue("#efb118", "#c98e0d"); // Gold/Yellow (darker for dark)
+  const color3 = useColorModeValue("#ff725c", "#d94e3a"); // Coral/Red (darker for dark)
+  const color4 = useColorModeValue("#6cc5b0", "#4d9a88"); // Teal (darker for dark)
+  const color5 = useColorModeValue("#3ca951", "#2d7d3c"); // Green (darker for dark)
+
   const colorScale = scaleOrdinal<string, string>()
     .domain(spanTypes)
-    .range(schemeCategory10);
+    .range([color1, color2, color3, color4, color5]);
 
   // X scale: continuous time scale based on actual span start times
   const minTime = data.length > 0 ? data[0].bucket_start : 0;
@@ -63,7 +69,7 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
   const { tooltipData, tooltipLeft, tooltipTop, showTooltip, hideTooltip } =
     useTooltip<{ type: string; duration: number }>();
 
-  const { containerRef, TooltipInPortal } = useTooltipInPortal({
+  const { containerRef, containerBounds, TooltipInPortal } = useTooltipInPortal({
     scroll: true,
     detectBounds: true,
   });
@@ -92,11 +98,10 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
                 height={barHeight}
                 fill={colorScale(type)}
                 onMouseMove={(event) => {
-                  const coords = { x: event.clientX, y: event.clientY };
                   showTooltip({
                     tooltipData: { type, duration },
-                    tooltipLeft: coords.x,
-                    tooltipTop: coords.y,
+                    tooltipLeft: event.clientX - containerBounds.left,
+                    tooltipTop: event.clientY - containerBounds.top,
                   });
                 }}
                 onMouseLeave={hideTooltip}

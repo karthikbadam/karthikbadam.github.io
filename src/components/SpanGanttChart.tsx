@@ -4,7 +4,6 @@ import { Group } from "@visx/group";
 import { scaleLinear, scaleOrdinal } from "@visx/scale";
 import { Bar } from "@visx/shape";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
-import { schemeCategory10 } from "d3";
 import React, { useMemo } from "react";
 import { useColorModeValue } from "./ui/color-mode";
 import type { TimeBucket, BucketSpan } from "@/hooks/useTraceData";
@@ -25,10 +24,10 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
   const margin = { top: 20, right: 120, bottom: 60, left: 100 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
-  const gridColor = useColorModeValue("#dedede", "#222");
-  const axisColor = useColorModeValue("#666", "#aaa");
-  const barStroke = useColorModeValue("#fff", "#000");
-  const labelFill = useColorModeValue("#000", "#fff");
+  const gridColor = useColorModeValue("#E2E8F0", "#2D3748"); // gray.200 / gray.700
+  const axisColor = useColorModeValue("#4A5568", "#A0AEC0"); // gray.600 / gray.400
+  const barStroke = useColorModeValue("#fff", "#1A202C"); // white / gray.900
+  const labelFill = useColorModeValue("#1A202C", "#F7FAFC"); // gray.900 / gray.50
 
   // Flatten all spans and assign them unique row indices
   const allSpans = useMemo(() => {
@@ -46,9 +45,16 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
     return Array.from(new Set(allSpans.map((s) => s.type)));
   }, [allSpans]);
 
+  // D3 Observable 10 color scheme
+  const color1 = useColorModeValue("#6b8dd6", "#2f4a9e"); // Blue (lighter for light, darker for dark)
+  const color2 = useColorModeValue("#efb118", "#c98e0d"); // Gold/Yellow (darker for dark)
+  const color3 = useColorModeValue("#ff725c", "#d94e3a"); // Coral/Red (darker for dark)
+  const color4 = useColorModeValue("#6cc5b0", "#4d9a88"); // Teal (darker for dark)
+  const color5 = useColorModeValue("#3ca951", "#2d7d3c"); // Green (darker for dark)
+
   const colorScale = scaleOrdinal<string, string>()
     .domain(spanTypes)
-    .range(schemeCategory10);
+    .range([color1, color2, color3, color4, color5]);
 
   // Time scale
   const minTime = data.length > 0 ? data[0].bucket_start : 0;
@@ -67,10 +73,12 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
   const { tooltipData, tooltipLeft, tooltipTop, showTooltip, hideTooltip } =
     useTooltip<BucketSpan>();
 
-  const { containerRef, TooltipInPortal } = useTooltipInPortal({
-    scroll: true,
-    detectBounds: true,
-  });
+  const { containerRef, containerBounds, TooltipInPortal } = useTooltipInPortal(
+    {
+      scroll: true,
+      detectBounds: true,
+    }
+  );
 
   return (
     <Box
@@ -124,18 +132,17 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
                   style={{ cursor: onSpanClick ? "pointer" : "default" }}
                   onClick={() => onSpanClick?.(span)}
                   onMouseMove={(event) => {
-                    const coords = { x: event.clientX, y: event.clientY };
                     showTooltip({
                       tooltipData: span,
-                      tooltipLeft: coords.x,
-                      tooltipTop: coords.y,
+                      tooltipLeft: event.clientX - containerBounds.left,
+                      tooltipTop: event.clientY - containerBounds.top,
                     });
                   }}
                   onMouseLeave={hideTooltip}
                 />
 
                 {/* Span label (if wide enough) */}
-                {spanWidth > 50 && (
+                {spanWidth > 80 && (
                   <text
                     x={spanX + 4}
                     y={spanY + rowHeight / 2}
