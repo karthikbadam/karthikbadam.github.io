@@ -1,0 +1,196 @@
+---
+title: "Visualizing OpenTelemetry Traces in ML Agent Systems"
+date: "2025-10-12"
+author: "Karthik Badam"
+description: "A deep dive into visualizing trace data from ML agents using OpenTelemetry, revealing performance patterns and the ReAct reasoning framework through interactive visualizations"
+---
+
+import { useState } from 'react';
+import { Box, SimpleGrid, Stat, Heading, Text } from '@chakra-ui/react';
+import { useTraceData } from '../../hooks/useTraceData';
+import { StackedBarChart } from '../../components/StackedBarChart';
+import { SpanGanttChart } from '../../components/SpanGanttChart';
+import { TraceIcicle } from '../../components/TraceIcicle';
+import { SpanInspector } from '../../components/SpanInspector';
+
+export function TraceVisualization() {
+  const { data, loading, error } = useTraceData();
+  const [selectedSpan, setSelectedSpan] = useState(null);
+
+  if (loading) return <Text>Loading trace data...</Text>;
+  if (error) return <Text color="red.500">Error: {error}</Text>;
+  if (!data) return null;
+
+  return (
+    <>
+      {/* Basic Statistics */}
+      <Box mb={8}>
+        <Heading size="lg" mb={4}>Trace Metrics</Heading>
+        <SimpleGrid columns={{ base: 2, md: 3 }} gap={4}>
+          <Stat.Root>
+            <Stat.Label>Elapsed Time</Stat.Label>
+            <Stat.ValueText>{data.metrics.total_duration.toFixed(2)}s</Stat.ValueText>
+            <Stat.HelpText>Actual trace runtime</Stat.HelpText>
+          </Stat.Root>
+          <Stat.Root>
+            <Stat.Label>Total Spans</Stat.Label>
+            <Stat.ValueText>{data.metrics.total_spans}</Stat.ValueText>
+          </Stat.Root>
+          <Stat.Root>
+            <Stat.Label>LLM Calls</Stat.Label>
+            <Stat.ValueText>{data.metrics.llm_call_count}</Stat.ValueText>
+          </Stat.Root>
+          <Stat.Root>
+            <Stat.Label>Total Tokens</Stat.Label>
+            <Stat.ValueText>{data.metrics.total_tokens.toLocaleString()}</Stat.ValueText>
+          </Stat.Root>
+          <Stat.Root>
+            <Stat.Label>Avg Step Duration</Stat.Label>
+            <Stat.ValueText>{data.metrics.avg_step_duration.toFixed(2)}s</Stat.ValueText>
+          </Stat.Root>
+          <Stat.Root>
+            <Stat.Label>Max Nesting Depth</Stat.Label>
+            <Stat.ValueText>{data.metrics.max_nesting_depth}</Stat.ValueText>
+          </Stat.Root>
+        </SimpleGrid>
+      </Box>
+
+      {/* Aggregated Bar Chart */}
+      <Box mb={8}>
+        <Heading size="lg" mb={4}>Activity Over Time (Aggregated)</Heading>
+        <Text mb={4}>
+          This stacked bar chart shows how different span types contribute to the overall execution time, grouped into 10-second buckets.
+        </Text>
+        <StackedBarChart data={data.buckets.aggregated} />
+      </Box>
+
+      {/* Gantt Chart for Individual Spans */}
+      <Box mb={8}>
+        <Heading size="lg" mb={4}>Detailed Span Timeline (Gantt View)</Heading>
+        <Text mb={4}>
+          This Gantt chart shows each span's exact timing and duration. Click on any span to inspect its details.
+        </Text>
+        <SpanGanttChart 
+          data={data.buckets.individual} 
+          onSpanClick={(span) => setSelectedSpan(span)}
+        />
+      </Box>
+
+      {/* Icicle Chart */}
+      <Box mb={8}>
+        <Heading size="lg" mb={4}>Hierarchical Trace View</Heading>
+        <Text mb={4}>
+          This icicle chart reveals the 7-layer hierarchy of the trace, from execution phases down to individual ReAct components.
+        </Text>
+        <TraceIcicle 
+          hierarchyData={data.icicle}
+          onNodeClick={(node) => setSelectedSpan(node)}
+        />
+      </Box>
+
+      {/* Span Inspector */}
+      <SpanInspector 
+        selectedSpan={selectedSpan}
+        onClose={() => setSelectedSpan(null)}
+      />
+    </>
+  );
+}
+
+# Visualizing OpenTelemetry Traces in ML Agent Systems
+
+[Introduction: Brief overview of OpenTelemetry traces and their importance in understanding ML agent behavior]
+
+## What Are Traces?
+
+[Explanation of traces, spans, and why they matter for ML agents]
+
+## The Dataset: SWEbench Traces
+
+[Brief description of the SWEbench dataset and what traces we're analyzing]
+
+<TraceVisualization />
+
+## Section 1: Basic Stats & Simple Charts
+
+[Analysis of basic metrics: elapsed time, span count, LLM calls, tokens, etc.]
+
+### Activity Over Time (Aggregated View)
+
+[Explanation of the stacked bar chart showing span types over time buckets]
+
+**Key Observations:**
+- [Observation about span type distribution]
+- [Observation about timing patterns]
+- [Observation about resource usage]
+
+## Section 2: Detailed Timeline & Span Inspection
+
+[Analysis of the Gantt chart showing individual span execution]
+
+### Understanding Individual Spans
+
+[Discussion of span-level details, clicking to inspect, and what we learn from granular timing]
+
+**Performance Insights:**
+- [Insight about bottlenecks]
+- [Insight about execution patterns]
+- [Insight about errors or anomalies]
+
+## Section 3: Hierarchical Trace Structure
+
+[Introduction to the 7-layer icicle hierarchy]
+
+### The Multi-Layer Hierarchy
+
+**Layer 1: Root** - [Description]  
+**Layer 2: Execution Phases** - [Description]  
+**Layer 3: Span Types** - [Description]  
+**Layer 4: Individual Spans** - [Description]  
+**Layer 5: ReAct Components** - [Description]  
+**Layer 6: Message Exchange** - [Description]  
+**Layer 7: Detailed Operations** - [Description]
+
+**Architectural Insights:**
+- [Insight about system structure]
+- [Insight about nesting and complexity]
+- [Insight about phase distribution]
+
+## Section 4: The ReAct Pattern Revealed
+
+[The big reveal: these traces follow the ReAct (Reasoning + Acting) pattern]
+
+### What is ReAct?
+
+[Explanation of the ReAct pattern: Thought → Action → Observation cycles]
+
+### Visualizing ReAct in Traces
+
+[How the icicle chart reveals ReAct components through Layer 5]
+
+**ReAct Pattern Analysis:**
+- [Analysis of thought phases]
+- [Analysis of action phases (LLM + Code)]
+- [Analysis of observation phases]
+- [Analysis of cycle patterns]
+
+### Decision-Making Patterns
+
+[Discussion of how agents make decisions, balance thinking vs. acting, handle loops]
+
+## Key Takeaways
+
+1. [Takeaway about trace visualization value]
+2. [Takeaway about performance optimization]
+3. [Takeaway about ReAct pattern ubiquity]
+4. [Takeaway about observability]
+5. [Takeaway about debugging and improvement]
+
+## Conclusion
+
+[Summary of insights gained and the power of trace visualization for ML agents]
+
+---
+
+*Technical note: Visualizations built with React, visx, and D3. Data preprocessed from OpenTelemetry traces using Python.*
+
