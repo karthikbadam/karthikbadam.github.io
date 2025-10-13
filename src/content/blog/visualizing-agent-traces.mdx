@@ -6,92 +6,86 @@ description: "A deep dive into visualizing trace data from ML agents using OpenT
 ---
 
 import { useState } from 'react';
-import { Box, SimpleGrid, Stat, Heading, Text } from '@chakra-ui/react';
+import { Box, SimpleGrid, Stat, Text } from '@chakra-ui/react';
 import { useTraceData } from '../../hooks/useTraceData';
 import { StackedBarChart } from '../../components/StackedBarChart';
-import { SpanGanttChart } from '../../components/SpanGanttChart';
-import { TraceIcicle } from '../../components/TraceIcicle';
-import { SpanInspector } from '../../components/SpanInspector';
+import { GanttChart } from '../../components/GanttChart';
+import { IcicleChart } from '../../components/IcicleChart';
+import { RecordInspector } from '../../components/RecordInspector';
 
-export function TraceVisualization() {
+export function TraceMetrics() {
   const { data, loading, error } = useTraceData();
-  const [selectedSpan, setSelectedSpan] = useState(null);
+  if (loading) return <Text>Loading...</Text>;
+  if (error || !data) return null;
+  return (
+    <SimpleGrid columns={{ base: 2, md: 3 }} gap={4} my={6}>
+      <Stat.Root>
+        <Stat.Label>Elapsed Time</Stat.Label>
+        <Stat.ValueText>{data.metrics.total_duration.toFixed(2)}s</Stat.ValueText>
+      </Stat.Root>
+      <Stat.Root>
+        <Stat.Label>Total Spans</Stat.Label>
+        <Stat.ValueText>{data.metrics.total_spans}</Stat.ValueText>
+      </Stat.Root>
+      <Stat.Root>
+        <Stat.Label>LLM Calls</Stat.Label>
+        <Stat.ValueText>{data.metrics.llm_call_count}</Stat.ValueText>
+      </Stat.Root>
+      <Stat.Root>
+        <Stat.Label>Total Tokens</Stat.Label>
+        <Stat.ValueText>{data.metrics.total_tokens.toLocaleString()}</Stat.ValueText>
+      </Stat.Root>
+      <Stat.Root>
+        <Stat.Label>Avg Step Duration</Stat.Label>
+        <Stat.ValueText>{data.metrics.avg_step_duration.toFixed(2)}s</Stat.ValueText>
+      </Stat.Root>
+      <Stat.Root>
+        <Stat.Label>Max Depth</Stat.Label>
+        <Stat.ValueText>{data.metrics.max_nesting_depth}</Stat.ValueText>
+      </Stat.Root>
+    </SimpleGrid>
+  );
+}
 
-  if (loading) return <Text>Loading trace data...</Text>;
-  if (error) return <Text color="red.500">Error: {error}</Text>;
-  if (!data) return null;
+export function DurationChart() {
+  const { data, loading } = useTraceData();
+  if (loading || !data) return null;
+  return <StackedBarChart data={data.buckets.aggregated} />;
+}
 
+export function CountChart() {
+  const { data, loading } = useTraceData();
+  if (loading || !data) return null;
+  return <StackedBarChart data={data.buckets.span_counts} metric="count" />;
+}
+
+export function TimelineChart() {
+  const { data, loading } = useTraceData();
+  const [selected, setSelected] = useState(null);
+  if (loading || !data) return null;
   return (
     <>
-      {/* Basic Statistics */}
-      <Box mb={8}>
-        <Heading size="lg" mb={4}>Trace Metrics</Heading>
-        <SimpleGrid columns={{ base: 2, md: 3 }} gap={4}>
-          <Stat.Root>
-            <Stat.Label>Elapsed Time</Stat.Label>
-            <Stat.ValueText>{data.metrics.total_duration.toFixed(2)}s</Stat.ValueText>
-            <Stat.HelpText>Actual trace runtime</Stat.HelpText>
-          </Stat.Root>
-          <Stat.Root>
-            <Stat.Label>Total Spans</Stat.Label>
-            <Stat.ValueText>{data.metrics.total_spans}</Stat.ValueText>
-          </Stat.Root>
-          <Stat.Root>
-            <Stat.Label>LLM Calls</Stat.Label>
-            <Stat.ValueText>{data.metrics.llm_call_count}</Stat.ValueText>
-          </Stat.Root>
-          <Stat.Root>
-            <Stat.Label>Total Tokens</Stat.Label>
-            <Stat.ValueText>{data.metrics.total_tokens.toLocaleString()}</Stat.ValueText>
-          </Stat.Root>
-          <Stat.Root>
-            <Stat.Label>Avg Step Duration</Stat.Label>
-            <Stat.ValueText>{data.metrics.avg_step_duration.toFixed(2)}s</Stat.ValueText>
-          </Stat.Root>
-          <Stat.Root>
-            <Stat.Label>Max Nesting Depth</Stat.Label>
-            <Stat.ValueText>{data.metrics.max_nesting_depth}</Stat.ValueText>
-          </Stat.Root>
-        </SimpleGrid>
-      </Box>
+      <GanttChart data={data.buckets.individual} onItemClick={setSelected} />
+      <RecordInspector 
+        data={selected}
+        keys={['name', 'type', 'span_id', 'duration', 'tokens', 'level', 'parent_id', 'attributes']}
+        onClose={() => setSelected(null)}
+      />
+    </>
+  );
+}
 
-      {/* Aggregated Bar Chart */}
-      <Box mb={8}>
-        <Heading size="lg" mb={4}>Activity Over Time (Aggregated)</Heading>
-        <Text mb={4}>
-          This stacked bar chart shows how different span types contribute to the overall execution time, grouped into 10-second buckets.
-        </Text>
-        <StackedBarChart data={data.buckets.aggregated} />
-      </Box>
-
-      {/* Gantt Chart for Individual Spans */}
-      <Box mb={8}>
-        <Heading size="lg" mb={4}>Detailed Span Timeline (Gantt View)</Heading>
-        <Text mb={4}>
-          This Gantt chart shows each span's exact timing and duration. Click on any span to inspect its details.
-        </Text>
-        <SpanGanttChart 
-          data={data.buckets.individual} 
-          onSpanClick={(span) => setSelectedSpan(span)}
-        />
-      </Box>
-
-      {/* Icicle Chart */}
-      <Box mb={8}>
-        <Heading size="lg" mb={4}>Hierarchical Trace View</Heading>
-        <Text mb={4}>
-          This icicle chart reveals the 7-layer hierarchy of the trace, from execution phases down to individual ReAct components.
-        </Text>
-        <TraceIcicle 
-          hierarchyData={data.icicle}
-          onNodeClick={(node) => setSelectedSpan(node)}
-        />
-      </Box>
-
-      {/* Span Inspector */}
-      <SpanInspector 
-        selectedSpan={selectedSpan}
-        onClose={() => setSelectedSpan(null)}
+export function HierarchyChart() {
+  const { data, loading } = useTraceData();
+  const [selected, setSelected] = useState(null);
+  if (loading || !data) return null;
+  return (
+    <>
+      <IcicleChart data={data.icicle} onNodeClick={setSelected} />
+      <RecordInspector 
+        data={selected}
+        keys={['name', 'layer', 'duration', 'tokens', 'span_count', 'attributes']}
+        onClose={() => setSelected(null)}
       />
     </>
   );
@@ -105,58 +99,57 @@ export function TraceVisualization() {
 
 [Explanation of traces, spans, and why they matter for ML agents]
 
-## The Dataset: SWEbench Traces
+## The Dataset: SWEbench Agent Traces
 
 [Brief description of the SWEbench dataset and what traces we're analyzing]
 
-<TraceVisualization />
-
-## Section 1: Basic Stats & Simple Charts
+<TraceMetrics />
 
 [Analysis of basic metrics: elapsed time, span count, LLM calls, tokens, etc.]
 
-### Activity Over Time (Aggregated View)
+## Activity Over Time
+
+<DurationChart />
 
 [Explanation of the stacked bar chart showing span types over time buckets]
 
-**Key Observations:**
-- [Observation about span type distribution]
-- [Observation about timing patterns]
-- [Observation about resource usage]
+[Discussion of activity patterns and what they reveal about agent behavior]
 
-## Section 2: Detailed Timeline & Span Inspection
+## Span Activity Patterns
 
-[Analysis of the Gantt chart showing individual span execution]
+<CountChart />
 
-### Understanding Individual Spans
+[Analysis of span count patterns and activity rhythms]
 
-[Discussion of span-level details, clicking to inspect, and what we learn from granular timing]
+## Individual Span Timeline
 
-**Performance Insights:**
-- [Insight about bottlenecks]
-- [Insight about execution patterns]
-- [Insight about errors or anomalies]
+<TimelineChart />
 
-## Section 3: Hierarchical Trace Structure
+[Discussion of the Gantt chart and what we learn from granular timing]
 
-[Introduction to the 7-layer icicle hierarchy]
+[Analysis of parallelism, sequential execution, and optimization opportunities]
 
-### The Multi-Layer Hierarchy
+## The Hidden Hierarchy
 
-**Layer 1: Root** - [Description]  
-**Layer 2: Execution Phases** - [Description]  
-**Layer 3: Span Types** - [Description]  
-**Layer 4: Individual Spans** - [Description]  
-**Layer 5: ReAct Components** - [Description]  
-**Layer 6: Message Exchange** - [Description]  
-**Layer 7: Detailed Operations** - [Description]
+<HierarchyChart />
 
-**Architectural Insights:**
-- [Insight about system structure]
-- [Insight about nesting and complexity]
-- [Insight about phase distribution]
+[Introduction to the hierarchical icicle visualization]
 
-## Section 4: The ReAct Pattern Revealed
+### The Seven Layers
+
+**Layer 0: Root** - [Description]
+
+**Layer 1: Execution Phases** - [Description]
+
+**Layer 2: Span Types** - [Description]
+
+**Layer 3: Individual Spans** - [Description]
+
+**Layer 4: ReAct Components** - [Description]
+
+**Layers 5-6: Detailed Breakdown** - [Description]
+
+## The ReAct Pattern Revealed
 
 [The big reveal: these traces follow the ReAct (Reasoning + Acting) pattern]
 
@@ -164,27 +157,23 @@ export function TraceVisualization() {
 
 [Explanation of the ReAct pattern: Thought → Action → Observation cycles]
 
-### Visualizing ReAct in Traces
+### Visualizing ReAct in Action
 
-[How the icicle chart reveals ReAct components through Layer 5]
+[How the icicle chart reveals ReAct components and cycles]
 
-**ReAct Pattern Analysis:**
-- [Analysis of thought phases]
-- [Analysis of action phases (LLM + Code)]
-- [Analysis of observation phases]
-- [Analysis of cycle patterns]
+[Analysis of the rhythm and timing of ReAct patterns]
 
-### Decision-Making Patterns
+## Key Insights
 
-[Discussion of how agents make decisions, balance thinking vs. acting, handle loops]
+1. **Temporal Patterns Matter**: [Insight]
 
-## Key Takeaways
+2. **LLM Calls Dominate**: [Insight]
 
-1. [Takeaway about trace visualization value]
-2. [Takeaway about performance optimization]
-3. [Takeaway about ReAct pattern ubiquity]
-4. [Takeaway about observability]
-5. [Takeaway about debugging and improvement]
+3. **ReAct is Everywhere**: [Insight]
+
+4. **Hierarchy Reveals Structure**: [Insight]
+
+5. **Observability Enables Optimization**: [Insight]
 
 ## Conclusion
 
@@ -192,5 +181,5 @@ export function TraceVisualization() {
 
 ---
 
-*Technical note: Visualizations built with React, visx, and D3. Data preprocessed from OpenTelemetry traces using Python.*
+*Technical note: Visualizations built with React, visx, and D3. Data preprocessed from OpenTelemetry traces using Python. All charts are interactive - hover for details, click to inspect.*
 

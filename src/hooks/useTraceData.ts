@@ -50,6 +50,13 @@ export interface BucketSpan {
   full_duration: number;
   start_offset: number;
   start_time: number;
+  parent_id?: string | null;
+  level?: number;
+  parent_name?: string | null;
+  tokens?: number | null;
+  has_children?: boolean;
+  child_count?: number;
+  attributes?: Record<string, any>;
 }
 
 export interface TimeBucket {
@@ -68,6 +75,7 @@ export interface AggregatedBucket {
 
 export interface BucketData {
   aggregated: AggregatedBucket[];
+  span_counts: AggregatedBucket[];  // Same structure, but counts instead of durations
   individual: TimeBucket[];
   bucket_size: number;
   min_start: number;
@@ -110,19 +118,17 @@ export const useTraceData = (): UseTraceDataReturn => {
         setLoading(true);
         setError(null);
 
-        const [metrics, hierarchy, react, buckets, icicle] = await Promise.all([
-          fetch('/data/trace-metrics.json').then(r => r.json()),
-          fetch('/data/trace-hierarchy.json').then(r => r.json()),
-          fetch('/data/trace-react-features.json').then(r => r.json()),
-          fetch('/data/trace-buckets.json').then(r => r.json()),
+        // Load consolidated files
+        const [traceData, icicle] = await Promise.all([
+          fetch('/data/trace-data.json').then(r => r.json()),
           fetch('/data/trace-icicle.json').then(r => r.json()),
         ]);
 
         setData({
-          metrics,
-          hierarchy,
-          react,
-          buckets,
+          metrics: traceData.metrics,
+          hierarchy: traceData.hierarchy,
+          react: {}, // React features are embedded in the hierarchy now
+          buckets: traceData.buckets,
           icicle,
         });
       } catch (err) {

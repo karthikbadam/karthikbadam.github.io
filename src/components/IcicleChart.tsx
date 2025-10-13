@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import { Group } from "@visx/group";
 import { hierarchy, partition, HierarchyRectangularNode } from "d3-hierarchy";
-import { scaleOrdinal } from "@visx/scale";
+import { interpolateBuPu } from "d3-scale-chromatic";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import React, { useMemo } from "react";
 import { useColorModeValue } from "./ui/color-mode";
@@ -14,16 +14,16 @@ interface NodeData {
   [key: string]: unknown;
 }
 
-interface TraceIcicleProps {
-  hierarchyData: IcicleNode;
+interface IcicleChartProps {
+  data: IcicleNode;
   width?: number;
   height?: number;
   onNodeClick?: (node: NodeData) => void;
-  metric?: "duration" | "tokens";
+  metric?: string;
 }
 
-export const TraceIcicle: React.FC<TraceIcicleProps> = ({
-  hierarchyData,
+export const IcicleChart: React.FC<IcicleChartProps> = ({
+  data,
   width = 1000,
   height = 600,
   onNodeClick,
@@ -37,7 +37,7 @@ export const TraceIcicle: React.FC<TraceIcicleProps> = ({
 
   // Create hierarchy and partition layout
   const root = useMemo(() => {
-    const hierarchyRoot = hierarchy(hierarchyData)
+    const hierarchyRoot = hierarchy(data)
       .sum((d) => {
         // Use the specified metric from attributes, fallback to 1
         const value = d.attributes?.[metric];
@@ -50,70 +50,32 @@ export const TraceIcicle: React.FC<TraceIcicleProps> = ({
       .padding(1);
 
     return partitionLayout(hierarchyRoot);
-  }, [hierarchyData, innerWidth, innerHeight, metric]);
+  }, [data, innerWidth, innerHeight, metric]);
 
-  // D3 Observable 10 color scheme
-  const phaseColor1 = useColorModeValue("#6b8dd6", "#2f4a9e"); // Blue (lighter for light, darker for dark)
-  const phaseColor2 = useColorModeValue("#efb118", "#c98e0d"); // Gold/Yellow (darker for dark)
-  const phaseColor3 = useColorModeValue("#ff725c", "#d94e3a"); // Coral/Red (darker for dark)
-  const phaseColor4 = useColorModeValue("#6cc5b0", "#4d9a88"); // Teal (darker for dark)
-  const fallbackColor = useColorModeValue("#9498a0", "#6b6f77"); // Gray (darker for dark)
+  const isDarkMode = useColorModeValue(false, true);
 
-  const categoryColor1 = useColorModeValue("#6b8dd6", "#2f4a9e"); // Blue (lighter for light, darker for dark)
-  const categoryColor2 = useColorModeValue("#efb118", "#c98e0d"); // Gold/Yellow (darker for dark)
-  const categoryColor3 = useColorModeValue("#ff725c", "#d94e3a"); // Coral/Red (darker for dark)
-  const categoryColor4 = useColorModeValue("#6cc5b0", "#4d9a88"); // Teal (darker for dark)
-  const categoryColor5 = useColorModeValue("#3ca951", "#2d7d3c"); // Green (darker for dark)
+  // Find max depth for normalization
+  const maxDepth = useMemo(() => {
+    let max = 0;
+    root.each((node) => {
+      if (node.depth > max) max = node.depth;
+    });
+    return max;
+  }, [root]);
 
-  // Blue gradient for hierarchy depth (based on Observable blue)
-  const depthColor0 = useColorModeValue("#d4e3f7", "#1e2f4a"); // Lightest / Darkest
-  const depthColor1 = useColorModeValue("#b3d1f0", "#253a5e"); // Very light / Very dark
-  const depthColor2 = useColorModeValue("#8bb5e5", "#2b4572"); // Light / Dark
-  const depthColor3 = useColorModeValue("#6b8dd6", "#2f4a9e"); // Medium light / Dark
-  const depthColor4 = useColorModeValue("#4269d0", "#3a5cba"); // Base / Darker
-  const depthColor5 = useColorModeValue("#3a5cba", "#4269d0"); // Medium dark / Base
-  const depthColor6 = useColorModeValue("#2f4a9e", "#6b8dd6"); // Darkest / Medium light
-
-  // Color scale based on node attributes - using Chakra UI colors
+  // Color scale based on node depth using continuous D3 BuPu interpolation
   const getNodeColor = (node: HierarchyRectangularNode<IcicleNode>): string => {
-    const data = node.data;
+    // Normalize depth to 0-1 range
+    const normalizedDepth = maxDepth > 0 ? node.depth / maxDepth : 0;
 
-    // Color by phase if available
-    if (data.attributes?.react_phase) {
-      const phaseColors: Record<string, string> = {
-        thought: phaseColor1,
-        action_llm: phaseColor2,
-        action_code: phaseColor3,
-        observation: phaseColor4,
-      };
-      return phaseColors[data.attributes.react_phase] || fallbackColor;
-    }
+    // In dark mode, reverse the scale (1 - normalizedDepth)
+    const t = isDarkMode ? 1 - normalizedDepth : normalizedDepth;
 
-    // Color by category type
-    if (data.attributes?.type) {
-      const typeColors = scaleOrdinal<string, string>()
-        .domain(["AGENT", "CHAIN", "LLM", "TOOL", "INTERNAL"])
-        .range([
-          categoryColor1,
-          categoryColor2,
-          categoryColor3,
-          categoryColor4,
-          categoryColor5,
-        ]);
-      return typeColors(data.attributes.type);
-    }
+    // Use D3's BuPu interpolator with a range that avoids the very lightest colors
+    // Map to 0.2-0.9 range for better visibility
+    const scaledT = 0.2 + t * 0.7;
 
-    // Color by depth - using blue shades for hierarchy depth
-    const depthColors = [
-      depthColor0,
-      depthColor1,
-      depthColor2,
-      depthColor3,
-      depthColor4,
-      depthColor5,
-      depthColor6,
-    ];
-    return depthColors[data.layer % depthColors.length];
+    return interpolateBuPu(scaledT);
   };
 
   const { tooltipData, tooltipLeft, tooltipTop, showTooltip, hideTooltip } =
