@@ -119,7 +119,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
             const itemY = index * (rowHeight + rowGap);
 
             return (
-              <Group key={`${item.span_id}-${index}`}>
+              <Group key={`gantt-item-${index}`}>
                 {/* Item bar */}
                 <Bar
                   x={itemX}
@@ -142,7 +142,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 />
 
                 {/* Item label (if wide enough) */}
-                {itemWidth > 80 && (
+                {itemWidth > 40 && (
                   <text
                     x={itemX + 4}
                     y={itemY + rowHeight / 2}
@@ -151,8 +151,8 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                     fill={labelFill}
                     style={{ pointerEvents: "none" }}
                   >
-                    {item.name.length > 20
-                      ? item.name.substring(0, 17) + "..."
+                    {item.name.length > itemWidth / 5
+                      ? item.name.substring(0, 7) + "..."
                       : item.name}
                   </text>
                 )}
@@ -188,7 +188,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
           {/* Y-axis labels */}
           {allItems.map((item, index) => (
             <text
-              key={`label-${index}`}
+              key={`gantt-label-${index}`}
               x={-10}
               y={index * (rowHeight + rowGap) + rowHeight / 2}
               dy=".35em"
@@ -204,7 +204,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
           {/* Legend */}
           <Group left={innerWidth + 20} top={0}>
             {itemTypes.map((type, i) => (
-              <Group key={type} top={i * 20}>
+              <Group key={`gantt-legend-${i}`} top={i * 20}>
                 <rect width={12} height={12} fill={colorScale(type)} />
                 <text
                   x={16}

@@ -91,6 +91,7 @@ export const IcicleChart: React.FC<IcicleChartProps> = ({
   // Render icicle rectangles
   const renderNodes = () => {
     const nodes: React.ReactNode[] = [];
+    let nodeIndex = 0;
 
     root.each((node) => {
       if (node.x1 - node.x0 < 1 || node.y1 - node.y0 < 1) return; // Skip tiny nodes
@@ -103,7 +104,7 @@ export const IcicleChart: React.FC<IcicleChartProps> = ({
       const showText = rectWidth > 50 && rectHeight > 15;
 
       nodes.push(
-        <Group key={`${node.data.name}-${node.depth}`}>
+        <Group key={`node-${nodeIndex++}`}>
           <rect
             x={node.x0}
             y={node.y0}
