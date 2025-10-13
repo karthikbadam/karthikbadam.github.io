@@ -88,12 +88,12 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
       let yOffset = 0;
 
       return (
-        <Group key={bucketIndex} left={xScale(bucketStartTime)}>
-          {Object.entries(bucket.by_type).map(([type, value]) => {
+        <Group key={`bucket-${bucketIndex}`} left={xScale(bucketStartTime)}>
+          {Object.entries(bucket.by_type).map(([type, value], typeIndex) => {
             const barHeight = innerHeight - yScale(value);
             const bar = (
               <Bar
-                key={type}
+                key={`bar-${bucketIndex}-${typeIndex}`}
                 x={0}
                 y={yScale(value) - yOffset}
                 width={bucketWidth}
@@ -122,7 +122,7 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
     return (
       <Group left={innerWidth + 20} top={0}>
         {spanTypes.map((type, i) => (
-          <Group key={type} top={i * 20}>
+          <Group key={`legend-${i}`} top={i * 20}>
             <rect width={12} height={12} fill={colorScale(type)} />
             <text
               x={16}
