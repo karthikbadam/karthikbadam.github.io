@@ -12,12 +12,14 @@ interface StackedBarChartProps {
   data: AggregatedBucket[];
   width?: number;
   height?: number;
+  metric?: "duration" | "count";
 }
 
 export const StackedBarChart: React.FC<StackedBarChartProps> = ({
   data,
   width = 800,
   height = 400,
+  metric = "duration",
 }) => {
   const margin = { top: 20, right: 120, bottom: 60, left: 60 };
   const innerWidth = width - margin.left - margin.right;
@@ -54,20 +56,20 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
     .range([0, innerWidth])
     .nice();
 
-  // Y scale: duration
-  const maxDuration = useMemo(() => {
+  // Y scale: duration or count
+  const maxValue = useMemo(() => {
     return Math.max(...data.map(bucket => {
       return Object.values(bucket.by_type).reduce((sum, val) => sum + val, 0);
     }));
   }, [data]);
 
   const yScale = scaleLinear<number>()
-    .domain([0, maxDuration])
+    .domain([0, maxValue])
     .range([innerHeight, 0])
     .nice();
 
   const { tooltipData, tooltipLeft, tooltipTop, showTooltip, hideTooltip } =
-    useTooltip<{ type: string; duration: number }>();
+    useTooltip<{ type: string; value: number }>();
 
   const { containerRef, containerBounds, TooltipInPortal } = useTooltipInPortal({
     scroll: true,
@@ -87,19 +89,19 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
 
       return (
         <Group key={bucketIndex} left={xScale(bucketStartTime)}>
-          {Object.entries(bucket.by_type).map(([type, duration]) => {
-            const barHeight = innerHeight - yScale(duration);
+          {Object.entries(bucket.by_type).map(([type, value]) => {
+            const barHeight = innerHeight - yScale(value);
             const bar = (
               <Bar
                 key={type}
                 x={0}
-                y={yScale(duration) - yOffset}
+                y={yScale(value) - yOffset}
                 width={bucketWidth}
                 height={barHeight}
                 fill={colorScale(type)}
                 onMouseMove={(event) => {
                   showTooltip({
-                    tooltipData: { type, duration },
+                    tooltipData: { type, value },
                     tooltipLeft: event.clientX - containerBounds.left,
                     tooltipTop: event.clientY - containerBounds.top,
                   });
@@ -203,7 +205,7 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
               textAnchor: 'end',
               dx: '-0.5em',
             })}
-            label="Duration (s)"
+            label={metric === "duration" ? "Duration (s)" : "Span Count"}
             labelProps={{
               fontSize: 12,
               fill: axisColor,
@@ -235,7 +237,10 @@ export const StackedBarChart: React.FC<StackedBarChartProps> = ({
           <div>
             Type: {tooltipData.type}
             <br />
-            Duration: {tooltipData.duration.toFixed(3)}s
+            {metric === "duration" 
+              ? `Duration: ${tooltipData.value.toFixed(3)}s`
+              : `Count: ${tooltipData.value}`
+            }
           </div>
         </TooltipInPortal>
       )}

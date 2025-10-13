@@ -270,16 +270,24 @@ def create_time_buckets(flat_spans: List[Dict], bucket_size: float = 10.0) -> Di
             
             # Check if span starts in this bucket
             if bucket_start <= span_start < bucket_end:
-                # Store the span with its actual start offset and duration
-                spans_in_bucket.append({
+                # Store the full span data with additional bucket-specific fields
+                span_copy = {
                     'span_id': span['span_id'],
                     'name': span['name'],
                     'type': span['type'],
-                    'duration': span['duration'],  # Use full duration, not overlap
+                    'duration': span['duration'],
                     'full_duration': span['duration'],
-                    'start_offset': span_start - bucket_start,  # Offset from bucket start
+                    'start_offset': span_start - bucket_start,
                     'start_time': span_start,
-                })
+                    'parent_id': span.get('parent_id'),
+                    'level': span.get('level'),
+                    'parent_name': span.get('parent_name'),
+                    'tokens': span.get('tokens'),
+                    'has_children': span.get('has_children', False),
+                    'child_count': span.get('child_count', 0),
+                    'attributes': span.get('attributes', {}),
+                }
+                spans_in_bucket.append(span_copy)
         
         buckets.append({
             'bucket_index': i,
@@ -290,10 +298,15 @@ def create_time_buckets(flat_spans: List[Dict], bucket_size: float = 10.0) -> Di
     
     # Aggregated: sum durations by type
     aggregated = []
+    span_counts = []  # New: count spans by type over time
+    
     for bucket in buckets:
         type_durations = defaultdict(float)
+        type_counts = defaultdict(int)
+        
         for span in bucket['spans']:
             type_durations[span['type']] += span['duration']
+            type_counts[span['type']] += 1
         
         aggregated.append({
             'bucket_index': bucket['bucket_index'],
@@ -301,12 +314,20 @@ def create_time_buckets(flat_spans: List[Dict], bucket_size: float = 10.0) -> Di
             'bucket_end': bucket['bucket_end'],
             'by_type': dict(type_durations)
         })
+        
+        span_counts.append({
+            'bucket_index': bucket['bucket_index'],
+            'bucket_start': bucket['bucket_start'],
+            'bucket_end': bucket['bucket_end'],
+            'by_type': dict(type_counts)
+        })
     
     # Individual: keep all spans
     individual = buckets
     
     return {
         'aggregated': aggregated,
+        'span_counts': span_counts,
         'individual': individual,
         'bucket_size': bucket_size,
         'min_start': min_start,
@@ -381,7 +402,8 @@ def build_icicle_hierarchy(trace: Dict, flat_spans: List[Dict], react_features: 
             for span in phase_spans:
                 types[span['type']].append(span)
             
-            for type_name, type_spans in types.items():
+            # Sort types by earliest start time
+            for type_name, type_spans in sorted(types.items(), key=lambda x: min(s['start'] for s in x[1])):
                 type_duration = sum(s['duration'] for s in type_spans)
                 type_tokens = 0
                 for s in type_spans:
@@ -401,8 +423,8 @@ def build_icicle_hierarchy(trace: Dict, flat_spans: List[Dict], react_features: 
                     'children': []
                 }
                 
-                # Layer 4: Individual spans
-                for span in type_spans:
+                # Layer 4: Individual spans (sorted by start time)
+                for span in sorted(type_spans, key=lambda s: s['start']):
                     span_node = {
                         'name': span['name'],
                         'layer': 3,
@@ -474,8 +496,9 @@ def build_icicle_hierarchy(trace: Dict, flat_spans: List[Dict], react_features: 
                                 'children': []
                             })
                     
-                    # Layer 6 & 7: Simplified for now (can expand later)
-                    # These would include message exchange and detailed operations
+                    # Note: Layers 6 & 7 would require more detailed telemetry data
+                    # that breaks down LLM and TOOL operations into finer-grained steps.
+                    # The current trace data doesn't include this level of detail.
                     
                     type_node['children'].append(span_node)
                 
@@ -506,41 +529,31 @@ def main():
     print("Building icicle hierarchy...")
     icicle = build_icicle_hierarchy(trace, flat_spans, react_features)
     
-    # Save outputs
+    # Save outputs - consolidated into 2 files
     OUTPUT_DIR.mkdir(exist_ok=True)
     
     print("Saving processed data...")
-    with open(OUTPUT_DIR / "trace-processed.json", 'w') as f:
-        json.dump(trace, f, indent=2)
     
-    with open(OUTPUT_DIR / "trace-metrics.json", 'w') as f:
-        json.dump(metrics, f, indent=2)
-    
-    with open(OUTPUT_DIR / "trace-hierarchy.json", 'w') as f:
-        # Convert to serializable format (remove circular references)
-        serializable_tree = {
-            'roots': tree['roots'],
-            'span_map': tree['span_map']
+    # File 1: Main trace data (metrics, hierarchy, buckets)
+    with open(OUTPUT_DIR / "trace-data.json", 'w') as f:
+        trace_data = {
+            'metrics': metrics,
+            'hierarchy': {
+                'roots': tree['roots'],
+                'span_map': tree['span_map']
+            },
+            'buckets': buckets
         }
-        json.dump(serializable_tree, f, indent=2)
+        json.dump(trace_data, f, indent=2)
     
-    with open(OUTPUT_DIR / "trace-react-features.json", 'w') as f:
-        json.dump(react_features, f, indent=2)
-    
-    with open(OUTPUT_DIR / "trace-buckets.json", 'w') as f:
-        json.dump(buckets, f, indent=2)
-    
+    # File 2: Icicle hierarchy (separate due to different structure)
     with open(OUTPUT_DIR / "trace-icicle.json", 'w') as f:
         json.dump(icicle, f, indent=2)
     
     print(f"\n✅ Processing complete!")
     print(f"Generated files in {OUTPUT_DIR}:")
-    print(f"  - trace-processed.json")
-    print(f"  - trace-metrics.json")
-    print(f"  - trace-hierarchy.json")
-    print(f"  - trace-react-features.json")
-    print(f"  - trace-buckets.json")
-    print(f"  - trace-icicle.json")
+    print(f"  - trace-data.json (metrics, hierarchy, buckets)")
+    print(f"  - trace-icicle.json (icicle hierarchy)")
     print(f"\nMetrics summary:")
     print(f"  Total duration: {metrics['total_duration']:.2f}s")
     print(f"  Total spans: {metrics['total_spans']}")

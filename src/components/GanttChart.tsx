@@ -8,18 +8,18 @@ import React, { useMemo } from "react";
 import { useColorModeValue } from "./ui/color-mode";
 import type { TimeBucket, BucketSpan } from "@/hooks/useTraceData";
 
-interface SpanGanttChartProps {
+interface GanttChartProps {
   data: TimeBucket[];
   width?: number;
   height?: number;
-  onSpanClick?: (span: BucketSpan) => void;
+  onItemClick?: (item: BucketSpan) => void;
 }
 
-export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
+export const GanttChart: React.FC<GanttChartProps> = ({
   data,
   width = 1000,
   height = 700,
-  onSpanClick,
+  onItemClick,
 }) => {
   const margin = { top: 20, right: 120, bottom: 60, left: 100 };
   const innerWidth = width - margin.left - margin.right;
@@ -29,21 +29,21 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
   const barStroke = useColorModeValue("#fff", "#1A202C"); // white / gray.900
   const labelFill = useColorModeValue("#1A202C", "#F7FAFC"); // gray.900 / gray.50
 
-  // Flatten all spans and assign them unique row indices
-  const allSpans = useMemo(() => {
-    const spans: (BucketSpan & { bucket_index: number })[] = [];
+  // Flatten all items and assign them unique row indices
+  const allItems = useMemo(() => {
+    const items: (BucketSpan & { bucket_index: number })[] = [];
     data.forEach((bucket, bucketIndex) => {
-      bucket.spans.forEach((span) => {
-        spans.push({ ...span, bucket_index: bucketIndex });
+      bucket.spans.forEach((item) => {
+        items.push({ ...item, bucket_index: bucketIndex });
       });
     });
-    return spans;
+    return items;
   }, [data]);
 
-  // Get span types for color scale
-  const spanTypes = useMemo(() => {
-    return Array.from(new Set(allSpans.map((s) => s.type)));
-  }, [allSpans]);
+  // Get item types for color scale
+  const itemTypes = useMemo(() => {
+    return Array.from(new Set(allItems.map((s) => s.type)));
+  }, [allItems]);
 
   // D3 Observable 10 color scheme
   const color1 = useColorModeValue("#6b8dd6", "#2f4a9e"); // Blue (lighter for light, darker for dark)
@@ -53,7 +53,7 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
   const color5 = useColorModeValue("#3ca951", "#2d7d3c"); // Green (darker for dark)
 
   const colorScale = scaleOrdinal<string, string>()
-    .domain(spanTypes)
+    .domain(itemTypes)
     .range([color1, color2, color3, color4, color5]);
 
   // Time scale
@@ -108,32 +108,32 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
             />
           ))}
 
-          {/* Render spans as horizontal bars */}
-          {allSpans.map((span, index) => {
-            const spanStartTime = span.start_time - minTime;
-            const spanX = xScale(spanStartTime);
-            const spanWidth = Math.max(
+          {/* Render items as horizontal bars */}
+          {allItems.map((item, index) => {
+            const itemStartTime = item.start_time - minTime;
+            const itemX = xScale(itemStartTime);
+            const itemWidth = Math.max(
               2,
-              xScale(spanStartTime + span.duration) - spanX
+              xScale(itemStartTime + item.duration) - itemX
             );
-            const spanY = index * (rowHeight + rowGap);
+            const itemY = index * (rowHeight + rowGap);
 
             return (
-              <Group key={`${span.span_id}-${index}`}>
-                {/* Span bar */}
+              <Group key={`${item.span_id}-${index}`}>
+                {/* Item bar */}
                 <Bar
-                  x={spanX}
-                  y={spanY}
-                  width={spanWidth}
+                  x={itemX}
+                  y={itemY}
+                  width={itemWidth}
                   height={rowHeight}
-                  fill={colorScale(span.type)}
+                  fill={colorScale(item.type)}
                   stroke={barStroke}
                   strokeWidth={1}
-                  style={{ cursor: onSpanClick ? "pointer" : "default" }}
-                  onClick={() => onSpanClick?.(span)}
+                  style={{ cursor: onItemClick ? "pointer" : "default" }}
+                  onClick={() => onItemClick?.(item)}
                   onMouseMove={(event) => {
                     showTooltip({
-                      tooltipData: span,
+                      tooltipData: item,
                       tooltipLeft: event.clientX - containerBounds.left,
                       tooltipTop: event.clientY - containerBounds.top,
                     });
@@ -141,19 +141,19 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
                   onMouseLeave={hideTooltip}
                 />
 
-                {/* Span label (if wide enough) */}
-                {spanWidth > 80 && (
+                {/* Item label (if wide enough) */}
+                {itemWidth > 80 && (
                   <text
-                    x={spanX + 4}
-                    y={spanY + rowHeight / 2}
+                    x={itemX + 4}
+                    y={itemY + rowHeight / 2}
                     dy=".35em"
                     fontSize={10}
                     fill={labelFill}
                     style={{ pointerEvents: "none" }}
                   >
-                    {span.name.length > 20
-                      ? span.name.substring(0, 17) + "..."
-                      : span.name}
+                    {item.name.length > 20
+                      ? item.name.substring(0, 17) + "..."
+                      : item.name}
                   </text>
                 )}
               </Group>
@@ -185,8 +185,8 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
             }}
           />
 
-          {/* Y-axis labels (span names) */}
-          {allSpans.map((span, index) => (
+          {/* Y-axis labels */}
+          {allItems.map((item, index) => (
             <text
               key={`label-${index}`}
               x={-10}
@@ -197,13 +197,13 @@ export const SpanGanttChart: React.FC<SpanGanttChartProps> = ({
               textAnchor="end"
               style={{ userSelect: "none" }}
             >
-              {span.type}
+              {item.type}
             </text>
           ))}
 
           {/* Legend */}
           <Group left={innerWidth + 20} top={0}>
-            {spanTypes.map((type, i) => (
+            {itemTypes.map((type, i) => (
               <Group key={type} top={i * 20}>
                 <rect width={12} height={12} fill={colorScale(type)} />
                 <text
