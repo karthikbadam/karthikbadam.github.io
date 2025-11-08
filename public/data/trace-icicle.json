@@ -1,18 +1,18 @@
 {
-  "name": "Trace 58bfe9dd",
+  "name": "Trace 567b83e6",
   "layer": 0,
   "attributes": {
-    "trace_id": "58bfe9dde723516f4d9366eb6b4b6388",
-    "duration": 382.630669,
-    "total_spans": 24
+    "trace_id": "567b83e63b59748d46419aa05ee50256",
+    "duration": 321.293142,
+    "total_spans": 15
   },
   "children": [
     {
       "name": "Setup",
       "layer": 1,
       "attributes": {
-        "span_count": 3,
-        "duration": 16.762073
+        "span_count": 2,
+        "duration": 9.930973
       },
       "children": [
         {
@@ -20,7 +20,7 @@
           "layer": 2,
           "attributes": {
             "span_count": 1,
-            "duration": 0.013562,
+            "duration": 0.075223,
             "tokens": null
           },
           "children": [
@@ -28,65 +28,13 @@
               "name": "create_agent",
               "layer": 3,
               "attributes": {
-                "span_id": "5fc40b5ca11d5c48",
+                "span_id": "2e7796cfad523f7d",
                 "type": "INTERNAL",
                 "level": 1,
-                "duration": 0.013562,
+                "duration": 0.075223,
                 "tokens": null
               },
               "children": []
-            }
-          ]
-        },
-        {
-          "name": "CHAIN",
-          "layer": 2,
-          "attributes": {
-            "span_count": 1,
-            "duration": 11.500946,
-            "tokens": null
-          },
-          "children": [
-            {
-              "name": "Step 1",
-              "layer": 3,
-              "attributes": {
-                "span_id": "2e0f3f1e8d8098c8",
-                "type": "CHAIN",
-                "level": 2,
-                "duration": 11.500946,
-                "tokens": null
-              },
-              "children": [
-                {
-                  "name": "Thought",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "thought",
-                    "duration": 2.3001892
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (LLM)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_llm",
-                    "duration": 5.247565,
-                    "tokens": "4297"
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (Code)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_code",
-                    "duration": 6.253381000000001
-                  },
-                  "children": []
-                }
-              ]
             }
           ]
         },
@@ -95,19 +43,19 @@
           "layer": 2,
           "attributes": {
             "span_count": 1,
-            "duration": 5.247565,
-            "tokens": 4297
+            "duration": 9.85575,
+            "tokens": 3976
           },
           "children": [
             {
               "name": "LiteLLMModel.__call__",
               "layer": 3,
               "attributes": {
-                "span_id": "2d9aee291e256eb8",
+                "span_id": "eed5fd92819ae071",
                 "type": "LLM",
                 "level": 3,
-                "duration": 5.247565,
-                "tokens": "4297"
+                "duration": 9.85575,
+                "tokens": "3976"
               },
               "children": []
             }
@@ -119,8 +67,8 @@
       "name": "Execution",
       "layer": 1,
       "attributes": {
-        "span_count": 18,
-        "duration": 338.28659
+        "span_count": 9,
+        "duration": 280.17807899999997
       },
       "children": [
         {
@@ -128,7 +76,7 @@
           "layer": 2,
           "attributes": {
             "span_count": 1,
-            "duration": 97.311336,
+            "duration": 88.78876,
             "tokens": null
           },
           "children": [
@@ -136,10 +84,10 @@
               "name": "process_item",
               "layer": 3,
               "attributes": {
-                "span_id": "3dcab935d3418e94",
+                "span_id": "71e463a9ade47ef5",
                 "type": "INTERNAL",
                 "level": 0,
-                "duration": 97.311336,
+                "duration": 88.78876,
                 "tokens": null
               },
               "children": []
@@ -151,19 +99,19 @@
           "layer": 2,
           "attributes": {
             "span_count": 1,
-            "duration": 97.296528,
-            "tokens": 104865
+            "duration": 88.703858,
+            "tokens": null
           },
           "children": [
             {
               "name": "CodeAgent.run",
               "layer": 3,
               "attributes": {
-                "span_id": "089f27412a51e6b4",
+                "span_id": "5b3b34c080083057",
                 "type": "AGENT",
                 "level": 1,
-                "duration": 97.296528,
-                "tokens": "104865"
+                "duration": 88.703858,
+                "tokens": null
               },
               "children": []
             }
@@ -173,19 +121,19 @@
           "name": "CHAIN",
           "layer": 2,
           "attributes": {
-            "span_count": 8,
-            "duration": 71.950339,
+            "span_count": 4,
+            "duration": 72.31631499999999,
             "tokens": null
           },
           "children": [
             {
-              "name": "Step 2",
+              "name": "Step 1",
               "layer": 3,
               "attributes": {
-                "span_id": "7ed95a2b029fbe5c",
+                "span_id": "0e8ac4e2868f7aa2",
                 "type": "CHAIN",
                 "level": 2,
-                "duration": 8.805213,
+                "duration": 39.368157,
                 "tokens": null
               },
               "children": [
@@ -194,7 +142,7 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "thought",
-                    "duration": 1.7610426000000001
+                    "duration": 7.8736314
                   },
                   "children": []
                 },
@@ -203,8 +151,8 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "action_llm",
-                    "duration": 8.745568,
-                    "tokens": "5158"
+                    "duration": 9.85575,
+                    "tokens": "3976"
                   },
                   "children": []
                 },
@@ -213,7 +161,48 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "action_code",
-                    "duration": 0.059644999999999726
+                    "duration": 29.512406999999996
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "Step 2",
+              "layer": 3,
+              "attributes": {
+                "span_id": "9d8acadcf009700c",
+                "type": "CHAIN",
+                "level": 2,
+                "duration": 9.982583,
+                "tokens": null
+              },
+              "children": [
+                {
+                  "name": "Thought",
+                  "layer": 4,
+                  "attributes": {
+                    "react_phase": "thought",
+                    "duration": 1.9965166
+                  },
+                  "children": []
+                },
+                {
+                  "name": "Action (LLM)",
+                  "layer": 4,
+                  "attributes": {
+                    "react_phase": "action_llm",
+                    "duration": 8.296916,
+                    "tokens": "31350"
+                  },
+                  "children": []
+                },
+                {
+                  "name": "Action (Code)",
+                  "layer": 4,
+                  "attributes": {
+                    "react_phase": "action_code",
+                    "duration": 1.6856670000000005
                   },
                   "children": []
                 }
@@ -223,10 +212,10 @@
               "name": "Step 3",
               "layer": 3,
               "attributes": {
-                "span_id": "dd747350c6c43e51",
+                "span_id": "6c12f9b3e87b73c8",
                 "type": "CHAIN",
                 "level": 2,
-                "duration": 10.443244,
+                "duration": 11.110878,
                 "tokens": null
               },
               "children": [
@@ -235,7 +224,7 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "thought",
-                    "duration": 2.0886488
+                    "duration": 2.2221756
                   },
                   "children": []
                 },
@@ -244,8 +233,8 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "action_llm",
-                    "duration": 10.426205,
-                    "tokens": "7894"
+                    "duration": 10.555392,
+                    "tokens": "32028"
                   },
                   "children": []
                 },
@@ -254,7 +243,7 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "action_code",
-                    "duration": 0.01703900000000047
+                    "duration": 0.5554860000000001
                   },
                   "children": []
                 }
@@ -264,10 +253,10 @@
               "name": "Step 4",
               "layer": 3,
               "attributes": {
-                "span_id": "19e0d09b70a0d486",
+                "span_id": "bb254006d4943d38",
                 "type": "CHAIN",
                 "level": 2,
-                "duration": 9.543038,
+                "duration": 11.854697,
                 "tokens": null
               },
               "children": [
@@ -276,7 +265,7 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "thought",
-                    "duration": 1.9086075999999998
+                    "duration": 2.3709394
                   },
                   "children": []
                 },
@@ -285,8 +274,8 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "action_llm",
-                    "duration": 9.516584,
-                    "tokens": "9166"
+                    "duration": 11.516838,
+                    "tokens": "46959"
                   },
                   "children": []
                 },
@@ -295,212 +284,7 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "action_code",
-                    "duration": 0.02645399999999931
-                  },
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "Step 5",
-              "layer": 3,
-              "attributes": {
-                "span_id": "5825388889a2f239",
-                "type": "CHAIN",
-                "level": 2,
-                "duration": 9.17415,
-                "tokens": null
-              },
-              "children": [
-                {
-                  "name": "Thought",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "thought",
-                    "duration": 1.83483
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (LLM)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_llm",
-                    "duration": 9.155433,
-                    "tokens": "10253"
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (Code)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_code",
-                    "duration": 0.018716999999998762
-                  },
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "Step 6",
-              "layer": 3,
-              "attributes": {
-                "span_id": "57112dd20bd946c4",
-                "type": "CHAIN",
-                "level": 2,
-                "duration": 10.805906,
-                "tokens": null
-              },
-              "children": [
-                {
-                  "name": "Thought",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "thought",
-                    "duration": 2.1611812
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (LLM)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_llm",
-                    "duration": 10.772765,
-                    "tokens": "11308"
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (Code)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_code",
-                    "duration": 0.03314100000000053
-                  },
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "Step 7",
-              "layer": 3,
-              "attributes": {
-                "span_id": "f95ec71e74392ed4",
-                "type": "CHAIN",
-                "level": 2,
-                "duration": 8.081637,
-                "tokens": null
-              },
-              "children": [
-                {
-                  "name": "Thought",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "thought",
-                    "duration": 1.6163274000000003
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (LLM)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_llm",
-                    "duration": 8.054329,
-                    "tokens": "12548"
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (Code)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_code",
-                    "duration": 0.027308000000001442
-                  },
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "Step 8",
-              "layer": 3,
-              "attributes": {
-                "span_id": "b1ce2f0e8c91cb20",
-                "type": "CHAIN",
-                "level": 2,
-                "duration": 7.827336,
-                "tokens": null
-              },
-              "children": [
-                {
-                  "name": "Thought",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "thought",
-                    "duration": 1.5654672
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (LLM)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_llm",
-                    "duration": 7.810784,
-                    "tokens": "13596"
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (Code)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_code",
-                    "duration": 0.0165519999999999
-                  },
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "Step 9",
-              "layer": 3,
-              "attributes": {
-                "span_id": "f19095888e51dcaf",
-                "type": "CHAIN",
-                "level": 2,
-                "duration": 7.269815,
-                "tokens": null
-              },
-              "children": [
-                {
-                  "name": "Thought",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "thought",
-                    "duration": 1.4539630000000001
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (LLM)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_llm",
-                    "duration": 7.246719,
-                    "tokens": "14758"
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Action (Code)",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "action_code",
-                    "duration": 0.02309600000000067
+                    "duration": 0.3378589999999999
                   },
                   "children": []
                 }
@@ -512,20 +296,20 @@
           "name": "LLM",
           "layer": 2,
           "attributes": {
-            "span_count": 8,
-            "duration": 71.728387,
-            "tokens": 84681
+            "span_count": 3,
+            "duration": 30.369146,
+            "tokens": 110337
           },
           "children": [
             {
               "name": "LiteLLMModel.__call__",
               "layer": 3,
               "attributes": {
-                "span_id": "c708be764700c5a6",
+                "span_id": "4641b34fa8c5b5cf",
                 "type": "LLM",
                 "level": 3,
-                "duration": 8.745568,
-                "tokens": "5158"
+                "duration": 8.296916,
+                "tokens": "31350"
               },
               "children": []
             },
@@ -533,11 +317,11 @@
               "name": "LiteLLMModel.__call__",
               "layer": 3,
               "attributes": {
-                "span_id": "6af2b7f1af555ee4",
+                "span_id": "70cfa46635ff5aa7",
                 "type": "LLM",
                 "level": 3,
-                "duration": 10.426205,
-                "tokens": "7894"
+                "duration": 10.555392,
+                "tokens": "32028"
               },
               "children": []
             },
@@ -545,71 +329,11 @@
               "name": "LiteLLMModel.__call__",
               "layer": 3,
               "attributes": {
-                "span_id": "35e9dc94390a3ece",
+                "span_id": "62e36a3c64806cff",
                 "type": "LLM",
                 "level": 3,
-                "duration": 9.516584,
-                "tokens": "9166"
-              },
-              "children": []
-            },
-            {
-              "name": "LiteLLMModel.__call__",
-              "layer": 3,
-              "attributes": {
-                "span_id": "5593d7d77d43fa55",
-                "type": "LLM",
-                "level": 3,
-                "duration": 9.155433,
-                "tokens": "10253"
-              },
-              "children": []
-            },
-            {
-              "name": "LiteLLMModel.__call__",
-              "layer": 3,
-              "attributes": {
-                "span_id": "f280f77af66eeb25",
-                "type": "LLM",
-                "level": 3,
-                "duration": 10.772765,
-                "tokens": "11308"
-              },
-              "children": []
-            },
-            {
-              "name": "LiteLLMModel.__call__",
-              "layer": 3,
-              "attributes": {
-                "span_id": "3180c05c519183f2",
-                "type": "LLM",
-                "level": 3,
-                "duration": 8.054329,
-                "tokens": "12548"
-              },
-              "children": []
-            },
-            {
-              "name": "LiteLLMModel.__call__",
-              "layer": 3,
-              "attributes": {
-                "span_id": "1871c6d17eaa7a97",
-                "type": "LLM",
-                "level": 3,
-                "duration": 7.810784,
-                "tokens": "13596"
-              },
-              "children": []
-            },
-            {
-              "name": "LiteLLMModel.__call__",
-              "layer": 3,
-              "attributes": {
-                "span_id": "80e3a4acd4a54f66",
-                "type": "LLM",
-                "level": 3,
-                "duration": 7.246719,
-                "tokens": "14758"
+                "duration": 11.516838,
+                "tokens": "46959"
               },
               "children": []
             }
@@ -621,27 +345,27 @@
       "name": "Finalization",
       "layer": 1,
       "attributes": {
-        "span_count": 3,
-        "duration": 27.582006
+        "span_count": 4,
+        "duration": 31.184089999999998
       },
       "children": [
         {
           "name": "CHAIN",
           "layer": 2,
           "attributes": {
-            "span_count": 1,
-            "duration": 13.801201,
+            "span_count": 2,
+            "duration": 15.926760999999999,
             "tokens": null
           },
           "children": [
             {
-              "name": "Step 10",
+              "name": "Step 5",
               "layer": 3,
               "attributes": {
-                "span_id": "84b8ebb9d751241d",
+                "span_id": "e0b061d835f98bfe",
                 "type": "CHAIN",
                 "level": 2,
-                "duration": 13.801201,
+                "duration": 15.465318,
                 "tokens": null
               },
               "children": [
@@ -650,7 +374,7 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "thought",
-                    "duration": 2.7602402
+                    "duration": 3.0930636000000002
                   },
                   "children": []
                 },
@@ -659,8 +383,8 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "action_llm",
-                    "duration": 13.780651,
-                    "tokens": "15887"
+                    "duration": 14.807991,
+                    "tokens": "63807"
                   },
                   "children": []
                 },
@@ -669,20 +393,23 @@
                   "layer": 4,
                   "attributes": {
                     "react_phase": "action_code",
-                    "duration": 0.020550000000000068
-                  },
-                  "children": []
-                },
-                {
-                  "name": "Observation",
-                  "layer": 4,
-                  "attributes": {
-                    "react_phase": "observation",
-                    "duration": 0.000154
+                    "duration": 0.6573270000000004
                   },
                   "children": []
                 }
               ]
+            },
+            {
+              "name": "Step 6",
+              "layer": 3,
+              "attributes": {
+                "span_id": "b67ce1b1f28ed513",
+                "type": "CHAIN",
+                "level": 2,
+                "duration": 0.461443,
+                "tokens": null
+              },
+              "children": []
             }
           ]
         },
@@ -690,42 +417,31 @@
           "name": "LLM",
           "layer": 2,
           "attributes": {
-            "span_count": 1,
-            "duration": 13.780651,
-            "tokens": 15887
+            "span_count": 2,
+            "duration": 15.257328999999999,
+            "tokens": 63807
           },
           "children": [
             {
               "name": "LiteLLMModel.__call__",
               "layer": 3,
               "attributes": {
-                "span_id": "a02f8ed1b99ec410",
+                "span_id": "6c47f3a8cf4bd36d",
                 "type": "LLM",
                 "level": 3,
-                "duration": 13.780651,
-                "tokens": "15887"
+                "duration": 14.807991,
+                "tokens": "63807"
               },
               "children": []
-            }
-          ]
-        },
-        {
-          "name": "TOOL",
-          "layer": 2,
-          "attributes": {
-            "span_count": 1,
-            "duration": 0.000154,
-            "tokens": null
-          },
-          "children": [
+            },
             {
-              "name": "FinalAnswerTool",
+              "name": "LiteLLMModel.__call__",
               "layer": 3,
               "attributes": {
-                "span_id": "439cdcf300328aac",
-                "type": "TOOL",
+                "span_id": "a72647d3aa7d330c",
+                "type": "LLM",
                 "level": 3,
-                "duration": 0.000154,
+                "duration": 0.449338,
                 "tokens": null
               },
               "children": []

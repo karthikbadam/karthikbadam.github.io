@@ -6,7 +6,7 @@ import { Bar } from "@visx/shape";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import React, { useMemo } from "react";
 import { useColorModeValue } from "./ui/color-mode";
-import type { TimeBucket, BucketSpan } from "@/hooks/useTraceData";
+import { TimeBucket, BucketSpan } from "../types/traces";
 
 interface GanttChartProps {
   data: TimeBucket[];
@@ -18,7 +18,7 @@ interface GanttChartProps {
 export const GanttChart: React.FC<GanttChartProps> = ({
   data,
   width = 1000,
-  height = 700,
+  height = 550,
   onItemClick,
 }) => {
   const margin = { top: 20, right: 120, bottom: 60, left: 100 };
@@ -142,7 +142,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({
                 />
 
                 {/* Item label (if wide enough) */}
-                {itemWidth > 40 && (
+                {itemWidth > 20 && (
                   <text
                     x={itemX + 4}
                     y={itemY + rowHeight / 2}

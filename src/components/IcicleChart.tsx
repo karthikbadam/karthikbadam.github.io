@@ -5,8 +5,7 @@ import { interpolateBuPu } from "d3-scale-chromatic";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import React, { useMemo } from "react";
 import { useColorModeValue } from "./ui/color-mode";
-import type { IcicleNode } from "@/hooks/useTraceData";
-
+import { IcicleNode } from "../types/traces";
 interface NodeData {
   name: string;
   layer: number;

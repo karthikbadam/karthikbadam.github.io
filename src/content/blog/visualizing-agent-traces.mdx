@@ -1,5 +1,5 @@
 ---
-title: "Visualizing OpenTelemetry Traces in ML Agent Systems"
+title: "Visualizing Traces in ML Agent Systems"
 date: "2025-10-12"
 author: "Karthik Badam"
 description: "A deep dive into visualizing trace data from ML agents using OpenTelemetry, revealing performance patterns and the ReAct reasoning framework through interactive visualizations"
@@ -7,13 +7,26 @@ description: "A deep dive into visualizing trace data from ML agents using OpenT
 
 import { TraceMetrics, DurationChart, CountChart, TimelineChart, HierarchyChart } from "../../containers/TraceVisualization";
 
-# Visualizing OpenTelemetry Traces in ML Agent Systems
+# Visualizing Traces in ML Agent Systems
 
-[Introduction: Brief overview of OpenTelemetry traces and their importance in understanding ML agent behavior]
+Agentic Systems are becoming more common. From ChatGPT's Agent mode to Perplexity's Comet browser, it looks like we are entering a new era of augmented web tools. Designing such experiences as a web developer has been compelling to my creative side. However, the analytical side calls for structured ways to measure success of these experiences. This led me to observability, OpenTelemetry, and traces.
+
+Observability of an application behavior involves metrics, logs, traces, and profiles (footnote: events are also considered as the fourth facet). Instrumentation of these four facets can help us understand complex application behavior. In this space, OpenTelemetry provides an industry standard for observability. Starting with conventions for structuring and naming the parts of the facets, to SDKs to develop them into an application, and services to collect the four facets.
+
+## Parts of ML Observability
+
+Now, observability in the ML space can offer a lot to Agentic applications:
+- Metrics help us quantitatively measure and track performance. Such as the duration of an MCP tool call or identifying service failures caused by an external resource.
+- Profiles track the resource use at the granular level of code blocks to catch the bottlenecks including, a slow container for the headless browser or an almost-full vector database.
+- Logs form a well-known foundational item to track any application behavior. 
+- Finally, the traces. They are a powerful abstraction for tracking operations across a complex system. I will dive into them in the rest of this article.
+
 
 ## What Are Traces?
 
-[Explanation of traces, spans, and why they matter for ML agents]
+Applications are made up of operations that are executed across the many underlying services. Tracking these operations, often distributed, can help connect them and figure out the overall behaviors. Traces are designed to do exactly that. A trace starts with an origin that defines a trace ID along with an operational context such as the user profile or application settings. You can attach this trace ID to a "span" of the application (i.e., to the logs coming out the span of a code block). A collector service provided by OpenTelemetry can stitch these spans into a trace using the common trace ID. 
+
+Traces 
 
 ## The Dataset: SWEbench Agent Traces
 
