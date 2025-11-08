@@ -62,6 +62,7 @@ export const Home = () => {
                 borderRadius="full"
                 width="100%"
                 maxWidth="150px"
+                boxShadow="lg"
                 height="auto"
                 objectFit="cover"
                 transition="transform 0.3s"

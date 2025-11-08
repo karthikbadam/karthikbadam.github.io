@@ -6,7 +6,7 @@ import { Bar } from "@visx/shape";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import React, { useMemo } from "react";
 import { useColorModeValue } from "./ui/color-mode";
-import type { AggregatedBucket } from "@/hooks/useTraceData";
+import { AggregatedBucket } from "../types/traces";
 
 interface StackedBarChartProps {
   data: AggregatedBucket[];

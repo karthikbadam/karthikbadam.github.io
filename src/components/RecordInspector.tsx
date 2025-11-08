@@ -102,7 +102,6 @@ export const RecordInspector: React.FC<InspectorProps> = ({
                       p={2}
                       fontSize="xs"
                       whiteSpace="pre-wrap"
-                      maxH="200px"
                       overflowY="auto"
                     >
                       {formatValue(value)}
