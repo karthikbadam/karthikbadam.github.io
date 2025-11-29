@@ -115,57 +115,52 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
             FROM all_spans a
             WHERE json_extract(a.span_json, '$.child_spans') IS NOT NULL
               AND json_array_length(json_extract(a.span_json, '$.child_spans')) > 0
+              AND a.depth < 3
+          ),
+          extracted AS (
+            SELECT 
+              trace_id,
+              json_extract_string(span_json, '$.span_id') as span_id,
+              json_extract_string(span_json, '$.parent_span_id') as parent_id,
+              json_extract_string(span_json, '$.span_name') as name,
+              json_extract_string(span_json, '$.span_attributes') as span_attributes,
+              COALESCE(
+                json_extract_string(span_json, '$."span_attributes"."openinference.span.kind"'),
+                'INTERNAL'
+              ) as type,
+              json_extract_string(span_json, '$.timestamp') as timestamp_str,
+              json_extract_string(span_json, '$.duration') as duration_str,
+              COALESCE(
+                TRY_CAST(json_extract(span_json, '$."span_attributes"."llm.token_count.total"') AS INTEGER),
+                0
+              ) as tokens,
+              depth
+            FROM all_spans
+          ),
+          with_duration AS (
+            SELECT *,
+              CASE 
+                WHEN duration_str IS NULL OR duration_str = '' THEN 0.0
+                WHEN duration_str LIKE 'PT%' THEN
+                  COALESCE(TRY_CAST(regexp_extract(duration_str, 'PT(?:\\d+H)?(?:\\d+M)?([\\d.]+)S', 1) AS DOUBLE), 0.0) +
+                  COALESCE(TRY_CAST(regexp_extract(duration_str, 'PT(?:\\d+H)?(\\d+)M', 1) AS DOUBLE) * 60, 0.0) +
+                  COALESCE(TRY_CAST(regexp_extract(duration_str, 'PT(\\d+)H', 1) AS DOUBLE) * 3600, 0.0)
+                ELSE TRY_CAST(duration_str AS DOUBLE) / 1000000.0
+              END as duration,
+              epoch(TRY_CAST(timestamp_str AS TIMESTAMP)) as ts_epoch
+            FROM extracted
           )
           SELECT 
-            trace_id,
-            json_extract_string(span_json, '$.span_id') as span_id,
-            json_extract_string(span_json, '$.parent_span_id') as parent_id,
-            json_extract_string(span_json, '$.span_name') as name,
-            json_extract_string(span_json, '$.span_attributes') as span_attributes,
-            COALESCE(
-              json_extract_string(span_json, '$."span_attributes"."openinference.span.kind"'),
-              'INTERNAL'
-            ) as type,
-            json_extract_string(span_json, '$.timestamp') as timestamp_str,
-            json_extract_string(span_json, '$.duration') as duration_str,
-            COALESCE(
-              TRY_CAST(json_extract(span_json, '$."span_attributes"."llm.token_count.total"') AS INTEGER),
-              0
-            ) as tokens,
-            depth,
-            ROW_NUMBER() OVER (PARTITION BY trace_id ORDER BY json_extract_string(span_json, '$.timestamp')) as span_index
-          FROM all_spans
-        `);
-
-        // Add and compute duration column (parse ISO 8601 duration)
-        await coordinator.exec(`ALTER TABLE spans ADD COLUMN IF NOT EXISTS duration DOUBLE`);
-        await coordinator.exec(`
-          UPDATE spans SET duration = 
-            CASE 
-              WHEN duration_str IS NULL OR duration_str = '' THEN 0.0
-              WHEN duration_str LIKE 'PT%' THEN
-                COALESCE(TRY_CAST(regexp_extract(duration_str, 'PT(?:\\d+H)?(?:\\d+M)?([\\d.]+)S', 1) AS DOUBLE), 0.0) +
-                COALESCE(TRY_CAST(regexp_extract(duration_str, 'PT(?:\\d+H)?(\\d+)M', 1) AS DOUBLE) * 60, 0.0) +
-                COALESCE(TRY_CAST(regexp_extract(duration_str, 'PT(\\d+)H', 1) AS DOUBLE) * 3600, 0.0)
-              ELSE TRY_CAST(duration_str AS DOUBLE) / 1000000.0
-            END
-        `);
-
-        // Add and compute start_time column (relative to trace start)
-        await coordinator.exec(`ALTER TABLE spans ADD COLUMN IF NOT EXISTS start_time DOUBLE`);
-        await coordinator.exec(`
-          WITH trace_starts AS (
-            SELECT trace_id, MIN(epoch(TRY_CAST(timestamp_str AS TIMESTAMP))) as min_start
-            FROM spans GROUP BY trace_id
-          )
-          UPDATE spans SET start_time = 
-            epoch(TRY_CAST(timestamp_str AS TIMESTAMP)) - 
-            (SELECT min_start FROM trace_starts WHERE trace_starts.trace_id = spans.trace_id)
+            trace_id, span_id, parent_id, name, span_attributes, type, 
+            timestamp_str, duration_str, tokens, depth, duration,
+            ts_epoch - MIN(ts_epoch) OVER (PARTITION BY trace_id) as start_time,
+            ROW_NUMBER() OVER (PARTITION BY trace_id ORDER BY timestamp_str) as span_index
+          FROM with_duration
         `);
 
         // Update trace_metrics with computed totals
         await coordinator.exec(`
-          CREATE OR REPLACE TABLE trace_metrics AS
+          CREATE TABLE OR REPLACE trace_metrics AS
           SELECT 
             t.trace_id,
             t.error_category,
