@@ -6,6 +6,7 @@ import { About } from "./pages/About";
 import { Posts } from "./pages/Posts";
 import { Publications } from "./pages/Publications";
 import { PackedRadialTreeDemo } from "./pages/Demos/PRT";
+import { SWEBenchDashboard } from "./pages/Demos/SWEBenchDashboard";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/posts" element={<Posts />} />
           <Route path="/about" element={<About />} />
           <Route path="/packed-radial-tree" element={<PackedRadialTreeDemo />} />
+          <Route path="/swe-bench" element={<SWEBenchDashboard />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
         </Routes>
       </Router>

@@ -15,14 +15,14 @@ export const Page = ({ children }: PageProps) => {
       </Box>
 
       {/* Main Content */}
-      <Box py={2} as="main" flex="1" overflowY="auto">
+      <Box as="main" flex="1" overflowY="auto">
         {children}
       </Box>
 
       {/* Footer */}
       <Box
         as="footer"
-        py={4}
+        py={2}
         px={{ base: 4, md: 10 }}
         borderTop="1px solid"
         borderColor="gray.subtle"
@@ -39,11 +39,7 @@ export const Page = ({ children }: PageProps) => {
           </Text>
 
           <Flex gap={4} fontSize="xs">
-            <Link
-              href="mailto:karthikbadam7@gmail.com"
-            >
-              Email
-            </Link>
+            <Link href="mailto:karthikbadam7@gmail.com">Email</Link>
             <Link
               href="https://linkedin.com/in/karthikbadam"
               target="_blank"

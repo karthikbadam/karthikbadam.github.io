@@ -1,0 +1,114 @@
+---
+title: "Visualizing Traces in ML Agent Systems"
+date: "2025-10-12"
+author: "Karthik Badam"
+description: "A deep dive into visualizing trace data from ML agents using OpenTelemetry, revealing performance patterns and the ReAct reasoning framework through interactive visualizations"
+---
+
+import { TraceMetrics, DurationChart, CountChart, TimelineChart, HierarchyChart } from "../../containers/TraceVisualization";
+
+# Visualizing Traces in ML Agent Systems
+
+Agentic Systems are becoming more common. From ChatGPT's Agent mode to Perplexity's Comet browser, it looks like we are entering a new era of augmented web tools. Designing such experiences as a web developer has been compelling to my creative side. However, the analytical side calls for structured ways to measure success of these experiences. This led me to observability, OpenTelemetry, and traces.
+
+Observability of an application behavior involves metrics, logs, traces, and profiles (footnote: events are also considered as the fourth facet). Instrumentation of these four facets can help us understand complex application behavior. In this space, OpenTelemetry provides an industry standard for observability. Starting with conventions for structuring and naming the parts of the facets, to SDKs to develop them into an application, and services to collect the four facets.
+
+## Parts of ML Observability
+
+Now, observability in the ML space can offer a lot to Agentic applications:
+- Metrics help us quantitatively measure and track performance. Such as the duration of an MCP tool call or identifying service failures caused by an external resource.
+- Profiles track the resource use at the granular level of code blocks to catch the bottlenecks including, a slow container for the headless browser or an almost-full vector database.
+- Logs form a well-known foundational item to track any application behavior. 
+- Finally, the traces. They are a powerful abstraction for tracking operations across a complex system. I will dive into them in the rest of this article.
+
+
+## What Are Traces?
+
+Applications are made up of operations that are executed across the many underlying services. Tracking these operations, often distributed, can help connect them and figure out the overall behaviors. Traces are designed to do exactly that. A trace starts with an origin that defines a trace ID along with an operational context such as the user profile or application settings. You can attach this trace ID to a "span" of the application (i.e., to the logs coming out the span of a code block). A collector service provided by OpenTelemetry can stitch these spans into a trace using the common trace ID. 
+
+Traces 
+
+## The Dataset: SWEbench Agent Traces
+
+[Brief description of the SWEbench dataset and what traces we're analyzing]
+
+<TraceMetrics />
+
+[Analysis of basic metrics: elapsed time, span count, LLM calls, tokens, etc.]
+
+## Activity Over Time
+
+<DurationChart />
+
+[Explanation of the stacked bar chart showing span types over time buckets]
+
+[Discussion of activity patterns and what they reveal about agent behavior]
+
+## Span Activity Patterns
+
+<CountChart />
+
+[Analysis of span count patterns and activity rhythms]
+
+## Individual Span Timeline
+
+<TimelineChart />
+
+[Discussion of the Gantt chart and what we learn from granular timing]
+
+[Analysis of parallelism, sequential execution, and optimization opportunities]
+
+## The Hidden Hierarchy
+
+<HierarchyChart />
+
+[Introduction to the hierarchical icicle visualization]
+
+### The Seven Layers
+
+**Layer 0: Root** - [Description]
+
+**Layer 1: Execution Phases** - [Description]
+
+**Layer 2: Span Types** - [Description]
+
+**Layer 3: Individual Spans** - [Description]
+
+**Layer 4: ReAct Components** - [Description]
+
+**Layers 5-6: Detailed Breakdown** - [Description]
+
+## The ReAct Pattern Revealed
+
+[The big reveal: these traces follow the ReAct (Reasoning + Acting) pattern]
+
+### What is ReAct?
+
+[Explanation of the ReAct pattern: Thought → Action → Observation cycles]
+
+### Visualizing ReAct in Action
+
+[How the icicle chart reveals ReAct components and cycles]
+
+[Analysis of the rhythm and timing of ReAct patterns]
+
+## Key Insights
+
+1. **Temporal Patterns Matter**: [Insight]
+
+2. **LLM Calls Dominate**: [Insight]
+
+3. **ReAct is Everywhere**: [Insight]
+
+4. **Hierarchy Reveals Structure**: [Insight]
+
+5. **Observability Enables Optimization**: [Insight]
+
+## Conclusion
+
+[Summary of insights gained and the power of trace visualization for ML agents]
+
+---
+
+*Technical note: Visualizations built with React, visx, and D3. Data preprocessed from OpenTelemetry traces using Python. All charts are interactive - hover for details, click to inspect.*
+
