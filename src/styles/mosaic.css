@@ -1,0 +1,16 @@
+/* Mosaic plots - Light mode */
+.light svg[class*="plot-"] {
+    --plot-background: white;
+    --mosaic-text: #1a202c;
+    --mosaic-axis: #4a5568;
+    --mosaic-grid: #e2e8f0;
+  }
+  
+  /* Mosaic plots - Dark mode */
+  .dark svg[class*="plot-"] {
+    --plot-background: #1a202c;
+    --mosaic-text: #f7fafc;
+    --mosaic-axis: #a0aec0;
+    --mosaic-grid: #2d3748;
+  }
+  

@@ -45,6 +45,10 @@ export const Home = () => {
     (post) => post.featured
   );
   const restPosts = (featuredData as Post[]).filter((post) => !post.featured);
+  const colorModeImage = useColorModeValue(
+    "/profile-light.jpg",
+    "/profile-dark.jpg"
+  );
 
   return (
     <Page>
@@ -53,11 +57,12 @@ export const Home = () => {
           <TwoPanelWithScroll.LeftPanel gap={6}>
             <Stack position="relative" mt={10} mb={6}>
               <Image
-                src="/profile.jpg"
+                src={colorModeImage}
                 alt="Karthik Badam"
                 borderRadius="full"
                 width="100%"
                 maxWidth="150px"
+                boxShadow="lg"
                 height="auto"
                 objectFit="cover"
                 transition="transform 0.3s"

@@ -5,7 +5,6 @@ import {
   Heading,
   HeadingProps,
   Link,
-  ListItem,
   Text,
   TextProps,
 } from "@chakra-ui/react";
@@ -17,9 +16,11 @@ import { useColorModeValue } from "../components/ui/color-mode";
 
 // Import all blog posts
 import UnderstandingEmbeddings from "../content/blog/understanding-embeddings.mdx";
+import VisualizingAgentTraces from "../content/blog/visualizing-agent-traces.mdx";
 
 const blogPosts = {
   "understanding-embeddings": UnderstandingEmbeddings,
+  "visualizing-agent-traces": VisualizingAgentTraces,
 };
 
 interface MDXComponentProps extends React.HTMLAttributes<HTMLElement> {
@@ -77,12 +78,14 @@ const createComponents = (headingColor: string) => ({
     />
   ),
   ul: (props: MDXComponentProps) => (
-    <Box as="ul" mb={4} ml={6} listStyleType="disc" {...props} />
+    <Box as="ul" mb={4} ml={6} css={{ listStyleType: 'disc' }} {...props} />
   ),
   ol: (props: MDXComponentProps) => (
-    <Box as="ol" mb={4} ml={6} listStyleType="decimal" {...props} />
+    <Box as="ol" mb={4} ml={6} css={{ listStyleType: 'decimal' }} {...props} />
   ),
-  li: (props: MDXComponentProps) => <ListItem mb={2} {...props} />,
+  li: (props: MDXComponentProps) => (
+    <Box as="li" mb={2} {...props} />
+  ),
 });
 
 export const BlogPost: React.FC = () => {

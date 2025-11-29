@@ -1,5 +1,21 @@
 [
   {
+    "title": "Visualize ML Traces from SWE-Bench",
+    "abstract": "An interactive visualization of trace data from ML agents using OpenTelemetry, revealing performance patterns and the ReAct reasoning framework. Explore the traces and detailed spans to understand how agents think and act.",
+    "link": "/swe-bench",
+
+    "image": {
+      "dark": "swe-bench-traces-dark.png",
+      "light": "swe-bench-traces-light.png"
+    },
+    "type": "Interactive Demo",
+    "date": {
+      "month": "November",
+      "year": 2025
+    },
+    "featured": true
+  },
+  {
     "title": "Explore Astronomy Concepts",
     "abstract": "An interactive visualization that renders hierarchical datasets as elegantly-arranged circular nodes in a radial layout. Explore the Unified Astronomy Thesaurus with this custom-designed visualization featuring packed circles, collision resolution, and navigation.",
     "link": "/packed-radial-tree",
@@ -26,8 +42,7 @@
     "date": {
       "month": "April",
       "year": 2025
-    },
-    "featured": true
+    }
   },
 
   {

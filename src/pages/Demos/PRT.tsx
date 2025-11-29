@@ -30,7 +30,7 @@ import { useCallback, useMemo } from "react";
 
 const HeaderSection = () => (
   <Box>
-    <Heading as="h1" size="2xl" color="accent" mb={2}>
+    <Heading as="h1" size="lg" color="accent" mb={2}>
       Explore Astronomy Concepts with a Packed Radial Tree
     </Heading>
     <Text fontSize="sm" color="gray.focusRing" mb={4}>
@@ -316,8 +316,8 @@ export function PackedRadialTreeDemo() {
   return (
     <Page>
       <TwoPanelWithScroll
-        leftWidth="2fr"
-        rightWidth="1fr"
+        leftWidth="3fr"
+        rightWidth="2fr"
         px={8}
         gap={6}
         maxW="100em"
@@ -337,7 +337,7 @@ export function PackedRadialTreeDemo() {
 
         {/* Content Panel */}
         <TwoPanelWithScroll.RightPanel py={2}>
-          <Stack gap={6} maxW="72ch">
+          <Stack gap={6} maxW="72ch" px={{base: 0, md: 10}}>
             <HeaderSection />
             {selectedNode ? (
               <NodeDetails
