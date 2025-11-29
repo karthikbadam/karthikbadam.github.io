@@ -16,21 +16,20 @@ export function LLMTokensOverTime() {
   const build = useCallback(
     (_: void, { width, height }: ChartDimensions) => {
       return vg.plot(
-        vg.dot(vg.from("spans_llm_tokens", { filterBy: traceSelection }), {
-          x: "start_time",
-          y: "tokens",
-          z: "trace_id",
-          r: 3,
-        }),
-        vg.lineY(vg.from("spans_llm_tokens"), {
+        vg.lineY(vg.from("spans_llm_tokens", { filterBy: traceSelection }), {
           x: "start_time",
           y: "tokens",
           strokeWidth: 1.5,
           curve: "monotone-x",
           z: "trace_id",
         }),
-        vg.toggleZ({ as: traceSelection }),
-        vg.highlight({ by: traceSelection }),
+        vg.dot(vg.from("spans_llm_tokens", { filterBy: traceSelection }), {
+          x: "start_time",
+          y: "tokens",
+          z: "trace_id",
+          r: 3,
+          tip: true,
+        }),
         vg.xLabel("Time (s)"),
         vg.yLabel("Tokens"),
         vg.marginLeft(80),

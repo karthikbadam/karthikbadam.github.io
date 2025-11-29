@@ -19,8 +19,18 @@ export function SpanDurationOverTime() {
           x: "start_time",
           y: "duration",
           fill: "type",
-          r: 2,
-          tip: true,
+          r: 3,
+          tip: {
+            format: {
+              x: (d: number) => `${d.toFixed(2)}s`,
+              y: (d: number) => `${d.toFixed(3)}s`,
+              fill: true,
+              trace_id: true,
+              span_id: true,
+              name: true,
+            }
+          },
+          z: "trace_id",
         }),
         vg.toggleX({ as: traceSelection }),
         vg.highlight({ by: traceSelection }),
@@ -41,8 +51,8 @@ export function SpanDurationOverTime() {
 
   return (
     <MosaicChart
-      title="Span Duration"
-      subtitle={traceIdValue ? "(filtered)" : "(all)"}
+      title="Span Duration Over Time"
+      subtitle={traceIdValue ? "(filtered)" : "(all traces)"}
       setup={setup}
       build={build}
       dependencies={[traceSelection, traceIdValue]}

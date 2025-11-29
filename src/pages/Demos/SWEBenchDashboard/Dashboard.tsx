@@ -1,26 +1,31 @@
-import { useState } from "react";
 import {
-  Box,
-  Text,
-  VStack,
-  Spinner,
-  HStack,
   Badge,
-  Grid,
-  GridItem,
+  Box,
   Button,
   Container,
+  Dialog,
+  Grid,
+  GridItem,
+  Heading,
+  HStack,
+  Link,
+  Portal,
+  Spinner,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
+import { useState } from "react";
+import { Page } from "../../../components/Page";
 import {
   SWEBenchProvider,
   useSWEBench,
 } from "../../../contexts/SWEBenchContext";
-import { TraceSelector } from "./TraceSelector";
-import { StatsPanel } from "./StatsPanel";
 import { DurationByType } from "./DurationByType";
-import { SpanDurationOverTime } from "./SpanDurationOverTime";
 import { LLMTokensOverTime } from "./LLMTokensOverTime";
+import { SpanDurationOverTime } from "./SpanDurationOverTime";
 import { SpanGantt } from "./SpanGantt";
+import { StatsPanel } from "./StatsPanel";
+import { TraceSelector } from "./TraceSelector";
 
 /**
  * Loading state indicator component
@@ -42,9 +47,9 @@ function LoadingIndicator() {
   );
 
   return (
-    <Box p={6} borderRadius="lg" bg="bg.subtle" maxW="400px" mx="auto" mt={10}>
+    <Box p={6} borderRadius="lg" maxW="400px" mx="auto" mt={10}>
       <Text fontSize="lg" fontWeight="bold" mb={4}>
-        Loading SWE-Bench Dashboard
+        Loading SWE-Bench Traces
       </Text>
       <VStack align="stretch" gap={2}>
         {steps.map((step, idx) => (
@@ -90,7 +95,7 @@ function LoadingIndicator() {
  * Main dashboard content
  */
 function DashboardContent() {
-  const { state, traceIdValue } = useSWEBench();
+  const { state } = useSWEBench();
   const [showSelector, setShowSelector] = useState(false);
 
   if (state.status !== "ready") {
@@ -98,18 +103,105 @@ function DashboardContent() {
   }
 
   return (
-    <Box h="100vh" overflow="hidden" display="flex" flexDirection="column">
+    <Box
+      h={{ base: "auto", md: "100%" }}
+      overflow="hidden"
+      display="flex"
+      flexDirection="column"
+      bg="bg.muted"
+      pb={2}
+    >
       {/* Header and Stats - centered in container */}
-      <Container maxW="100ch" px={4} pt={4} pb={2} mx='auto'>
+      <Container maxW="85ch" px={4} py={4} mx="auto">
         <Box mb={2}>
-          <Text fontSize="xl" fontWeight="bold">
-            SWE-Bench Trace Explorer
-          </Text>
-          <Text fontSize="sm" color="fg.muted">
-            {traceIdValue
-              ? `Viewing trace: ${traceIdValue.slice(0, 8)}...`
-              : "Aggregate view across all traces"}
-          </Text>
+          <Heading as="h1" size="lg" color="accent" mb={1}>
+            Visualize ML Traces from SWE-Bench
+          </Heading>
+          <HStack gap={2} alignItems="baseline">
+            <Text fontSize="sm" color="gray.fg">
+              Traces are a powerful abstraction for tracking operations across
+              complex agentic systems.
+            </Text>
+            <Dialog.Root>
+              <Dialog.Trigger asChild>
+                <Link
+                  fontSize="sm"
+                  color="accent"
+                  cursor="pointer"
+                  whiteSpace="nowrap"
+                >
+                  Read more
+                </Link>
+              </Dialog.Trigger>
+              <Portal>
+                <Dialog.Backdrop />
+                <Dialog.Positioner>
+                  <Dialog.Content maxW="600px">
+                    <Dialog.Header>
+                      <Dialog.Title color="accent">
+                        About the Trace Visualizations
+                      </Dialog.Title>
+                    </Dialog.Header>
+                    <Dialog.Body pb={6}>
+                      <VStack gap={4} align="stretch">
+                        <Text fontSize="sm" color="gray.fg">
+                          Agentic Systems are becoming more common. From
+                          ChatGPT's Agent mode to Perplexity's Comet browser, we
+                          are entering a new era of augmented web tools. In such
+                          a world, we need structured ways to measure success of
+                          these experiences through observability,
+                          OpenTelemetry, and traces.
+                        </Text>
+                        <Text fontSize="sm" color="gray.fg">
+                          A trace starts with an origin that defines a trace ID
+                          along with an operational context. You can attach this
+                          trace ID to a "span" of the application (i.e., to the
+                          logs coming out the span of a code block). A collector
+                          service can stitch these spans into a trace using the
+                          common trace ID.
+                        </Text>
+                        <Text fontSize="sm" color="gray.fg">
+                          This page explores agent traces from a{" "}
+                          <Link
+                            href="https://huggingface.co/datasets/PatronusAI/TRAIL"
+                            target="_blank"
+                          >
+                            SWE-Bench evaluation dataset
+                          </Link>
+                          , revealing performance patterns and the{" "}
+                          <Link
+                            href="https://arxiv.org/abs/2210.03629"
+                            target="_blank"
+                          >
+                            ReAct
+                          </Link>{" "}
+                          (Reasoning + Acting) framework and key failures faced
+                          by{" "}
+                          <Link
+                            href="https://www.anthropic.com/news/claude-3-7-sonnet"
+                            target="_blank"
+                          >
+                            Claude Sonnet 3.7
+                          </Link>
+                          .
+                        </Text>
+                        <Text fontSize="sm" color="gray.fg">
+                          Made with{" "}
+                          <Link
+                            href="https://idl.uw.edu/mosaic/"
+                            target="_blank"
+                          >
+                            UW's Mosaic Chart library.
+                          </Link>
+                        </Text>
+                      </VStack>
+                    </Dialog.Body>
+                    <Dialog.CloseTrigger />
+                  </Dialog.Content>
+                </Dialog.Positioner>
+              </Portal>
+            </Dialog.Root>
+          </HStack>
         </Box>
         <StatsPanel />
       </Container>
@@ -128,7 +220,6 @@ function DashboardContent() {
         gap={2}
         flex={1}
         px={4}
-        pb={4}
         overflow="hidden"
       >
         {/* Mobile Toggle Button */}
@@ -154,7 +245,11 @@ function DashboardContent() {
 
         {/* Charts Row */}
         <GridItem area="charts" overflow="auto">
-          <Grid templateColumns={{ base: "1fr", sm: "1fr 1fr" }} gap={2} h="100%">
+          <Grid
+            templateColumns={{ base: "1fr", sm: "1fr 1fr" }}
+            gap={2}
+            h="100%"
+          >
             <DurationByType />
             <SpanDurationOverTime />
           </Grid>
@@ -162,7 +257,11 @@ function DashboardContent() {
 
         {/* Details Row */}
         <GridItem area="details" overflow="auto">
-          <Grid templateColumns={{ base: "1fr", sm: "1fr 1fr" }} gap={2} h="100%">
+          <Grid
+            templateColumns={{ base: "1fr", sm: "1fr 1fr" }}
+            gap={2}
+            h="100%"
+          >
             <LLMTokensOverTime />
             <SpanGantt />
           </Grid>
@@ -174,12 +273,14 @@ function DashboardContent() {
 
 /**
  * SWEBenchDashboard - Main dashboard page component
- * Wraps content with the SWEBenchProvider context
+ * Wraps content with the SWEBenchProvider context and Page for nav/footer
  */
 export function SWEBenchDashboard() {
   return (
-    <SWEBenchProvider>
-      <DashboardContent />
-    </SWEBenchProvider>
+    <Page>
+      <SWEBenchProvider>
+        <DashboardContent />
+      </SWEBenchProvider>
+    </Page>
   );
 }
