@@ -115,7 +115,7 @@ function DashboardContent() {
       <Container maxW="85ch" px={4} py={4} mx="auto">
         <Box mb={2}>
           <Heading as="h1" size="lg" color="accent" mb={1}>
-            Visualize ML Traces from SWE-Bench
+            Visualizing ML Traces from SWE-Bench
           </Heading>
           <HStack gap={2} alignItems="baseline">
             <Text fontSize="sm" color="gray.fg">
