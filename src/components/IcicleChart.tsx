@@ -3,9 +3,11 @@ import { Group } from "@visx/group";
 import { hierarchy, partition, HierarchyRectangularNode } from "d3-hierarchy";
 import { interpolateBuPu } from "d3-scale-chromatic";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useColorModeValue } from "./ui/color-mode";
 import { IcicleNode } from "../types/traces";
+import { RecordInspector } from "./RecordInspector";
+import * as vg from "@uwdata/vgplot";
 interface NodeData {
   name: string;
   layer: number;
@@ -269,3 +271,174 @@ export const IcicleChart: React.FC<IcicleChartProps> = ({
     </Box>
   );
 };
+
+interface MosaicIcicleChartProps {
+  data: IcicleNode;
+  tableName?: string;
+  width?: number;
+  height?: number;
+  metric?: string;
+  inspectorKeys?: string[];
+}
+
+/**
+ * MosaicIcicleChart - Wraps IcicleChart with Mosaic/DuckDB integration
+ * - Loads flattened data into DuckDB
+ * - Uses the visx-based IcicleChart visualization
+ * - Opens RecordInspector on click, querying from DuckDB
+ */
+export function MosaicIcicleChart({
+  data,
+  tableName = "icicle_nodes",
+  width = 1000,
+  height = 600,
+  metric = "duration",
+}: MosaicIcicleChartProps) {
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [selectedData, setSelectedData] = useState<Record<string, unknown> | null>(null);
+  const isDarkMode = useColorModeValue(false, true);
+
+  // Load flattened data into DuckDB
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Compute partition layout to get positions (matching IcicleChart's logic)
+        const hierarchyRoot = hierarchy<IcicleNode>(data)
+          .sum((d) => {
+            const val = d.attributes?.duration;
+            return typeof val === "number" && val > 0 ? val : 1;
+          })
+          .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+        const partitionLayout = partition<IcicleNode>()
+          .size([width, height])
+          .padding(1);
+
+        const root = partitionLayout(hierarchyRoot);
+
+        // Find max depth
+        let maxDepth = 0;
+        root.each((node) => {
+          if (node.depth > maxDepth) maxDepth = node.depth;
+        });
+
+        // Flatten hierarchy for DuckDB
+        interface FlatNode {
+          id: number;
+          name: string;
+          layer: number;
+          depth: number;
+          duration: number;
+          tokens: number | null;
+          span_count: number | null;
+          react_phase: string | null;
+        }
+
+        const flatNodes: FlatNode[] = [];
+        let nodeId = 0;
+
+        root.each((node) => {
+          if (node.x1 - node.x0 < 1 || node.y1 - node.y0 < 1) return;
+
+          const d = node.data;
+          flatNodes.push({
+            id: nodeId++,
+            name: d.name,
+            layer: d.layer,
+            depth: node.depth,
+            duration: d.attributes?.duration ?? 0,
+            tokens:
+              typeof d.attributes?.tokens === "number"
+                ? d.attributes.tokens
+                : typeof d.attributes?.tokens === "string"
+                  ? parseInt(d.attributes.tokens, 10) || null
+                  : null,
+            span_count:
+              typeof d.attributes?.span_count === "number"
+                ? d.attributes.span_count
+                : null,
+            react_phase:
+              typeof d.attributes?.react_phase === "string"
+                ? d.attributes.react_phase
+                : null,
+          });
+        });
+
+        // Load into DuckDB
+        const coordinator = vg.coordinator();
+        await coordinator.exec(`
+          CREATE OR REPLACE TABLE ${tableName} (
+            id INTEGER,
+            name VARCHAR,
+            layer INTEGER,
+            depth INTEGER,
+            duration DOUBLE,
+            tokens INTEGER,
+            span_count INTEGER,
+            react_phase VARCHAR
+          )
+        `);
+
+        if (flatNodes.length > 0) {
+          const values = flatNodes
+            .map((n) => {
+              return `(${n.id}, '${n.name.replace(/'/g, "''")}', ${n.layer}, ${n.depth}, ${n.duration}, ${n.tokens ?? "NULL"}, ${n.span_count ?? "NULL"}, ${n.react_phase ? `'${n.react_phase}'` : "NULL"})`;
+            })
+            .join(",\n");
+          await coordinator.exec(`INSERT INTO ${tableName} VALUES ${values}`);
+        }
+
+        setDataLoaded(true);
+      } catch (error) {
+        console.error("Failed to load icicle data into DuckDB:", error);
+      }
+    };
+
+    loadData();
+  }, [data, tableName, width, height, isDarkMode]);
+
+  // Handle node click - query DuckDB and show inspector
+  const handleNodeClick = useCallback(async (node: NodeData) => {
+    if (!dataLoaded) return;
+    
+    try {
+      const coordinator = vg.coordinator();
+      const escapedName = (node.name as string).replace(/'/g, "''");
+      const result = await coordinator.query(
+        `SELECT * FROM ${tableName} WHERE name = '${escapedName}' AND layer = ${node.layer} LIMIT 1`
+      );
+      
+      // Convert result to plain object
+      if (result && result.numRows > 0) {
+        const row = result.get(0);
+        const obj: Record<string, unknown> = {};
+        for (const field of result.schema.fields) {
+          obj[field.name] = row[field.name];
+        }
+        setSelectedData(obj);
+      }
+    } catch (error) {
+      console.error("Failed to query node data:", error);
+    }
+  }, [dataLoaded, tableName]);
+
+  const handleClose = useCallback(() => {
+    setSelectedData(null);
+  }, []);
+
+  return (
+    <>
+      <IcicleChart
+        data={data}
+        width={width}
+        height={height}
+        metric={metric}
+        onNodeClick={handleNodeClick}
+      />
+      <RecordInspector
+        data={selectedData}
+        onClose={handleClose}
+      />
+    </>
+  );
+}

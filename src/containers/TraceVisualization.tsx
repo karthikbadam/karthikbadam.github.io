@@ -64,19 +64,9 @@ export function TimelineChart() {
   if (loading || !data) return null;
   return (
     <>
-      <GanttChart data={data.buckets.individual} onItemClick={setSelected} />
+      <GanttChart data={data.buckets.individual} onItemClick={(item) => setSelected({ ...item })} />
       <RecordInspector
         data={selected}
-        keys={[
-          "name",
-          "type",
-          "span_id",
-          "duration",
-          "tokens",
-          "level",
-          "parent_id",
-          "attributes",
-        ]}
         onClose={() => setSelected(null)}
       />
     </>
@@ -92,14 +82,6 @@ export function HierarchyChart() {
       <IcicleChart data={data.icicle} onNodeClick={setSelected} />
       <RecordInspector
         data={selected}
-        keys={[
-          "name",
-          "layer",
-          "duration",
-          "tokens",
-          "span_count",
-          "attributes",
-        ]}
         onClose={() => setSelected(null)}
       />
     </>
