@@ -4,13 +4,17 @@ import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
 import { useSWEBench } from "../../../contexts/SWEBenchContext";
 
 export function LLMTokensOverTime() {
-  const { state, traceSelection, traceIdValue, getOrCreateView } = useSWEBench();
+  const { state, traceSelection, traceIdValue, getOrCreateView } =
+    useSWEBench();
 
   const setup = useCallback(async () => {
-    await getOrCreateView("spans_llm_tokens", `
+    await getOrCreateView(
+      "spans_llm_tokens",
+      `
       SELECT *, SUBSTRING(trace_id, 1, 8) as trace_label 
       FROM spans WHERE type = 'LLM' AND tokens > 0 AND start_time IS NOT NULL
-    `);
+    `
+    );
   }, [getOrCreateView]);
 
   const build = useCallback(
