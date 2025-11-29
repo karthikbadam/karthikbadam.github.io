@@ -1,11 +1,11 @@
 {
   "posts": [
     {
-      "title": "Visualizing OpenTelemetry Traces in ML Agent Systems",
-      "abstract": "A deep dive into visualizing trace data from ML agents using OpenTelemetry, revealing performance patterns and the ReAct reasoning framework through interactive visualizations. Explore hierarchical icicle charts, stacked bar charts, and detailed span inspection to understand how agents think and act.",
-      "link": "/blog/visualizing-agent-traces",
-      "type": "Blog Post",
-      "date": "October 2025"
+      "title": "Visualize ML Traces from SWE-Bench",
+      "abstract": "An interactive visualization of trace data from ML agents using OpenTelemetry, revealing performance patterns and the ReAct reasoning framework. Explore the traces and detailed spans to understand how agents think and act.",
+      "link": "/swe-bench",
+      "type": "Interactive Demo",
+      "date": "November 2025"
     },
     {
       "title": "Explore Astronomy Concepts with a Packed Radial Tree",
@@ -75,4 +75,4 @@
       "date": "May 12, 2016"
     }
   ]
-} 
+}

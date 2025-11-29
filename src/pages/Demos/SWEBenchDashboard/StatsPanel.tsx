@@ -80,12 +80,12 @@ export function StatsPanel() {
   ];
 
   return (
-    <Box px={3} py={2} borderRadius="lg" bg="bg.subtle">
+    <Box px={2} py={2} borderRadius="lg" bg="bg.panel" border="1px solid" borderColor="gray.subtle">
       <Flex gap={2} wrap="wrap">
         {statItems.map((item, idx) => (
           <Flex key={idx} align="center">
             <Stat.Root size="sm" px={2}>
-              <Stat.Label fontSize="xs" color="fg.muted">{item.label}</Stat.Label>
+              <Stat.Label fontSize="xs" color="accentSubtle">{item.label}</Stat.Label>
               <Stat.ValueText fontSize="sm" fontWeight="semibold">{item.value}</Stat.ValueText>
             </Stat.Root>
           </Flex>

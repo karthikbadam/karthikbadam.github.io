@@ -117,12 +117,7 @@ export function MosaicChart<T = void>({
 
   if (!isReady) {
     return (
-      <Box
-        gridArea={gridArea}
-        bg="bg.subtle"
-        borderRadius="lg"
-        p={3}
-      >
+      <Box gridArea={gridArea} bg="bg.subtle" borderRadius="lg" p={3}>
         <Text fontSize="sm" color="fg.muted">
           {loadingText}
         </Text>
@@ -133,7 +128,7 @@ export function MosaicChart<T = void>({
   return (
     <Box
       gridArea={gridArea}
-      bg="bg.subtle"
+      bg="bg.panel"
       borderRadius="lg"
       p={2}
       overflow="hidden"
@@ -141,18 +136,19 @@ export function MosaicChart<T = void>({
       h="100%"
       display="flex"
       flexDirection="column"
+      border="1px solid"
+      borderColor="gray.subtle"
     >
-      <Text fontSize="xs" fontWeight="semibold" color="fg.muted" mb={1}>
+      <Text fontSize="xs" fontWeight="semibold" color="accentSubtle" mb={1}>
         {title}
         {subtitle && (
-          <Text as="span" fontWeight="normal" ml={1}>
+          <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
             {subtitle}
           </Text>
         )}
         {isBuilding && <Spinner size="xs" ml={2} />}
       </Text>
-      <Box ref={containerRef} flex="1" h="100%" minH="80px" overflow="auto" />
+      <Box ref={containerRef} flex="1" h="100%" minH={{ base: "350px", md: "100px" }} overflow="auto" />
     </Box>
   );
 }
-

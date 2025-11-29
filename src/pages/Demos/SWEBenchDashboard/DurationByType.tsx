@@ -14,9 +14,8 @@ export function DurationByType() {
           y: vg.sum("duration"),
           fill: "type",
           tip: true,
-          z: "trace_id",
         }),
-        vg.xLabel("Type"),
+        vg.xLabel("Span Type"),
         vg.yLabel("Duration (s)"),
         vg.colorLabel("Span Type"),
         vg.marginLeft(50),
@@ -32,8 +31,8 @@ export function DurationByType() {
 
   return (
     <MosaicChart
-      title="Duration by Type"
-      subtitle={traceIdValue ? "(filtered)" : "(all)"}
+      title="Duration by Span Type"
+      subtitle={traceIdValue ? "(filtered)" : "(all traces)"}
       build={build}
       dependencies={[traceSelection]}
       isReady={state.status === "ready" && !!traceSelection}
