@@ -36,7 +36,7 @@ def load_traces() -> Dict:
         traces = json.load(f)
     
     # Get first trace and parse the nested JSON string
-    first_trace_wrapper = traces[3]
+    first_trace_wrapper = traces[1]
     trace = json.loads(first_trace_wrapper['trace'])
     
     # Flatten nested child_spans structure
