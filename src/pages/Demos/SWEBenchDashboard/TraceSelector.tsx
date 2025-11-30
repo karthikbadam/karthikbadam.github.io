@@ -1,4 +1,4 @@
-import { Text, HStack } from "@chakra-ui/react";
+import { Text } from "@chakra-ui/react";
 import { useCallback } from "react";
 import * as vg from "@uwdata/vgplot";
 import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
@@ -60,11 +60,12 @@ export function TraceSelector() {
   );
 
   const subtitle = traceIdValue ? (
-    <HStack gap={2}>
+    <>
       <Text as="span" fontSize="xs">
         Selected: {traceIdValue.slice(0, 10)}...
       </Text>
       <Text
+        ml={2}
         as="span"
         color="blue.solid"
         cursor="pointer"
@@ -73,10 +74,10 @@ export function TraceSelector() {
       >
         clear
       </Text>
-    </HStack>
+    </>
   ) : (
     <Text as="span" color="fg.muted" fontSize="xs">
-      Pick a trace to explore
+      · Pick a trace to explore
     </Text>
   );
 
