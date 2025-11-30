@@ -58,7 +58,9 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
     const init = async () => {
       try {
         setState({ status: "initializing" });
-
+        
+        const traceLimit = window.innerWidth < 768 ? 5 : 50;
+        
         const connector = vg.wasmConnector();
         const coordinator = new vg.Coordinator(connector, {
           cache: false,
@@ -112,6 +114,7 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
             UNNEST(from_json(json_extract(trace, '$.spans'), '["JSON"]')) as span_json,
             0 as depth
           FROM raw
+          limit ${traceLimit}
         `);
 
         // Create temporary table for all spans (flattened recursively)
@@ -120,7 +123,7 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
           CREATE TEMPORARY TABLE IF NOT EXISTS flattened_spans AS
           WITH RECURSIVE flattened AS (
             SELECT trace_id, span_json, depth FROM top_spans
-            UNION
+            UNION ALL
             SELECT 
               f.trace_id,
               UNNEST(from_json(json_extract(f.span_json, '$.child_spans'), '["JSON"]')) as span_json,
@@ -134,7 +137,7 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         `);
 
         // Create final spans table with extracted fields
-        setState({ status: "updating-tables", message: "creating spans table" });
+        setState({ status: "updating-tables", message: "creating spans" });
         await coordinator.exec(`
           CREATE TABLE IF NOT EXISTS spans AS
           SELECT 
@@ -159,7 +162,10 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         `);
 
         // Add and compute duration column (parse ISO 8601 duration)
-        setState({ status: "updating-tables", message: "adding duration column to spans" });
+        setState({
+          status: "updating-tables",
+          message: "adding duration column to spans",
+        });
         await coordinator.exec(
           `ALTER TABLE spans ADD COLUMN IF NOT EXISTS duration DOUBLE`
         );
@@ -176,7 +182,10 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         `);
 
         // Add and compute start_time column (relative to trace start)
-        setState({ status: "updating-tables", message: "adding start_time column to spans" });
+        setState({
+          status: "updating-tables",
+          message: "adding start_time column to spans",
+        });
         await coordinator.exec(
           `ALTER TABLE spans ADD COLUMN IF NOT EXISTS start_time DOUBLE`
         );
@@ -191,7 +200,10 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         `);
 
         // Update trace_metrics with computed totals
-        setState({ status: "updating-tables", message: "updating trace_metrics" });
+        setState({
+          status: "updating-tables",
+          message: "updating trace_metrics",
+        });
         await coordinator.exec(`
           CREATE OR REPLACE TABLE trace_metrics AS
           SELECT 
@@ -212,10 +224,14 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
               SUM(tokens) as total_tokens
             FROM spans GROUP BY trace_id
           ) s ON t.trace_id = s.trace_id
+           WHERE total_duration > 0 
         `);
 
         // Free memory - drop temporary tables
-        setState({ status: "updating-tables", message: "dropping temporary tables" });
+        setState({
+          status: "updating-tables",
+          message: "dropping temporary tables",
+        });
         await coordinator.exec(`DROP TABLE IF EXISTS raw`);
         await coordinator.exec(`DROP TABLE IF EXISTS top_spans`);
         await coordinator.exec(`DROP TABLE IF EXISTS flattened_spans`);

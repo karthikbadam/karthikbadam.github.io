@@ -49,7 +49,7 @@ export function TraceSelector() {
         vg.yLabel(null),
         vg.yAxis(null),
         vg.marginLeft(5),
-        vg.marginRight(50),
+        vg.marginRight(60),
         vg.marginTop(0),
         vg.marginBottom(50),
         vg.width(width),
