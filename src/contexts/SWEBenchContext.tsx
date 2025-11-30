@@ -14,6 +14,7 @@ export type LoadingState =
   | { status: "initializing" }
   | { status: "loading-parquet"; message: string }
   | { status: "creating-tables"; table: string }
+  | { status: "updating-tables"; message: string }
   | { status: "ready" }
   | { status: "error"; message: string };
 
@@ -75,10 +76,11 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         const parquetUrl = `${baseUrl}/data/swe_bench.parquet`;
 
         await coordinator.exec(`INSTALL httpfs; LOAD httpfs;`);
+        await coordinator.exec(`SET threads = 1;`);
         await coordinator.exec(`SET memory_limit = '4GB';`);
 
         await coordinator.exec(`
-          CREATE TABLE IF NOT EXISTS raw AS 
+          CREATE TEMPORARY TABLE IF NOT EXISTS raw AS 
           SELECT * FROM read_parquet('${parquetUrl}')
         `);
 
@@ -101,29 +103,40 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
           FROM parsed
         `);
 
-        // Create spans table with recursive CTE to flatten nested child_spans
-        setState({ status: "creating-tables", table: "spans" });
+        // Create temporary table for top-level spans
+        setState({ status: "creating-tables", table: "top_spans" });
+        await coordinator.exec(`
+          CREATE TEMPORARY TABLE IF NOT EXISTS top_spans AS
+          SELECT 
+            json_extract_string(trace, '$.trace_id') as trace_id,
+            UNNEST(from_json(json_extract(trace, '$.spans'), '["JSON"]')) as span_json,
+            0 as depth
+          FROM raw
+        `);
+
+        // Create temporary table for all spans (flattened recursively)
+        setState({ status: "creating-tables", table: "flattened_spans" });
+        await coordinator.exec(`
+          CREATE TEMPORARY TABLE IF NOT EXISTS flattened_spans AS
+          WITH RECURSIVE flattened AS (
+            SELECT trace_id, span_json, depth FROM top_spans
+            UNION
+            SELECT 
+              f.trace_id,
+              UNNEST(from_json(json_extract(f.span_json, '$.child_spans'), '["JSON"]')) as span_json,
+              f.depth + 1
+            FROM flattened f
+            WHERE json_extract(f.span_json, '$.child_spans') IS NOT NULL
+              AND json_array_length(json_extract(f.span_json, '$.child_spans')) > 0
+              AND f.depth < 3
+          )
+          SELECT * FROM flattened
+        `);
+
+        // Create final spans table with extracted fields
+        setState({ status: "updating-tables", message: "creating spans table" });
         await coordinator.exec(`
           CREATE TABLE IF NOT EXISTS spans AS
-          WITH RECURSIVE 
-          top_spans AS (
-            SELECT 
-              json_extract_string(trace, '$.trace_id') as trace_id,
-              UNNEST(from_json(json_extract(trace, '$.spans'), '["JSON"]')) as span_json,
-              0 as depth
-            FROM raw
-          ),
-          all_spans AS (
-            SELECT trace_id, span_json, depth FROM top_spans
-            UNION ALL
-            SELECT 
-              a.trace_id,
-              UNNEST(from_json(json_extract(a.span_json, '$.child_spans'), '["JSON"]')) as span_json,
-              a.depth + 1
-            FROM all_spans a
-            WHERE json_extract(a.span_json, '$.child_spans') IS NOT NULL
-              AND json_array_length(json_extract(a.span_json, '$.child_spans')) > 0
-          )
           SELECT 
             trace_id,
             json_extract_string(span_json, '$.span_id') as span_id,
@@ -142,10 +155,11 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
             ) as tokens,
             depth,
             ROW_NUMBER() OVER (PARTITION BY trace_id ORDER BY json_extract_string(span_json, '$.timestamp')) as span_index
-          FROM all_spans
+          FROM flattened_spans
         `);
 
         // Add and compute duration column (parse ISO 8601 duration)
+        setState({ status: "updating-tables", message: "adding duration column to spans" });
         await coordinator.exec(
           `ALTER TABLE spans ADD COLUMN IF NOT EXISTS duration DOUBLE`
         );
@@ -162,6 +176,7 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         `);
 
         // Add and compute start_time column (relative to trace start)
+        setState({ status: "updating-tables", message: "adding start_time column to spans" });
         await coordinator.exec(
           `ALTER TABLE spans ADD COLUMN IF NOT EXISTS start_time DOUBLE`
         );
@@ -176,6 +191,7 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         `);
 
         // Update trace_metrics with computed totals
+        setState({ status: "updating-tables", message: "updating trace_metrics" });
         await coordinator.exec(`
           CREATE OR REPLACE TABLE trace_metrics AS
           SELECT 
@@ -198,9 +214,11 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
           ) s ON t.trace_id = s.trace_id
         `);
 
-        // Free memory
+        // Free memory - drop temporary tables
+        setState({ status: "updating-tables", message: "dropping temporary tables" });
         await coordinator.exec(`DROP TABLE IF EXISTS raw`);
-        await coordinator.exec(`CHECKPOINT`);
+        await coordinator.exec(`DROP TABLE IF EXISTS top_spans`);
+        await coordinator.exec(`DROP TABLE IF EXISTS flattened_spans`);
 
         // Create shared selection for cross-chart filtering
         traceSelectionRef.current = vg.Selection.single();

@@ -39,6 +39,7 @@ function LoadingIndicator() {
     { key: "initializing", label: "Initializing DuckDB" },
     { key: "loading-parquet", label: "Loading parquet file" },
     { key: "creating-tables", label: "Creating tables" },
+    { key: "updating-tables", label: "Updating tables" },
     { key: "ready", label: "Ready" },
   ];
 
@@ -74,6 +75,11 @@ function LoadingIndicator() {
               {state.status === "creating-tables" && idx === currentIndex && (
                 <Text as="span" color="blue.500" ml={2}>
                   ({(state as { table: string }).table})
+                </Text>
+              )}
+              {state.status === "updating-tables" && idx === currentIndex && (
+                <Text as="span" color="blue.500" ml={2}>
+                  ({(state as { message: string }).message})
                 </Text>
               )}
             </Text>
