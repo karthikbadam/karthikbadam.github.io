@@ -59,16 +59,24 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         setState({ status: "initializing" });
 
         const connector = vg.wasmConnector();
-        vg.coordinator().databaseConnector(connector);
+        const coordinator = new vg.Coordinator(connector, {
+          cache: false,
+          preagg: { enabled: false },
+        });
+        vg.coordinator(coordinator).databaseConnector(connector);
         await connector.getDuckDB();
 
-        setState({ status: "loading-parquet", message: "Loading SWE-bench traces..." });
+        setState({
+          status: "loading-parquet",
+          message: "Loading SWE-bench traces...",
+        });
 
-        const coordinator = vg.coordinator();
         const baseUrl = window.location.origin;
         const parquetUrl = `${baseUrl}/data/swe_bench.parquet`;
 
         await coordinator.exec(`INSTALL httpfs; LOAD httpfs;`);
+        await coordinator.exec(`SET memory_limit = '4GB';`);
+
         await coordinator.exec(`
           CREATE TABLE IF NOT EXISTS raw AS 
           SELECT * FROM read_parquet('${parquetUrl}')
@@ -138,7 +146,9 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         `);
 
         // Add and compute duration column (parse ISO 8601 duration)
-        await coordinator.exec(`ALTER TABLE spans ADD COLUMN IF NOT EXISTS duration DOUBLE`);
+        await coordinator.exec(
+          `ALTER TABLE spans ADD COLUMN IF NOT EXISTS duration DOUBLE`
+        );
         await coordinator.exec(`
           UPDATE spans SET duration = 
             CASE 
@@ -152,7 +162,9 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         `);
 
         // Add and compute start_time column (relative to trace start)
-        await coordinator.exec(`ALTER TABLE spans ADD COLUMN IF NOT EXISTS start_time DOUBLE`);
+        await coordinator.exec(
+          `ALTER TABLE spans ADD COLUMN IF NOT EXISTS start_time DOUBLE`
+        );
         await coordinator.exec(`
           WITH trace_starts AS (
             SELECT trace_id, MIN(epoch(TRY_CAST(timestamp_str AS TIMESTAMP))) as min_start
@@ -188,6 +200,7 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
 
         // Free memory
         await coordinator.exec(`DROP TABLE IF EXISTS raw`);
+        await coordinator.exec(`CHECKPOINT`);
 
         // Create shared selection for cross-chart filtering
         traceSelectionRef.current = vg.Selection.single();
