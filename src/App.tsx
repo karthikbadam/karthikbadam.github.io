@@ -7,6 +7,7 @@ import { Posts } from "./pages/Posts";
 import { Publications } from "./pages/Publications";
 import { PackedRadialTreeDemo } from "./pages/Demos/PRT";
 import { SWEBenchDashboard } from "./pages/Demos/SWEBenchDashboard";
+import { GravitationalLensingDashboard } from "./pages/Demos/GravitationalLensing";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/packed-radial-tree" element={<PackedRadialTreeDemo />} />
           <Route path="/swe-bench" element={<SWEBenchDashboard />} />
+          <Route path="/gravitational-lensing" element={<GravitationalLensingDashboard />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
         </Routes>
       </Router>
