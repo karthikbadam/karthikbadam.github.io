@@ -70,13 +70,18 @@ export function LensedGrid() {
           strokeWidth: 0.5,
         }),
         // Raw points
-        vg.dot(vg.from(downsampledSource), {
+        vg.raster(vg.from('lensed_grid'), {
           x: vg.sql`CASE WHEN ${$showBeta} = 1 THEN beta_x ELSE theta_x END`,
           y: vg.sql`CASE WHEN ${$showBeta} = 1 THEN beta_y ELSE theta_y END`,
-          r: 1,
-          fill: "steelblue",
-          fillOpacity: 0.5,
+          bandwidth: 0,
+          fill: 'steelblue'
         }),
+        // vg.dot(vg.from(downsampledSource), {
+        //   x: vg.sql`CASE WHEN ${$showBeta} = 1 THEN beta_x ELSE theta_x END`,
+        //   y: vg.sql`CASE WHEN ${$showBeta} = 1 THEN beta_y ELSE theta_y END`,
+        //   r: 1,
+        //   fillOpacity: 0.5,
+        // }),
         vg.xDomain([-1, 1]),
         vg.yDomain([-1, 1]),
         vg.xAxis(null),
@@ -87,10 +92,10 @@ export function LensedGrid() {
         vg.marginTop(10),
         vg.marginBottom(10),
         vg.width(dimensions.width),
-        vg.height(dimensions.height - 50)
+        vg.height(dimensions.height - 50),
       )
     );
-  }, [state.status, dimensions]);
+  }, [dimensions]);
 
   useEffect(() => {
     if (!containerRef.current || state.status !== "ready") return;

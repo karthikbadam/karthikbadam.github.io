@@ -143,10 +143,10 @@ export function GravitationalLensingProvider({ children }: { children: ReactNode
             e DOUBLE
           );
           INSERT INTO lenses VALUES 
-            (1, -0.3, 0.2, 0.25),
-            (2, 0.4, -0.1, 0.2),
-            (3, 0.0, 0.5, 0.15),
-            (4, -0.2, -0.4, 0.18);
+            (1, -0.3, 0.2, 0.025),
+            (2, 0.4, -0.1, 0.02),
+            (3, 0.0, 0.5, 0.015),
+            (4, -0.2, -0.4, 0.018);
         `;
         setState({ status: "creating-tables", table: "lenses", query: lensesQuery });
         await coordinator.exec(lensesQuery);
