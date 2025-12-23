@@ -123,7 +123,7 @@ function DashboardContent() {
           <Heading as="h1" size="lg" color="accent" mb={1}>
             Visualizing ML Traces from SWE-Bench
           </Heading>
-          <HStack gap={2} alignItems="baseline">
+          <HStack gap={2} alignItems="baseline" flexWrap="wrap">
             <Text fontSize="sm" color="gray.fg">
               Traces are a powerful abstraction for tracking operations across
               complex agentic systems.
