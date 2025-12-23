@@ -113,12 +113,11 @@ function DashboardContent() {
           <Text fontSize="sm" color="gray.fg">
             A small collection of 1 million stars with their positions,
             magnitudes, and other properties. This is a subset of the Gaia star
-            catalog that contains 1 billion stars.
+            catalog that contains 1 billion stars.{" "}
             <Link
-              ml={2}
               fontSize="sm"
               color="accent"
-              href="https://gaia.aip.de/query/2ff8be6f-09ca-47b9-bda5-bc4da0dd1b3f/"
+              href="https://gaia.aip.de/query/b9cbe033-a5bf-401e-ba85-65d6768f2444/"
               target="_blank"
             >
               View the full catalog
@@ -138,7 +137,11 @@ function DashboardContent() {
       >
         {/* Left: Sky Map + Histograms stacked */}
         <Box flex={1} minW={0} display="flex" flexDirection="column" gap={4}>
-          <Box h={{ base: "400px", md: "auto" }} maxH={{ md: "400px" }} aspectRatio={{ md: "4/3" }}>
+          <Box
+            h={{ base: "350px", md: "auto" }}
+            maxH={{ md: "350px" }}
+            aspectRatio={{ md: "4/3" }}
+          >
             <SkyMap />
           </Box>
           <Box h={{ base: "300px", md: "auto" }} flex={{ md: 1 }}>

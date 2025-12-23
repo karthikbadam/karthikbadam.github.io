@@ -36,10 +36,8 @@ const GaiaContext = createContext<GaiaContextValue>({
   coordinator: null,
 });
 
-// https://gaia.aip.de/query/2ff8be6f-09ca-47b9-bda5-bc4da0dd1b3f/
 //https://gaia.aip.de/query/b9cbe033-a5bf-401e-ba85-65d6768f2444/
 const PARQUET_FILENAME = "gaia-b9cbe033-a5bf-401e-ba85-65d6768f2444.parquet";
-// const PARQUET_FILENAME = "gaia-2ff8be6f-09ca-47b9-bda5-bc4da0dd1b3f.parquet";
 
 export function GaiaProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<LoadingState>({ status: "idle" });
