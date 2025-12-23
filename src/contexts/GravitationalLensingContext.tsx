@@ -8,14 +8,7 @@ import {
   ReactNode,
 } from "react";
 import * as vg from "@uwdata/vgplot";
-
-export type LoadingState =
-  | { status: "idle" }
-  | { status: "initializing" }
-  | { status: "creating-tables"; table: string; query?: string }
-  | { status: "computing-lensing"; query?: string }
-  | { status: "ready" }
-  | { status: "error"; message: string };
+import { LoadingState } from "./SWEBenchContext";
 
 interface GravitationalLensingContextValue {
   state: LoadingState;
@@ -25,35 +18,42 @@ interface GravitationalLensingContextValue {
   isComputing: boolean;
 }
 
-const GravitationalLensingContext = createContext<GravitationalLensingContextValue>({
-  state: { status: "idle" },
-  recomputeLensing: async () => {},
-  addLens: async () => {},
-  removeLastLens: async () => {},
-  isComputing: false,
-});
+const GravitationalLensingContext =
+  createContext<GravitationalLensingContextValue>({
+    state: { status: "idle" },
+    recomputeLensing: async () => {},
+    addLens: async () => {},
+    removeLastLens: async () => {},
+    isComputing: false,
+  });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let coordinatorRef: any = null;
 
-export function GravitationalLensingProvider({ children }: { children: ReactNode }) {
+export function GravitationalLensingProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [state, setState] = useState<LoadingState>({ status: "idle" });
   const [isComputing, setIsComputing] = useState(false);
   const initRef = useRef(false);
 
   // Recompute lensing when lenses change
-  const recomputeLensing = useCallback(async () => {
+  // isInitial: true during initial setup (shows loading screen), false for user operations (uses isComputing only)
+  const recomputeLensing = useCallback(async (isInitial = false) => {
     if (!coordinatorRef) return;
     setIsComputing(true);
 
     try {
+      // When no lenses exist, SUM returns NULL, COALESCE gives 0, so beta = theta (no deflection).
       const lensingQuery = `
         CREATE OR REPLACE TABLE lensed_grid AS
         WITH offsets AS (
           SELECT g.ix, g.iy, g.theta_x, g.theta_y,
             SUM(l.e * l.e * (g.theta_x - l.cx) / NULLIF(POW(g.theta_x - l.cx, 2) + POW(g.theta_y - l.cy, 2), 0)) AS dx,
             SUM(l.e * l.e * (g.theta_y - l.cy) / NULLIF(POW(g.theta_x - l.cx, 2) + POW(g.theta_y - l.cy, 2), 0)) AS dy
-          FROM source_grid g CROSS JOIN lenses l
+          FROM source_grid g LEFT JOIN lenses l ON TRUE
           GROUP BY g.ix, g.iy, g.theta_x, g.theta_y
         )
         SELECT ix, iy, theta_x, theta_y,
@@ -61,9 +61,14 @@ export function GravitationalLensingProvider({ children }: { children: ReactNode
           theta_y - COALESCE(dy, 0) AS beta_y
         FROM offsets
       `;
-      setState({ status: "computing-lensing", query: lensingQuery });
+      // Only update loading state during initial setup to avoid UI flash on user operations
+      if (isInitial) {
+        setState({ status: "creating-tables", table: "lensed_grid", query: lensingQuery });
+      }
       await coordinatorRef.exec(lensingQuery);
-      setState({ status: "ready" });
+      if (isInitial) {
+        setState({ status: "ready" });
+      }
     } catch (err) {
       console.error("Failed to compute lensing:", err);
       setState({
@@ -76,19 +81,22 @@ export function GravitationalLensingProvider({ children }: { children: ReactNode
   }, []);
 
   // Add a new lens
-  const addLens = useCallback(async (cx: number, cy: number, e: number) => {
-    if (!coordinatorRef) return;
-    setIsComputing(true);
-    try {
-      await coordinatorRef.exec(`
+  const addLens = useCallback(
+    async (cx: number, cy: number, e: number) => {
+      if (!coordinatorRef) return;
+      setIsComputing(true);
+      try {
+        await coordinatorRef.exec(`
         INSERT INTO lenses (lens_id, cx, cy, e)
         SELECT COALESCE(MAX(lens_id), 0) + 1, ${cx}, ${cy}, ${e} FROM lenses
       `);
-      await recomputeLensing();
-    } finally {
-      setIsComputing(false);
-    }
-  }, [recomputeLensing]);
+        await recomputeLensing();
+      } finally {
+        setIsComputing(false);
+      }
+    },
+    [recomputeLensing]
+  );
 
   // Remove the last lens
   const removeLastLens = useCallback(async () => {
@@ -131,10 +139,14 @@ export function GravitationalLensingProvider({ children }: { children: ReactNode
             -1.0 + 2.0 * y.range / 1999.0 AS theta_y
           FROM range(2000) x, range(2000) y
         `;
-        setState({ status: "creating-tables", table: "source_grid", query: gridQuery });
+        setState({
+          status: "creating-tables",
+          table: "source_grid",
+          query: gridQuery,
+        });
         await coordinator.exec(gridQuery);
 
-        // Create lenses table with sample data
+        // Create lenses table with sample data (12 lenses with varied e values)
         const lensesQuery = `
           CREATE TABLE IF NOT EXISTS lenses (
             lens_id INTEGER PRIMARY KEY,
@@ -143,19 +155,33 @@ export function GravitationalLensingProvider({ children }: { children: ReactNode
             e DOUBLE
           );
           INSERT INTO lenses VALUES 
-            (1, -0.3, 0.2, 0.025),
-            (2, 0.4, -0.1, 0.02),
-            (3, 0.0, 0.5, 0.015),
-            (4, -0.2, -0.4, 0.018);
+            (1, -0.5, 0.3, 0.12),
+            (2, 0.4, 0.5, 0.08),
+            (3, -0.2, -0.4, 0.15),
+            (4, 0.6, -0.3, 0.10),
+            (5, 0.0, 0.0, 0.18),
+            (6, -0.6, -0.2, 0.07),
+            (7, 0.3, 0.2, 0.11),
+            (8, -0.1, 0.6, 0.09),
+            (9, 0.5, -0.6, 0.14),
+            (10, -0.4, 0.0, 0.06),
+            (11, 0.2, -0.5, 0.13),
+            (12, -0.3, -0.7, 0.05);
         `;
-        setState({ status: "creating-tables", table: "lenses", query: lensesQuery });
+        setState({
+          status: "creating-tables",
+          table: "lenses",
+          query: lensesQuery,
+        });
         await coordinator.exec(lensesQuery);
 
-        // Compute initial lensing
-        await recomputeLensing();
-
+        // Compute initial lensing (isInitial=true to show loading state)
+        await recomputeLensing(true);
       } catch (err) {
-        console.error("Failed to initialize Gravitational Lensing context:", err);
+        console.error(
+          "Failed to initialize Gravitational Lensing context:",
+          err
+        );
         setState({
           status: "error",
           message: err instanceof Error ? err.message : "Unknown error",
@@ -181,5 +207,5 @@ export function GravitationalLensingProvider({ children }: { children: ReactNode
   );
 }
 
-export const useGravitationalLensing = () => useContext(GravitationalLensingContext);
-
+export const useGravitationalLensing = () =>
+  useContext(GravitationalLensingContext);

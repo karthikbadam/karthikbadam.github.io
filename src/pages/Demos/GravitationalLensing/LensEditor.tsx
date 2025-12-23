@@ -5,36 +5,30 @@ import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
 import { useGravitationalLensing } from "../../../contexts/GravitationalLensingContext";
 
 export function LensEditor() {
-  const { state, addLens, removeLastLens, isComputing } = useGravitationalLensing();
+  const { state, addLens, removeLastLens, isComputing } =
+    useGravitationalLensing();
 
-  const build = useCallback(
-    (_: void, { width, height }: ChartDimensions) => {
-      return vg.plot(
-        vg.dot(vg.from("lenses"), {
-          x: "cx",
-          y: "cy",
-          r: vg.sql`e * 80`,
-          fill: "steelblue",
-          fillOpacity: 0.6,
-          stroke: "steelblue",
-          strokeWidth: 2,
-          tip: true,
-        }),
-        vg.xLabel("cx (horizontal position)"),
-        vg.yLabel("cy (vertical position)"),
-        vg.xDomain([-1, 1]),
-        vg.yDomain([-1, 1]),
-        vg.aspectRatio(1),
-        vg.marginLeft(40),
-        vg.marginRight(20),
-        vg.marginTop(40),
-        vg.marginBottom(40),
-        vg.width(width),
-        vg.height(height)
-      );
-    },
-    []
-  );
+  const build = useCallback((_: void, { width, height }: ChartDimensions) => {
+    return vg.plot(
+      vg.dot(vg.from("lenses"), {
+        x: "cx",
+        y: "cy",
+        r: vg.sql`e * 80`,
+        fill: "orange",
+        tip: true,
+      }),
+      vg.xDomain([-1, 1]),
+      vg.yDomain([-1, 1]),
+      vg.yAxis(null),
+      vg.xAxis(null),
+      vg.width(width),
+      vg.height(height),
+      vg.marginLeft(0),
+      vg.marginRight(0),
+      vg.marginTop(0),
+      vg.marginBottom(0)
+    );
+  }, []);
 
   const handleAddLens = () => {
     // Add a new lens at a random position
@@ -48,27 +42,22 @@ export function LensEditor() {
     <Box
       bg="bg.panel"
       borderRadius="lg"
-      p={2}
       h="100%"
       display="flex"
       flexDirection="column"
       border="1px solid"
       borderColor="gray.subtle"
     >
-      <Text fontSize="xs" fontWeight="semibold" color="accentSubtle" mb={1}>
-        Lens Editor
-      </Text>
-
       <Box flex="1" minH="200px">
         <MosaicChart
-          title=""
+          title="Lens Editor"
           build={build}
           dependencies={[isComputing]}
           isReady={state.status === "ready"}
         />
       </Box>
 
-      <VStack gap={2} mt={2} align="stretch">
+      <VStack gap={2} mt={2} align="stretch" p={2}>
         <HStack gap={2}>
           <Button
             size="xs"
@@ -81,7 +70,6 @@ export function LensEditor() {
           </Button>
           <Button
             size="xs"
-            colorPalette="red"
             variant="outline"
             onClick={removeLastLens}
             disabled={isComputing}
@@ -97,4 +85,3 @@ export function LensEditor() {
     </Box>
   );
 }
-

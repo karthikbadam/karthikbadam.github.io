@@ -28,8 +28,9 @@ function LoadingIndicator() {
 
   const steps = [
     { key: "initializing", label: "Initializing DuckDB" },
+    { key: "loading-parquet", label: "Loading parquet file" },
     { key: "creating-tables", label: "Creating tables" },
-    { key: "computing-lensing", label: "Computing lensing" },
+    { key: "updating-tables", label: "Updating tables" },
     { key: "ready", label: "Ready" },
   ];
 
@@ -39,7 +40,8 @@ function LoadingIndicator() {
 
   // Extract query from state if available
   const currentQuery =
-    (state.status === "creating-tables" || state.status === "computing-lensing") &&
+    (state.status === "creating-tables" ||
+      state.status === "updating-tables") &&
     "query" in state
       ? (state as { query?: string }).query
       : null;
@@ -47,7 +49,7 @@ function LoadingIndicator() {
   return (
     <Box p={6} borderRadius="lg" maxW="600px" mx="auto" mt={10}>
       <Text fontSize="lg" fontWeight="bold" mb={4}>
-        Loading Gravitational Lensing Demo
+        Loading Gravitational Lenses
       </Text>
       <VStack align="stretch" gap={2}>
         {steps.map((step, idx) => (
@@ -74,19 +76,17 @@ function LoadingIndicator() {
                   ({(state as { table: string }).table})
                 </Text>
               )}
+              {state.status === "updating-tables" && idx === currentIndex && (
+                <Text as="span" color="blue.500" ml={2}>
+                  ({(state as { message: string }).message})
+                </Text>
+              )}
             </Text>
           </HStack>
         ))}
       </VStack>
       {currentQuery && (
-        <Box
-          mt={4}
-          p={3}
-          bg="bg.subtle"
-          borderRadius="md"
-          maxH="450px"
-          overflow="auto"
-        >
+        <Box mt={4} p={3} bg="bg.subtle" borderRadius="md" overflow="auto">
           <Text
             fontSize="xs"
             fontFamily="mono"
@@ -134,8 +134,9 @@ function DashboardContent() {
             Gravitational Lensing Simulation
           </Heading>
           <Text fontSize="sm" color="gray.fg">
-            Interactive visualization of gravitational lensing using the thin-lens
-            point-mass approximation. Edit lens positions and observe the warped grid.
+            Interactive visualization of gravitational lensing using the
+            thin-lens point-mass approximation. Edit lens positions and observe
+            the warped grid.
           </Text>
         </Box>
       </Container>
@@ -156,7 +157,7 @@ function DashboardContent() {
         px={4}
         overflow="hidden"
       >
-        <GridItem area="editor" overflow="auto">
+        <GridItem area="editor" overflow="auto" aspectRatio={"1/1"}>
           <LensEditor />
         </GridItem>
 
@@ -180,4 +181,3 @@ export function GravitationalLensingDashboard() {
     </Page>
   );
 }
-

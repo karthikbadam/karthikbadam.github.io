@@ -1,9 +1,9 @@
 import { SimpleGrid, Stat, Text } from "@chakra-ui/react";
 import { useState } from "react";
-import { GanttChart } from "../components/GanttChart";
-import { IcicleChart } from "../components/IcicleChart";
-import { RecordInspector } from "../components/RecordInspector";
-import { StackedBarChart } from "../components/StackedBarChart";
+import { GanttChart } from "./GanttChart";
+import { IcicleChart } from "./IcicleChart";
+import { RecordInspector } from "./RecordInspector";
+import { StackedBarChart } from "./StackedBarChart";
 import { useTraceData } from "../hooks/useTraceData";
 
 export function TraceMetrics() {
