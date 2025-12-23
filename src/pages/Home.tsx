@@ -53,7 +53,7 @@ export const Home = () => {
   return (
     <Page>
       <Container maxW="container.xl" px={8}>
-        <TwoPanelWithScroll leftWidth="320px" rightWidth="1fr" gap="100px">
+        <TwoPanelWithScroll leftWidth="400px" rightWidth="1fr" gap="100px">
           <TwoPanelWithScroll.LeftPanel gap={6}>
             <Stack position="relative" mt={10} mb={6}>
               <Image
@@ -216,7 +216,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       <Heading size="sm" fontWeight="medium">
         {post.title}
       </Heading>
-      <Text fontSize="sm" lineClamp={3} color="gray.focusRing">
+      <Text fontSize="sm" lineClamp={2} color="gray.focusRing">
         {post.abstract}
       </Text>
       <HStack gap={2} pt={2}>
