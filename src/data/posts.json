@@ -8,6 +8,13 @@
       "date": "December 2025"
     },
     {
+      "title": "Gravitational Lensing Simulation",
+      "abstract": "Simulation of gravitational lensing using the thin-lens point-mass approximation. Add and remove lenses to observe how mass bends light, creating caustics and distorting the source plane grid.",
+      "link": "/gravitational-lensing",
+      "type": "Interactive Demo",
+      "date": "November 2025"
+    },
+    {
       "title": "Visualize ML Traces from SWE-Bench",
       "abstract": "An interactive visualization of trace data from ML agents using OpenTelemetry, revealing performance patterns and the ReAct reasoning framework. Explore the traces and detailed spans to understand how agents think and act.",
       "link": "/swe-bench",

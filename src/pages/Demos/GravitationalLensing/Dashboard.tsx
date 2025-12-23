@@ -2,24 +2,27 @@ import {
   Badge,
   Box,
   Container,
+  Grid,
+  GridItem,
   Heading,
   HStack,
-  Link,
   Spinner,
   Text,
   VStack,
 } from "@chakra-ui/react";
 import { Page } from "../../../components/Page";
-import { GaiaProvider, useGaia } from "../../../contexts/GaiaContext";
-import { SkyMap } from "./SkyMap";
-import { HistogramCharts } from "./HistogramCharts";
-import { ThreeDView } from "./ThreeDView";
+import {
+  GravitationalLensingProvider,
+  useGravitationalLensing,
+} from "../../../contexts/GravitationalLensingContext";
+import { LensEditor } from "./LensEditor";
+import { LensedGrid } from "./LensedGrid";
 
 /**
  * Loading state indicator component
  */
 function LoadingIndicator() {
-  const { state } = useGaia();
+  const { state } = useGravitationalLensing();
 
   if (state.status === "ready") return null;
 
@@ -46,7 +49,7 @@ function LoadingIndicator() {
   return (
     <Box p={6} borderRadius="lg" maxW="600px" mx="auto" mt={10}>
       <Text fontSize="lg" fontWeight="bold" mb={4}>
-        Loading Star Catalog
+        Loading Gravitational Lenses
       </Text>
       <VStack align="stretch" gap={2}>
         {steps.map((step, idx) => (
@@ -83,7 +86,7 @@ function LoadingIndicator() {
         ))}
       </VStack>
       {currentQuery && (
-        <Box mt={4} p={2} bg="bg.subtle" borderRadius="md" overflow="auto">
+        <Box mt={4} p={3} bg="bg.subtle" borderRadius="md" overflow="auto">
           <Text
             fontSize="xs"
             fontFamily="mono"
@@ -95,7 +98,7 @@ function LoadingIndicator() {
         </Box>
       )}
       {state.status === "error" && (
-        <Box mt={4} p={2} bg="red.subtle" borderRadius="md">
+        <Box mt={4} p={3} bg="red.subtle" borderRadius="md">
           <Text color="red.fg" fontSize="sm">
             Error: {(state as { message: string }).message}
           </Text>
@@ -106,10 +109,10 @@ function LoadingIndicator() {
 }
 
 /**
- * Main content
+ * Main dashboard content
  */
 function DashboardContent() {
-  const { state } = useGaia();
+  const { state } = useGravitationalLensing();
 
   if (state.status !== "ready") {
     return <LoadingIndicator />;
@@ -125,70 +128,56 @@ function DashboardContent() {
       pb={2}
     >
       {/* Header */}
-      <Container maxW="85ch" px={4} py={4}>
+      <Container maxW="85ch" px={4} py={4} mx="auto">
         <Box mb={2}>
           <Heading as="h1" size="lg" color="accent" mb={1}>
-            Gaia Star Catalog Explorer
+            Gravitational Lensing Simulation
           </Heading>
           <Text fontSize="sm" color="gray.fg">
-            A small collection of 1 million stars with their positions,
-            magnitudes, and other properties. This is a subset of the Gaia star
-            catalog that contains 1 billion stars.{" "}
-            <Link
-              fontSize="sm"
-              color="accent"
-              href="https://gaia.aip.de/query/b9cbe033-a5bf-401e-ba85-65d6768f2444/"
-              target="_blank"
-            >
-              View the full catalog
-            </Link>
+            Interactive visualization of gravitational lensing using the
+            thin-lens point-mass approximation. Edit lens positions and observe
+            the warped grid.
           </Text>
         </Box>
       </Container>
 
-      {/* Two-panel layout - responsive */}
-      <Box
+      {/* Charts Grid */}
+      <Grid
+        templateAreas={{
+          base: `"editor" "grid"`,
+          md: `"editor grid"`,
+        }}
+        templateColumns={{ base: "1fr", md: "1fr 2fr" }}
+        templateRows={{
+          base: "1fr 1fr",
+          md: "1fr",
+        }}
+        gap={2}
         flex={1}
         px={4}
-        overflow={{ base: "auto", md: "hidden" }}
-        display="flex"
-        flexDirection={{ base: "column", md: "row" }}
-        gap={4}
+        overflow="hidden"
       >
-        {/* Left: Sky Map + Histograms stacked */}
-        <Box flex={1} minW={0} display="flex" flexDirection="column" gap={4}>
-          <Box aspectRatio={{ md: "4/3" }}>
-            <SkyMap />
-          </Box>
-          <Box flex={{ md: 1 }}>
-            <HistogramCharts />
-          </Box>
-        </Box>
+        <GridItem area="editor" overflow="auto" aspectRatio={"1/1"}>
+          <LensEditor />
+        </GridItem>
 
-        {/* Right: 3D View */}
-        <Box
-          flex={2}
-          minW={0}
-          h={{ base: "85vh", md: "auto" }}
-          borderRadius="md"
-          overflow="hidden"
-        >
-          <ThreeDView />
-        </Box>
-      </Box>
+        <GridItem area="grid" overflow="auto">
+          <LensedGrid />
+        </GridItem>
+      </Grid>
     </Box>
   );
 }
 
 /**
- * StarCatalogExplorer - Main page component
+ * GravitationalLensingDashboard - Main dashboard page component
  */
-export function StarCatalogExplorer() {
+export function GravitationalLensingDashboard() {
   return (
     <Page>
-      <GaiaProvider>
+      <GravitationalLensingProvider>
         <DashboardContent />
-      </GaiaProvider>
+      </GravitationalLensingProvider>
     </Page>
   );
 }

@@ -142,7 +142,7 @@ export function SpanGantt() {
       <MosaicChart<GanttSetupResult>
         title="Span Timeline"
         subtitle={`${spanCount.toLocaleString()} spans ${
-          !selectedData ? "· Click a span to review its content" : ""
+          !selectedData ? "• Click a span to review its content" : ""
         }`}
         setup={setup}
         build={build}
