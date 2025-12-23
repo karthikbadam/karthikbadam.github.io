@@ -137,14 +137,10 @@ function DashboardContent() {
       >
         {/* Left: Sky Map + Histograms stacked */}
         <Box flex={1} minW={0} display="flex" flexDirection="column" gap={4}>
-          <Box
-            h={{ base: "350px", md: "auto" }}
-            maxH={{ md: "350px" }}
-            aspectRatio={{ md: "4/3" }}
-          >
+          <Box aspectRatio={{ md: "4/3" }}>
             <SkyMap />
           </Box>
-          <Box h={{ base: "300px", md: "auto" }} flex={{ md: 1 }}>
+          <Box flex={{ md: 1 }}>
             <HistogramCharts />
           </Box>
         </Box>

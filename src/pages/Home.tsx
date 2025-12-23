@@ -57,7 +57,7 @@ export const Home = () => {
         <TwoPanelWithScroll
           leftWidth="360px"
           rightWidth="1fr"
-          gap={{ base: 6, md: 100 }}
+          gap={{ base: 10, md: 100 }}
         >
           <TwoPanelWithScroll.LeftPanel gap={6}>
             <Stack position="relative" mt={10} mb={6}>
