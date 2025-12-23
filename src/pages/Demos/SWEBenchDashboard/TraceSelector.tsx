@@ -77,7 +77,7 @@ export function TraceSelector() {
     </>
   ) : (
     <Text as="span" color="fg.muted" fontSize="xs">
-      · Pick a trace to explore
+      Pick a trace to explore
     </Text>
   );
 

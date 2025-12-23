@@ -12,28 +12,18 @@ type ChartBuilder<T = void> = (
 ) => HTMLElement | null;
 
 interface MosaicChartProps<T = void> {
-  /** Title displayed above the chart */
   title: string;
-  /** Optional subtitle/status text or element */
   subtitle?: ReactNode;
-  /**
-   * Optional async setup function that runs queries/creates views.
-   * Returns data needed by build().
-   */
   setup?: () => Promise<T>;
-  /**
-   * Builds the chart element.
-   * Receives result from setup() if provided, plus container dimensions.
-   */
   build: ChartBuilder<T>;
-  /** Dependencies that trigger chart rebuild */
   dependencies?: unknown[];
-  /** Whether the context is ready */
   isReady: boolean;
-  /** Optional loading text */
   loadingText?: string;
-  /** Grid area name for CSS Grid layout */
   gridArea?: string;
+  /** Optional element to render on the right side of the header */
+  rightElement?: ReactNode;
+  /** Optional CSS styles to apply to the chart container */
+  containerCss?: Record<string, unknown>;
 }
 
 export function MosaicChart<T = void>({
@@ -45,6 +35,8 @@ export function MosaicChart<T = void>({
   isReady,
   loadingText = "Loading...",
   gridArea,
+  rightElement,
+  containerCss,
 }: MosaicChartProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isBuilding, setIsBuilding] = useState(false);
@@ -78,15 +70,11 @@ export function MosaicChart<T = void>({
 
   const renderChart = useCallback(async () => {
     if (!isReady || !containerRef.current) return;
-    // Wait for valid dimensions
     if (dimensions.width === 0 || dimensions.height === 0) return;
 
     setIsBuilding(true);
     try {
-      // Run setup queries if provided
       const setupResult = setup ? await setup() : (undefined as T);
-
-      // Build chart with setup results and dimensions
       const chart = build(setupResult, dimensions);
 
       if (chart && containerRef.current) {
@@ -139,16 +127,28 @@ export function MosaicChart<T = void>({
       border="1px solid"
       borderColor="gray.subtle"
     >
-      <Text fontSize="xs" fontWeight="semibold" color="accentSubtle" mb={1}>
-        {title}
-        {subtitle && (
-          <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
-            {subtitle}
-          </Text>
-        )}
-        {isBuilding && <Spinner size="xs" ml={2} />}
-      </Text>
-      <Box ref={containerRef} flex="1" h="100%" minH={{ base: "350px", md: "100px" }} overflow="auto" />
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+        <Text fontSize="xs" fontWeight="semibold" color="accentSubtle">
+          {title}
+          {subtitle && (
+            <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
+              {"• "}
+              {subtitle}
+            </Text>
+          )}
+          {isBuilding && <Spinner size="xs" ml={2} />}
+        </Text>
+        {rightElement}
+      </Box>
+      <Box
+        ref={containerRef}
+        flex="1"
+        h="100%"
+        borderRadius="md"
+        minH={{ base: "350px", md: "100px" }}
+        overflow="auto"
+        css={containerCss}
+      />
     </Box>
   );
 }

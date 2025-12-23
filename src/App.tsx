@@ -8,6 +8,7 @@ import { Publications } from "./pages/Publications";
 import { PackedRadialTreeDemo } from "./pages/Demos/PRT";
 import { SWEBenchDashboard } from "./pages/Demos/SWEBenchDashboard";
 import { GravitationalLensingDashboard } from "./pages/Demos/GravitationalLensing";
+import { StarCatalogExplorer } from "./pages/Demos/StarCatalog";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/packed-radial-tree" element={<PackedRadialTreeDemo />} />
           <Route path="/swe-bench" element={<SWEBenchDashboard />} />
           <Route path="/gravitational-lensing" element={<GravitationalLensingDashboard />} />
+          <Route path="/star-catalog" element={<StarCatalogExplorer />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
         </Routes>
       </Router>
