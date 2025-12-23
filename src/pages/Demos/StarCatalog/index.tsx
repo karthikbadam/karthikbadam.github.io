@@ -38,7 +38,7 @@ function LoadingIndicator() {
   return (
     <Box p={6} borderRadius="lg" maxW="400px" mx="auto" mt={10}>
       <Text fontSize="lg" fontWeight="bold" mb={4}>
-        Loading Sky Catalog
+        Loading Star Catalog
       </Text>
       <VStack align="stretch" gap={2}>
         {steps.map((step, idx) => (
