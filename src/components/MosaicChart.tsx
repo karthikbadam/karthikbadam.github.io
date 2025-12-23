@@ -145,7 +145,7 @@ export function MosaicChart<T = void>({
         flex="1"
         h="100%"
         borderRadius="md"
-        minH={{ base: "350px", md: "100px" }}
+        minH={{ base: "250px", md: "100px" }}
         overflow="auto"
         css={containerCss}
       />
