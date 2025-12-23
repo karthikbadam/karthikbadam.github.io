@@ -1,5 +1,20 @@
 [
   {
+    "title": "Navigate the Gaia Star Catalog",
+    "abstract": "Visualization of over 1 million stars from ESA's Gaia mission. Brush regions on the sky map to explore star clusters, view distributions of magnitude and parallax, and hover to see detailed information with links to SIMBAD and Gaia@AIP.",
+    "link": "/star-catalog",
+    "image": {
+      "dark": "gaia-catalog-dark.png",
+      "light": "gaia-catalog-light.png"
+    },
+    "type": "Interactive Demo",
+    "date": {
+      "month": "December",
+      "year": 2025
+    },
+    "featured": true
+  },
+  {
     "title": "Visualize ML Traces from SWE-Bench",
     "abstract": "An interactive visualization of trace data from ML agents using OpenTelemetry, revealing performance patterns and the ReAct reasoning framework. Explore the traces and detailed spans to understand how agents think and act.",
     "link": "/swe-bench",
@@ -17,7 +32,7 @@
   },
   {
     "title": "Explore Astronomy Concepts",
-    "abstract": "An interactive visualization that renders hierarchical datasets as elegantly-arranged circular nodes in a radial layout. Explore the Unified Astronomy Thesaurus with this custom-designed visualization featuring packed circles, collision resolution, and navigation.",
+    "abstract": "Custom visualization that renders hierarchical datasets as elegantly-arranged circular nodes in a radial layout. Explore the Unified Astronomy Thesaurus with this custom-designed visualization featuring packed circles, collision resolution, and navigation.",
     "link": "/packed-radial-tree",
     "image": {
       "dark": "packed-radial-tree-dark.png",
@@ -42,7 +57,8 @@
     "date": {
       "month": "April",
       "year": 2025
-    }
+    },
+    "featured": true
   },
 
   {

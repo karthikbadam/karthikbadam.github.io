@@ -6,6 +6,7 @@ import {
   Heading,
   HStack,
   Image,
+  Link,
   Stack,
   Tag,
   Text,
@@ -53,7 +54,11 @@ export const Home = () => {
   return (
     <Page>
       <Container maxW="container.xl" px={8}>
-        <TwoPanelWithScroll leftWidth="320px" rightWidth="1fr" gap="100px">
+        <TwoPanelWithScroll
+          leftWidth="360px"
+          rightWidth="1fr"
+          gap={{ base: 10, md: 100 }}
+        >
           <TwoPanelWithScroll.LeftPanel gap={6}>
             <Stack position="relative" mt={10} mb={6}>
               <Image
@@ -86,21 +91,30 @@ export const Home = () => {
                   <Tag.Label>Full-Stack Engineer</Tag.Label>
                 </Tag.Root>
                 <Tag.Root>
-                  <Tag.Label>Apple</Tag.Label>
+                  <Tag.Label>Machine Learning</Tag.Label>
                 </Tag.Root>
                 <Tag.Root>
-                  <Tag.Label>Machine Learning</Tag.Label>
+                  <Tag.Label>Apple</Tag.Label>
                 </Tag.Root>
               </HStack>
               <Text fontSize="sm" color="gray.fg" lineHeight="tall">
-                Full-stack engineer building tools for exploratory data analysis
-                and ML training. Passionate about crafting intuitive interfaces
-                that make sense of complex data.
+                Full-stack engineer building visualization tools for exploratory
+                data analysis, LLM evaluation, and ML training at Apple.
+              </Text>
+              <Text fontSize="sm">
+                Get in touch:{" "}
+                <Link
+                  href="mailto:karthikbadam7@gmail.com"
+                  color="accent"
+                  variant="underline"
+                >
+                  karthikbadam7[at]gmail.com
+                </Link>
               </Text>
             </Stack>
           </TwoPanelWithScroll.LeftPanel>
           <TwoPanelWithScroll.RightPanel py={2}>
-            <Stack gap={4} maxW={{ base: "100%", lg: "80ch" }}>
+            <Stack gap={4} maxW={{ base: "100%", lg: "76ch" }}>
               <Heading color="accent">Featured Works</Heading>
               {/* Featured Posts as Large Cards - Side by Side */}
               {featuredPosts.length > 0 && (
@@ -216,7 +230,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       <Heading size="sm" fontWeight="medium">
         {post.title}
       </Heading>
-      <Text fontSize="sm" lineClamp={3} color="gray.focusRing">
+      <Text fontSize="sm" lineClamp={2} color="gray.focusRing">
         {post.abstract}
       </Text>
       <HStack gap={2} pt={2}>
