@@ -277,6 +277,7 @@ export function ThreeDView() {
     }
     if (hoverSpriteRef.current) {
       scene.remove(hoverSpriteRef.current);
+      hoverSpriteRef.current.material.map?.dispose();
       hoverSpriteRef.current.material.dispose();
       hoverSpriteRef.current = null;
     }
@@ -377,6 +378,7 @@ export function ThreeDView() {
     }
     if (hoverSpriteRef.current) {
       scene.remove(hoverSpriteRef.current);
+      hoverSpriteRef.current.material.map?.dispose();
       hoverSpriteRef.current.material.dispose();
       hoverSpriteRef.current = null;
     }
