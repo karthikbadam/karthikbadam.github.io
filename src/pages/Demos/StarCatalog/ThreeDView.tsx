@@ -43,7 +43,7 @@ function bpRpToColor(bpRp: number): THREE.Color {
 /** Map magnitude to point size (brighter = larger) */
 function magToSize(mag: number): number {
   const normalized = Math.max(0, Math.min(1, (15 - mag) / 9));
-  return 5 + normalized * 20;
+  return 7 + normalized * 20;
 }
 
 /** Create glowing sprite texture */
@@ -261,7 +261,7 @@ export function ThreeDView() {
     return () => client.destroy();
   }, [coordinator, brushSelection]);
 
-  // Update Three.js points and highlight when stars or selection changes
+  // Update Three.js points when stars change (rebuilds geometry, fits camera)
   useEffect(() => {
     const scene = sceneRef.current;
     const camera = cameraRef.current;
@@ -355,37 +355,60 @@ export function ThreeDView() {
     pointsRef.current = points;
     starsDataRef.current = { stars, positions: positions3D };
 
-    // Fit camera
+    // Fit camera only when stars change
     const center = new THREE.Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
     const radius = center.distanceTo(new THREE.Vector3(maxX, maxY, maxZ));
     fitCameraToSphere(camera, controls, center, Math.max(radius, 1) / 2);
+  }, [stars]);
 
-    // Apply highlight if there's a selected star
-    if (selectedStar) {
-      const starIndex = stars.findIndex((s) => s.source_id === selectedStar.source_id);
-      if (starIndex !== -1) {
-        const sizeAttr = geometry.getAttribute("size") as THREE.BufferAttribute;
-        sizeAttr.array[starIndex] = originalSizesRef.current[starIndex] * 2.5;
-        sizeAttr.needsUpdate = true;
-        selectedIndexRef.current = starIndex;
+  // Update highlight when selectedStar changes (no camera reset)
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const points = pointsRef.current;
+    if (!scene || !points || !originalSizesRef.current) return;
 
-        // Create glow sprite
-        const pos = positions3D[starIndex];
-        const glowTexture = createGlowTexture(new THREE.Color(1, 0.8, 0));
-        const glowMaterial = new THREE.SpriteMaterial({
-          map: glowTexture,
-          transparent: true,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-        });
-        const sprite = new THREE.Sprite(glowMaterial);
-        sprite.scale.set(30, 30, 1);
-        sprite.position.copy(pos);
-        scene.add(sprite);
-        hoverSpriteRef.current = sprite;
-      }
+    const geometry = points.geometry;
+    const sizeAttr = geometry.getAttribute("size") as THREE.BufferAttribute;
+
+    // Reset previous highlight
+    if (selectedIndexRef.current !== null) {
+      sizeAttr.array[selectedIndexRef.current] = originalSizesRef.current[selectedIndexRef.current];
+      selectedIndexRef.current = null;
     }
-  }, [stars, selectedStar]);
+    if (hoverSpriteRef.current) {
+      scene.remove(hoverSpriteRef.current);
+      hoverSpriteRef.current.material.dispose();
+      hoverSpriteRef.current = null;
+    }
+
+    if (!selectedStar) {
+      sizeAttr.needsUpdate = true;
+      return;
+    }
+
+    // Apply new highlight
+    const starIndex = starsDataRef.current.stars.findIndex((s) => s.source_id === selectedStar.source_id);
+    if (starIndex !== -1) {
+      sizeAttr.array[starIndex] = originalSizesRef.current[starIndex] * 2.5;
+      sizeAttr.needsUpdate = true;
+      selectedIndexRef.current = starIndex;
+
+      // Create glow sprite
+      const pos = starsDataRef.current.positions[starIndex];
+      const glowTexture = createGlowTexture(new THREE.Color(1, 0.8, 0));
+      const glowMaterial = new THREE.SpriteMaterial({
+        map: glowTexture,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const sprite = new THREE.Sprite(glowMaterial);
+      sprite.scale.set(30, 30, 1);
+      sprite.position.copy(pos);
+      scene.add(sprite);
+      hoverSpriteRef.current = sprite;
+    }
+  }, [selectedStar]);
 
   return (
     <Box
