@@ -20,8 +20,6 @@ interface MosaicChartProps<T = void> {
   isReady: boolean;
   loadingText?: string;
   gridArea?: string;
-  /** Optional element to render on the right side of the header */
-  rightElement?: ReactNode;
   /** Optional CSS styles to apply to the chart container */
   containerCss?: Record<string, unknown>;
 }
@@ -35,7 +33,6 @@ export function MosaicChart<T = void>({
   isReady,
   loadingText = "Loading...",
   gridArea,
-  rightElement,
   containerCss,
 }: MosaicChartProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,35 +116,32 @@ export function MosaicChart<T = void>({
       bg="bg.panel"
       borderRadius="lg"
       p={2}
-      overflow="hidden"
       position="relative"
       h="100%"
       display="flex"
       flexDirection="column"
       border="1px solid"
       borderColor="gray.subtle"
+      overflow="hidden"
     >
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-        <Text fontSize="xs" fontWeight="semibold" color="accentSubtle">
-          {title}
-          {subtitle && (
-            <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
-              {"• "}
-              {subtitle}
-            </Text>
-          )}
-          {isBuilding && <Spinner size="xs" ml={2} />}
-        </Text>
-        {rightElement}
-      </Box>
+      <Text fontSize="xs" fontWeight="semibold" color="accentSubtle">
+        {title}
+        {subtitle && (
+          <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
+            {"• "}
+            {subtitle}
+          </Text>
+        )}
+        {isBuilding && <Spinner size="xs" ml={2} />}
+      </Text>
       <Box
         ref={containerRef}
         flex="1"
-        h="100%"
         borderRadius="md"
+        h="100%"
         minH={{ base: "350px", md: "100px" }}
-        overflow="auto"
         css={containerCss}
+        overflow="auto"
       />
     </Box>
   );

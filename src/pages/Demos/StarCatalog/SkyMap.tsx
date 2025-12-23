@@ -18,7 +18,7 @@ export function SkyMap() {
         }),
         vg.intervalXY({ as: brushSelection }),
         vg.colorScale("sqrt"),
-        vg.colorScheme("cividis"),
+        vg.colorScheme("Cividis"),
         vg.xAxis(null),
         vg.yAxis(null),
         vg.marginLeft(0),

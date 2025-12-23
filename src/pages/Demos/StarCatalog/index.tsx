@@ -38,7 +38,7 @@ function LoadingIndicator() {
   return (
     <Box p={6} borderRadius="lg" maxW="400px" mx="auto" mt={10}>
       <Text fontSize="lg" fontWeight="bold" mb={4}>
-        Loading Sky Catalog
+        Loading Star Catalog
       </Text>
       <VStack align="stretch" gap={2}>
         {steps.map((step, idx) => (
@@ -113,12 +113,11 @@ function DashboardContent() {
           <Text fontSize="sm" color="gray.fg">
             A small collection of 1 million stars with their positions,
             magnitudes, and other properties. This is a subset of the Gaia star
-            catalog that contains 1 billion stars.
+            catalog that contains 1 billion stars.{" "}
             <Link
-              ml={2}
               fontSize="sm"
               color="accent"
-              href="https://gaia.aip.de/query/2ff8be6f-09ca-47b9-bda5-bc4da0dd1b3f/"
+              href="https://gaia.aip.de/query/b9cbe033-a5bf-401e-ba85-65d6768f2444/"
               target="_blank"
             >
               View the full catalog
@@ -138,17 +137,19 @@ function DashboardContent() {
       >
         {/* Left: Sky Map + Histograms stacked */}
         <Box flex={1} minW={0} display="flex" flexDirection="column" gap={4}>
-          <Box aspectRatio={{ base: "16/9", md: "4/3" }} maxH={{ base: "250px", md: "350px" }}>
+          <Box aspectRatio={{ md: "4/3" }}>
             <SkyMap />
           </Box>
-          <HistogramCharts />
+          <Box flex={{ md: 1 }}>
+            <HistogramCharts />
+          </Box>
         </Box>
 
         {/* Right: 3D View */}
         <Box
           flex={2}
           minW={0}
-          minH={{ base: "400px", md: "auto" }}
+          h={{ base: "85vh", md: "auto" }}
           borderRadius="md"
           overflow="hidden"
         >
