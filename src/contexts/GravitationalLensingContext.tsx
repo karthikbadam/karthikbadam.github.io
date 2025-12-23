@@ -8,7 +8,7 @@ import {
   ReactNode,
 } from "react";
 import * as vg from "@uwdata/vgplot";
-import { LoadingState } from "./SWEBenchContext";
+import { LoadingState } from "../types/loading";
 
 interface GravitationalLensingContextValue {
   state: LoadingState;
