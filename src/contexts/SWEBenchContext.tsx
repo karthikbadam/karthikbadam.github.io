@@ -13,8 +13,8 @@ export type LoadingState =
   | { status: "idle" }
   | { status: "initializing" }
   | { status: "loading-parquet"; message: string }
-  | { status: "creating-tables"; table: string }
-  | { status: "updating-tables"; message: string }
+  | { status: "creating-tables"; table: string; query?: string }
+  | { status: "updating-tables"; message: string; query?: string }
   | { status: "ready" }
   | { status: "error"; message: string };
 
@@ -58,9 +58,9 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
     const init = async () => {
       try {
         setState({ status: "initializing" });
-        
+
         const traceLimit = window.innerWidth < 768 ? 5 : 50;
-        
+
         const connector = vg.wasmConnector();
         const coordinator = new vg.Coordinator(connector, {
           cache: false,
@@ -87,8 +87,7 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
         `);
 
         // Create trace_metrics table
-        setState({ status: "creating-tables", table: "trace_metrics" });
-        await coordinator.exec(`
+        const traceMetricsQuery = `
           CREATE TABLE IF NOT EXISTS trace_metrics AS
           WITH parsed AS (
             SELECT 
@@ -103,11 +102,16 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
             json_array_length(spans_json) as span_count,
             ROW_NUMBER() OVER (ORDER BY trace_id) as trace_index
           FROM parsed
-        `);
+        `;
+        setState({
+          status: "creating-tables",
+          table: "trace_metrics",
+          query: traceMetricsQuery,
+        });
+        await coordinator.exec(traceMetricsQuery);
 
         // Create temporary table for top-level spans
-        setState({ status: "creating-tables", table: "top_spans" });
-        await coordinator.exec(`
+        const topSpansQuery = `
           CREATE TEMPORARY TABLE IF NOT EXISTS top_spans AS
           SELECT 
             json_extract_string(trace, '$.trace_id') as trace_id,
@@ -115,11 +119,16 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
             0 as depth
           FROM raw
           limit ${traceLimit}
-        `);
+        `;
+        setState({
+          status: "creating-tables",
+          table: "top_spans",
+          query: topSpansQuery,
+        });
+        await coordinator.exec(topSpansQuery);
 
         // Create temporary table for all spans (flattened recursively)
-        setState({ status: "creating-tables", table: "flattened_spans" });
-        await coordinator.exec(`
+        const flattenedSpansQuery = `
           CREATE TEMPORARY TABLE IF NOT EXISTS flattened_spans AS
           WITH RECURSIVE flattened AS (
             SELECT trace_id, span_json, depth FROM top_spans
@@ -134,11 +143,16 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
               AND f.depth < 3
           )
           SELECT * FROM flattened
-        `);
+        `;
+        setState({
+          status: "creating-tables",
+          table: "flattened_spans",
+          query: flattenedSpansQuery,
+        });
+        await coordinator.exec(flattenedSpansQuery);
 
         // Create final spans table with extracted fields
-        setState({ status: "updating-tables", message: "creating spans" });
-        await coordinator.exec(`
+        const spansQuery = `
           CREATE TABLE IF NOT EXISTS spans AS
           SELECT 
             trace_id,
@@ -159,17 +173,16 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
             depth,
             ROW_NUMBER() OVER (PARTITION BY trace_id ORDER BY json_extract_string(span_json, '$.timestamp')) as span_index
           FROM flattened_spans
-        `);
-
-        // Add and compute duration column (parse ISO 8601 duration)
+        `;
         setState({
           status: "updating-tables",
-          message: "adding duration column to spans",
+          message: "extracting values from spans",
+          query: spansQuery,
         });
-        await coordinator.exec(
-          `ALTER TABLE spans ADD COLUMN IF NOT EXISTS duration DOUBLE`
-        );
-        await coordinator.exec(`
+        await coordinator.exec(spansQuery);
+
+        // Add and compute duration column (parse ISO 8601 duration)
+        const durationQuery = `
           UPDATE spans SET duration = 
             CASE 
               WHEN duration_str IS NULL OR duration_str = '' THEN 0.0
@@ -179,17 +192,19 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
                 COALESCE(TRY_CAST(regexp_extract(duration_str, 'PT(\\d+)H', 1) AS DOUBLE) * 3600, 0.0)
               ELSE TRY_CAST(duration_str AS DOUBLE) / 1000000.0
             END
-        `);
-
-        // Add and compute start_time column (relative to trace start)
+        `;
         setState({
           status: "updating-tables",
-          message: "adding start_time column to spans",
+          message: "adding duration column to spans",
+          query: durationQuery,
         });
         await coordinator.exec(
-          `ALTER TABLE spans ADD COLUMN IF NOT EXISTS start_time DOUBLE`
+          `ALTER TABLE spans ADD COLUMN IF NOT EXISTS duration DOUBLE`
         );
-        await coordinator.exec(`
+        await coordinator.exec(durationQuery);
+
+        // Add and compute start_time column (relative to trace start)
+        const startTimeQuery = `
           WITH trace_starts AS (
             SELECT trace_id, MIN(epoch(TRY_CAST(timestamp_str AS TIMESTAMP))) as min_start
             FROM spans GROUP BY trace_id
@@ -197,14 +212,19 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
           UPDATE spans SET start_time = 
             epoch(TRY_CAST(timestamp_str AS TIMESTAMP)) - 
             (SELECT min_start FROM trace_starts WHERE trace_starts.trace_id = spans.trace_id)
-        `);
-
-        // Update trace_metrics with computed totals
+        `;
         setState({
           status: "updating-tables",
-          message: "updating trace_metrics",
+          message: "adding start_time column to spans",
+          query: startTimeQuery,
         });
-        await coordinator.exec(`
+        await coordinator.exec(
+          `ALTER TABLE spans ADD COLUMN IF NOT EXISTS start_time DOUBLE`
+        );
+        await coordinator.exec(startTimeQuery);
+
+        // Update trace_metrics with computed totals
+        const updateMetricsQuery = `
           CREATE OR REPLACE TABLE trace_metrics AS
           SELECT 
             t.trace_id,
@@ -225,7 +245,13 @@ export function SWEBenchProvider({ children }: { children: ReactNode }) {
             FROM spans GROUP BY trace_id
           ) s ON t.trace_id = s.trace_id
            WHERE total_duration > 0 
-        `);
+        `;
+        setState({
+          status: "updating-tables",
+          message: "updating trace_metrics",
+          query: updateMetricsQuery,
+        });
+        await coordinator.exec(updateMetricsQuery);
 
         // Free memory - drop temporary tables
         setState({

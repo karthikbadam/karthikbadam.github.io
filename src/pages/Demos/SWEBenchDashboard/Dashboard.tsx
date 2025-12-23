@@ -47,8 +47,15 @@ function LoadingIndicator() {
     (s) => s.key === state.status.split("-")[0] || s.key === state.status
   );
 
+  // Extract query from state if available
+  const currentQuery =
+    (state.status === "creating-tables" || state.status === "updating-tables") &&
+    "query" in state
+      ? (state as { query?: string }).query
+      : null;
+
   return (
-    <Box p={6} borderRadius="lg" maxW="400px" mx="auto" mt={10}>
+    <Box p={6} borderRadius="lg" maxW="600px" mx="auto" mt={10}>
       <Text fontSize="lg" fontWeight="bold" mb={4}>
         Loading SWE-Bench Traces
       </Text>
@@ -86,6 +93,24 @@ function LoadingIndicator() {
           </HStack>
         ))}
       </VStack>
+      {currentQuery && (
+        <Box
+          mt={4}
+          p={3}
+          bg="bg.subtle"
+          borderRadius="md"
+          overflow="auto"
+        >
+          <Text
+            fontSize="xs"
+            fontFamily="mono"
+            whiteSpace="pre-wrap"
+            color="fg.muted"
+          >
+            {currentQuery.trim()}
+          </Text>
+        </Box>
+      )}
       {state.status === "error" && (
         <Box mt={4} p={3} bg="red.subtle" borderRadius="md">
           <Text color="red.fg" fontSize="sm">

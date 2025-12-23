@@ -124,7 +124,7 @@ export function MosaicChart<T = void>({
       borderColor="gray.subtle"
       overflow="hidden"
     >
-      <Text fontSize="xs" fontWeight="semibold" color="accentSubtle">
+      <Text fontSize="xs" fontWeight="semibold" color="accentSubtle" mb={1}>
         {title}
         {subtitle && (
           <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
