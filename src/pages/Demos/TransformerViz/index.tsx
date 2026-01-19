@@ -1,20 +1,15 @@
-import { useState } from "react";
-import { Box, Container, Heading, Text, Link } from "@chakra-ui/react";
+import { Box, Container, Grid, GridItem, Heading, Text, Link } from "@chakra-ui/react";
 import { Page } from "../../../components/Page";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
 import { TransformerProvider, useTransformer } from "../../../contexts/TransformerContext";
-import { ThreeJSTower } from "./ThreeJSTower";
-import { StatsPanel } from "./StatsPanel";
-import { HoverTooltip } from "./HoverTooltip";
-
-import type { HoverInfo } from "./ThreeJSTower";
+import { ArchitectureGraph } from "./ArchitectureGraph";
+import { DetailStack } from "./DetailStack";
 
 /**
  * Main dashboard content
  */
 function DashboardContent() {
-  const { state, numLayers, numHeads, numKVHeads } = useTransformer();
-  const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
+  const { state, numLayers, numHeads, numKVHeads, promptTokens } = useTransformer();
 
   if (state.status !== "ready") {
     return <LoadingIndicator state={state} title="Loading Transformer Architecture" />;
@@ -36,7 +31,7 @@ function DashboardContent() {
             Transformer Architecture Visualization
           </Heading>
           <Text fontSize="sm" color="gray.fg">
-            A semantic, weight-driven 3D visualization of{" "}
+            Interactive visualization of{" "}
             <Link
               color="accent"
               href="https://huggingface.co/HuggingFaceTB/SmolLM3-3B"
@@ -45,37 +40,31 @@ function DashboardContent() {
               SmolLM3-3B
             </Link>
             . {numLayers} layers, {numHeads} attention heads per layer with{" "}
-            {numHeads / numKVHeads}:1 GQA. ~1M dimension points rendered via point cloud shaders.
+            {numHeads / numKVHeads}:1 GQA. Live activations from prompt:{" "}
+            {promptTokens.filter(t => t.is_input).map(t => t.token_text).join(" ")}
           </Text>
         </Box>
       </Container>
 
-      {/* Main layout */}
-      <Box
+      {/* Two-panel layout */}
+      <Grid
+        templateColumns={{ base: "1fr", lg: "1fr 2fr" }}
+        templateRows={{ base: "auto 1fr", lg: "1fr" }}
+        gap={4}
         flex={1}
         px={4}
-        overflow={{ base: "auto", md: "hidden" }}
-        display="flex"
-        flexDirection={{ base: "column", md: "row" }}
-        gap={4}
-        position="relative"
+        overflow="hidden"
       >
-        {/* Left: Stats Panel */}
-        <Box
-          w={{ base: "100%", md: "280px" }}
-          flexShrink={0}
-          h={{ base: "auto", md: "100%" }}
-          overflow="auto"
-        >
-          <StatsPanel />
-        </Box>
+        {/* Left: Architecture Graph */}
+        <GridItem overflow="hidden">
+          <ArchitectureGraph />
+        </GridItem>
 
-        {/* Center: 3D Tower */}
-        <Box flex={1} minW={0} h={{ base: "70vh", md: "100%" }} position="relative">
-          <ThreeJSTower onHover={setHoverInfo} />
-          <HoverTooltip info={hoverInfo} position={{ x: 10, y: 40 }} />
-        </Box>
-      </Box>
+        {/* Right: Detail Stack */}
+        <GridItem overflow="hidden">
+          <DetailStack />
+        </GridItem>
+      </Grid>
     </Box>
   );
 }

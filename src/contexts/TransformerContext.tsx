@@ -12,11 +12,6 @@ import { LoadingState } from "../types/loading";
 import type {
   Tensor,
   TensorStats,
-  TensorDim,
-  TensorBlock,
-  TensorRelation,
-  HeadAggregate,
-  KVAggregate,
   HeadBlockProfile,
   OProjSignature,
 } from "../types/transformer";
@@ -24,13 +19,13 @@ import type {
 /**
  * Context for Transformer architecture visualization via DuckDB WASM + Mosaic vgplot
  *
- * Loads 6 semantic parquet tables:
- * 1. tensors.parquet        - Tensor catalog (~326 rows)
- * 2. tensor_stats.parquet   - Whole-tensor metrics (~326 rows)
- * 3. tensor_dims.parquet    - Per-output-dimension metrics (~976k rows)
- * 4. tensor_blocks.parquet  - Semantic block decomposition (~23k rows)
- * 5. tensor_block_topk.parquet - Sparse weight anchors (~370k rows)
- * 6. tensor_relations.parquet  - Semantic relations (~1k rows)
+ * Loads 6 parquet tables:
+ * 1. model_structure.parquet      - Combined tensor catalog + stats + relations (~1.5k rows)
+ * 2. weight_blocks.parquet        - Block-level weight decomposition (~23k rows)
+ * 3. activation_snapshot.parquet  - Tokens + layer norm stats (~500 rows)
+ * 4. hidden_states.parquet        - Per-position aggregated hidden states (~2M rows)
+ * 5. attention_patterns.parquet   - Sparse attention weights (~150k rows)
+ * 6. mlp_activations.parquet      - MLP intermediate activations (~100k rows)
  */
 
 type VgSelection = vg.Selection;
@@ -45,7 +40,15 @@ interface TransformerContextValue {
   headBrush: VgSelection | null;
   blockBrush: VgSelection | null;
   
-  // Model config (from tensors table)
+  // Selection state for two-panel navigation
+  selectedLayer: number | null;
+  selectedModule: 'attn' | 'mlp' | 'norm' | 'embed' | null;
+  selectedNormType: 'input_norm' | 'post_norm' | 'final_norm' | null;
+  stackIndex: number;
+  setSelection: (layer: number | null, module: 'attn' | 'mlp' | 'norm' | 'embed' | null, normType?: 'input_norm' | 'post_norm' | 'final_norm') => void;
+  navigateStack: (delta: number) => void;
+  
+  // Model config (from model_structure table)
   numLayers: number;
   numHeads: number;
   numKVHeads: number;
@@ -54,18 +57,20 @@ interface TransformerContextValue {
   headDim: number;
   
   // Pre-loaded data for rendering
-  tensors: Tensor[];
-  tensorStats: Map<string, TensorStats>;
-  headAggregates: HeadAggregate[];
-  kvAggregates: KVAggregate[];
+  tensors: Tensor[]; // Used in ArchitectureGraph for node generation
+  
+  // Prompt info
+  promptTokens: Array<{ position: number; token_id: number; token_text: string; is_input: boolean; log_prob: number | null }>;
+  numPositions: number;
   
   // Query helpers
   queryTensorStats: (tensorId: string) => Promise<TensorStats | null>;
-  queryDimStats: (tensorId: string, head: number | null, dim: number) => Promise<TensorDim | null>;
-  queryHeadAggregate: (layer: number, head: number) => Promise<HeadAggregate | null>;
   queryHeadBlockProfile: (layer: number, head: number) => Promise<HeadBlockProfile | null>;
   queryOProjSignature: (layer: number) => Promise<OProjSignature | null>;
-  queryDimsForLayer: (layer: number, role: string) => Promise<TensorDim[]>;
+  queryWeightRows: (layer: number, role: string, rowStart?: number, rowEnd?: number) => Promise<Array<{ row_idx: number; values: number[] }>>;
+  queryHiddenState: (layer: number, position: number) => Promise<{ norm: number; mean: number; std: number; top_dims: number[]; top_vals: number[] } | null>;
+  queryAttentionPattern: (layer: number, head: number) => Promise<Array<{ query_pos: number; key_pos: number; weight: number }>>;
+  queryMLPActivation: (layer: number, position: number, stage: string) => Promise<{ norm: number; sparsity: number; top_dims: number[]; top_vals: number[] } | null>;
 }
 
 const defaultContext: TransformerContextValue = {
@@ -74,6 +79,12 @@ const defaultContext: TransformerContextValue = {
   layerBrush: null,
   headBrush: null,
   blockBrush: null,
+  selectedLayer: null,
+  selectedModule: null,
+  selectedNormType: null,
+  stackIndex: 0,
+  setSelection: () => {},
+  navigateStack: () => {},
   numLayers: 36,
   numHeads: 16,
   numKVHeads: 4,
@@ -81,27 +92,29 @@ const defaultContext: TransformerContextValue = {
   intermediateSize: 11008,
   headDim: 128,
   tensors: [],
-  tensorStats: new Map(),
-  headAggregates: [],
-  kvAggregates: [],
+  promptTokens: [],
+  numPositions: 0,
   queryTensorStats: async () => null,
-  queryDimStats: async () => null,
-  queryHeadAggregate: async () => null,
   queryHeadBlockProfile: async () => null,
   queryOProjSignature: async () => null,
-  queryDimsForLayer: async () => [],
+  queryWeightRows: async () => [],
+  queryHiddenState: async () => null,
+  queryAttentionPattern: async () => [],
+  queryMLPActivation: async () => null,
 };
 
 const TransformerContext = createContext<TransformerContextValue>(defaultContext);
 
 // Parquet file names
 const PARQUET_FILES = {
-  tensors: "tensors.parquet",
-  tensorStats: "tensor_stats.parquet",
-  tensorDims: "tensor_dims.parquet",
-  tensorBlocks: "tensor_blocks.parquet",
-  tensorBlockTopk: "tensor_block_topk.parquet",
-  tensorRelations: "tensor_relations.parquet",
+  modelStructure: "model_structure.parquet",
+  activationSnapshot: "activation_snapshot.parquet",
+  hiddenStates: "hidden_states.parquet",
+  attentionPatterns: "attention_patterns.parquet",
+  attentionScores: "attention_scores.parquet",
+  mlpActivations: "mlp_activations.parquet",
+  // raw_weights split into files by layer and role: raw_weights_l{layer}_{role}.parquet
+  getRawWeightsFile: (layer: number, role: string) => `raw_weights_l${layer}_${role}.parquet`,
 };
 
 // Helper to convert Arrow table to array of objects
@@ -127,21 +140,42 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
   const [headBrush, setHeadBrush] = useState<VgSelection | null>(null);
   const [blockBrush, setBlockBrush] = useState<VgSelection | null>(null);
   
+  // Selection state
+  const [selectedLayer, setSelectedLayer] = useState<number | null>(null);
+  const [selectedModule, setSelectedModule] = useState<'attn' | 'mlp' | 'norm' | 'embed' | null>(null);
+  const [selectedNormType, setSelectedNormType] = useState<'input_norm' | 'post_norm' | 'final_norm' | null>(null);
+  const [stackIndex, setStackIndex] = useState(0);
+  
   // Model config
   const [numLayers, setNumLayers] = useState(36);
-  const [numHeads, setNumHeads] = useState(16);
-  const [numKVHeads, setNumKVHeads] = useState(4);
-  const [hiddenSize, setHiddenSize] = useState(2048);
-  const [intermediateSize, setIntermediateSize] = useState(11008);
-  const [headDim, setHeadDim] = useState(128);
+  const [numHeads] = useState(16);
+  const [numKVHeads] = useState(4);
+  const [hiddenSize] = useState(2048);
+  const [intermediateSize] = useState(11008);
+  const [headDim] = useState(128);
   
   // Pre-loaded data
   const [tensors, setTensors] = useState<Tensor[]>([]);
-  const [tensorStats, setTensorStats] = useState<Map<string, TensorStats>>(new Map());
-  const [headAggregates, setHeadAggregates] = useState<HeadAggregate[]>([]);
-  const [kvAggregates, setKvAggregates] = useState<KVAggregate[]>([]);
+  const [promptTokens, setPromptTokens] = useState<Array<{ position: number; token_id: number; token_text: string; is_input: boolean; log_prob: number | null }>>([]);
+  const [numPositions, setNumPositions] = useState(0);
   
   const initRef = useRef(false);
+  
+  // Selection handlers
+  const handleSetSelection = useCallback((layer: number | null, module: 'attn' | 'mlp' | 'norm' | 'embed' | null, normType?: 'input_norm' | 'post_norm' | 'final_norm') => {
+    setSelectedLayer(layer);
+    setSelectedModule(module);
+    setSelectedNormType(normType || null);
+    setStackIndex(0); // Reset stack when selection changes
+  }, []);
+  
+  const handleNavigateStack = useCallback((delta: number) => {
+    setStackIndex((prev) => {
+      const maxIndex = selectedModule === 'attn' ? 3 : selectedModule === 'mlp' ? 2 : selectedModule === 'norm' || selectedModule === 'embed' ? 0 : 0;
+      const newIndex = prev + delta;
+      return Math.max(0, Math.min(maxIndex, newIndex));
+    });
+  }, [selectedModule]);
 
   useEffect(() => {
     if (initRef.current) return;
@@ -174,112 +208,85 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
 
         await coord.exec(`INSTALL httpfs; LOAD httpfs;`);
         await coord.exec(`SET threads = 1;`);
-        await coord.exec(`SET memory_limit = '4GB';`);
+        await coord.exec(`SET memory_limit = '6GB';`);
 
         // Load all 6 parquet tables
         setState({
           status: "creating-tables",
-          table: "tensors",
-          query: "Loading tensor catalog...",
+          table: "model_structure",
+          query: "Loading model structure...",
         });
         await coord.exec(`
-          CREATE TABLE IF NOT EXISTS tensors AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.tensors}'
+          CREATE TABLE IF NOT EXISTS model_structure AS
+          SELECT * FROM '${dataPath}/${PARQUET_FILES.modelStructure}'
+        `);
+
+        // NOTE: raw_weights.parquet is 4.5GB - too large to load entirely in browser
+        // Instead, we'll query it on-demand when needed via direct parquet queries
+        // Don't create a table for it - use direct file queries instead
+        setState({
+          status: "creating-tables",
+          table: "raw_weights",
+          query: "Skipping raw weights table (will query on-demand)...",
+        });
+        // Skip loading raw_weights into a table - we'll query it directly when needed
+
+        setState({
+          status: "creating-tables",
+          table: "activation_snapshot",
+          query: "Loading activation snapshot...",
+        });
+        await coord.exec(`
+          CREATE TABLE IF NOT EXISTS activation_snapshot AS
+          SELECT * FROM '${dataPath}/${PARQUET_FILES.activationSnapshot}'
         `);
 
         setState({
           status: "creating-tables",
-          table: "tensor_stats",
-          query: "Loading tensor stats...",
+          table: "hidden_states",
+          query: "Loading hidden states...",
         });
         await coord.exec(`
-          CREATE TABLE IF NOT EXISTS tensor_stats AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.tensorStats}'
+          CREATE TABLE IF NOT EXISTS hidden_states AS
+          SELECT * FROM '${dataPath}/${PARQUET_FILES.hiddenStates}'
         `);
 
         setState({
           status: "creating-tables",
-          table: "tensor_dims",
-          query: "Loading dimension stats (~976k rows)...",
+          table: "attention_patterns",
+          query: "Loading attention patterns...",
         });
         await coord.exec(`
-          CREATE TABLE IF NOT EXISTS tensor_dims AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.tensorDims}'
+          CREATE TABLE IF NOT EXISTS attention_patterns AS
+          SELECT * FROM '${dataPath}/${PARQUET_FILES.attentionPatterns}'
         `);
 
         setState({
           status: "creating-tables",
-          table: "tensor_blocks",
-          query: "Loading block stats...",
+          table: "mlp_activations",
+          query: "Loading MLP activations...",
         });
         await coord.exec(`
-          CREATE TABLE IF NOT EXISTS tensor_blocks AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.tensorBlocks}'
+          CREATE TABLE IF NOT EXISTS mlp_activations AS
+          SELECT * FROM '${dataPath}/${PARQUET_FILES.mlpActivations}'
         `);
 
         setState({
           status: "creating-tables",
-          table: "tensor_block_topk",
-          query: "Loading top-k weights...",
+          table: "attention_scores",
+          query: "Loading attention scores...",
         });
         await coord.exec(`
-          CREATE TABLE IF NOT EXISTS tensor_block_topk AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.tensorBlockTopk}'
+          CREATE TABLE IF NOT EXISTS attention_scores AS
+          SELECT * FROM '${dataPath}/${PARQUET_FILES.attentionScores}'
         `);
 
-        setState({
-          status: "creating-tables",
-          table: "tensor_relations",
-          query: "Loading relations...",
-        });
-        await coord.exec(`
-          CREATE TABLE IF NOT EXISTS tensor_relations AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.tensorRelations}'
-        `);
-
-        // Create pre-computed views
-        setState({
-          status: "creating-tables",
-          table: "views",
-          query: "Creating aggregation views...",
-        });
-
-        // Head aggregates: sum row_l2 per (layer, head) for Q dims
-        await coord.exec(`
-          CREATE OR REPLACE VIEW head_aggregates AS
-          SELECT 
-            layer,
-            head,
-            SUM(row_l2) as total_l2,
-            AVG(row_mean_abs) as avg_mean_abs,
-            MAX(row_p95_abs) as max_p95_abs
-          FROM tensor_dims
-          WHERE role = 'q' AND head IS NOT NULL
-          GROUP BY layer, head
-          ORDER BY layer, head
-        `);
-
-        // KV aggregates: sum row_l2 per (layer, kv_head) for K+V
-        await coord.exec(`
-          CREATE OR REPLACE VIEW kv_aggregates AS
-          SELECT 
-            layer,
-            head as kv_head,
-            SUM(CASE WHEN role = 'k' THEN row_l2 ELSE 0 END) as k_total_l2,
-            SUM(CASE WHEN role = 'v' THEN row_l2 ELSE 0 END) as v_total_l2,
-            SUM(row_l2) as combined_l2
-          FROM tensor_dims
-          WHERE role IN ('k', 'v') AND head IS NOT NULL
-          GROUP BY layer, head
-          ORDER BY layer, head
-        `);
-
-        // Fetch model config from tensors table
+        // Fetch model config from model_structure table
         const configResult = await coord.query(`
           SELECT 
             MAX(layer) + 1 as num_layers,
             COUNT(DISTINCT CASE WHEN role = 'q' AND layer = 0 THEN 1 END) as has_q
-          FROM tensors
+          FROM model_structure
           WHERE layer IS NOT NULL
         `);
         const configRows = arrowTableToArray(configResult);
@@ -288,39 +295,31 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
           if (nl > 0) setNumLayers(nl);
         }
 
-        // Fetch tensors
-        const tensorsResult = await coord.query(`SELECT * FROM tensors ORDER BY layer, module, role`);
-        const tensorsRows = arrowTableToArray(tensorsResult) as Tensor[];
+        // Fetch tensors from model_structure
+        const tensorsResult = await coord.query(`SELECT * FROM model_structure ORDER BY layer, module, role`);
+        const tensorsRows = arrowTableToArray(tensorsResult) as unknown as Tensor[];
         setTensors(tensorsRows);
 
-        // Fetch tensor stats into map
-        const statsResult = await coord.query(`SELECT * FROM tensor_stats`);
-        const statsRows = arrowTableToArray(statsResult) as TensorStats[];
-        const statsMap = new Map<string, TensorStats>();
-        statsRows.forEach((s) => statsMap.set(s.tensor_id, s));
-        setTensorStats(statsMap);
+        // Tensor stats are available via queryTensorStats, no need to pre-load
 
-        // Fetch head aggregates
-        const headAggResult = await coord.query(`SELECT * FROM head_aggregates`);
-        const headAggRows = arrowTableToArray(headAggResult).map((row) => ({
-          layer: Number(row.layer),
-          head: Number(row.head),
-          total_l2: Number(row.total_l2),
-          avg_mean_abs: Number(row.avg_mean_abs),
-          max_p95_abs: Number(row.max_p95_abs),
+        // Fetch prompt tokens
+        const tokensResult = await coord.query(`
+          SELECT * FROM activation_snapshot 
+          WHERE type = 'token'
+          ORDER BY position
+        `);
+        const tokenRows = arrowTableToArray(tokensResult);
+        const tokens = tokenRows.map((row) => ({
+          position: Number(row.position),
+          token_id: Number(row.token_id),
+          token_text: String(row.token_text || ''),
+          is_input: Boolean(row.is_input),
+          log_prob: row.log_prob !== null ? Number(row.log_prob) : null,
         }));
-        setHeadAggregates(headAggRows);
+        setPromptTokens(tokens);
+        setNumPositions(tokens.length);
 
-        // Fetch KV aggregates
-        const kvAggResult = await coord.query(`SELECT * FROM kv_aggregates`);
-        const kvAggRows = arrowTableToArray(kvAggResult).map((row) => ({
-          layer: Number(row.layer),
-          kv_head: Number(row.kv_head),
-          k_total_l2: Number(row.k_total_l2),
-          v_total_l2: Number(row.v_total_l2),
-          combined_l2: Number(row.combined_l2),
-        }));
-        setKvAggregates(kvAggRows);
+        // Head/KV aggregates can be queried on-demand, no need to pre-load
 
         // Create crossfilter selections
         const $layerBrush = vg.Selection.crossfilter();
@@ -333,6 +332,9 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
         setBlockBrush($blockBrush);
 
         setState({ status: "ready" });
+        
+        // Set embedding as default selection
+        handleSetSelection(null, "embed");
       } catch (err) {
         console.error("Failed to initialize Transformer context:", err);
         setState({
@@ -354,54 +356,24 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
       if (!coordinator) return null;
       try {
         const result = await coordinator.query(
-          `SELECT * FROM tensor_stats WHERE tensor_id = '${tensorId}' LIMIT 1`
-        );
-        const rows = arrowTableToArray(result) as TensorStats[];
-        return rows[0] || null;
-      } catch (err) {
-        console.error("queryTensorStats error:", err);
-        return null;
-      }
-    },
-    [coordinator]
-  );
-
-  const queryDimStats = useCallback(
-    async (tensorId: string, head: number | null, dim: number): Promise<TensorDim | null> => {
-      if (!coordinator) return null;
-      try {
-        const headClause = head !== null ? `AND head = ${head}` : "AND head IS NULL";
-        const result = await coordinator.query(
-          `SELECT * FROM tensor_dims WHERE tensor_id = '${tensorId}' ${headClause} AND dim = ${dim} LIMIT 1`
-        );
-        const rows = arrowTableToArray(result) as TensorDim[];
-        return rows[0] || null;
-      } catch (err) {
-        console.error("queryDimStats error:", err);
-        return null;
-      }
-    },
-    [coordinator]
-  );
-
-  const queryHeadAggregate = useCallback(
-    async (layer: number, head: number): Promise<HeadAggregate | null> => {
-      if (!coordinator) return null;
-      try {
-        const result = await coordinator.query(
-          `SELECT * FROM head_aggregates WHERE layer = ${layer} AND head = ${head} LIMIT 1`
+          `SELECT * FROM model_structure WHERE tensor_id = '${tensorId}' LIMIT 1`
         );
         const rows = arrowTableToArray(result);
         if (rows.length === 0) return null;
+        const row = rows[0];
         return {
-          layer: Number(rows[0].layer),
-          head: Number(rows[0].head),
-          total_l2: Number(rows[0].total_l2),
-          avg_mean_abs: Number(rows[0].avg_mean_abs),
-          max_p95_abs: Number(rows[0].max_p95_abs),
+          tensor_id: String(row.tensor_id),
+          fro_norm: Number(row.fro_norm || 0),
+          mean_abs: Number(row.mean_abs || 0),
+          std: Number(row.std || 0),
+          p95_abs: Number(row.p95_abs || 0),
+          p99_abs: Number(row.p99_abs || 0),
+          zero_frac: Number(row.zero_frac || 0),
+          min: Number(row.min || 0),
+          max: Number(row.max || 0),
         };
       } catch (err) {
-        console.error("queryHeadAggregate error:", err);
+        console.error("queryTensorStats error:", err);
         return null;
       }
     },
@@ -412,10 +384,31 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
     async (layer: number, head: number): Promise<HeadBlockProfile | null> => {
       if (!coordinator) return null;
       try {
+        // Query raw_weights.parquet directly (on-demand) instead of loading entire table
+        const baseUrl = window.location.origin;
+        const hashBase = window.location.pathname.replace(/\/$/, "");
+        const dataPath = `${baseUrl}${hashBase}/data/llm`;
+        
+        // For raw_weights, compute block-level stats from row data
+        // Each head has 128 rows (HEAD_DIM), group by input block (chunk columns into blocks of 128)
+        const BLOCK_DIM = 128;
+        const HEAD_DIM = 128; // 2048 / 16 = 128
+        const qFile = PARQUET_FILES.getRawWeightsFile(layer, 'q');
         const result = await coordinator.query(`
+          WITH head_rows AS (
+            SELECT row_idx, values, col_end
+            FROM '${dataPath}/${qFile}'
+            WHERE row_idx >= ${head * HEAD_DIM} AND row_idx < ${(head + 1) * HEAD_DIM}
+          ),
+          block_stats AS (
+            SELECT 
+              CAST((col_end / ${BLOCK_DIM}) AS INTEGER) - 1 as in_block,
+              SQRT(SUM(LIST_SUM(LIST_TRANSFORM(values, x -> x * x)))) as fro_norm
+            FROM head_rows
+            GROUP BY in_block
+          )
           SELECT in_block, fro_norm
-          FROM tensor_blocks
-          WHERE layer = ${layer} AND role = 'q' AND head = ${head}
+          FROM block_stats
           ORDER BY in_block
         `);
         const rows = arrowTableToArray(result);
@@ -437,10 +430,34 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
     async (layer: number): Promise<OProjSignature | null> => {
       if (!coordinator) return null;
       try {
+        // Query raw_weights.parquet directly (on-demand) instead of loading entire table
+        const baseUrl = window.location.origin;
+        const hashBase = window.location.pathname.replace(/\/$/, "");
+        const dataPath = `${baseUrl}${hashBase}/data/llm`;
+        
+        // For raw_weights, compute block-level stats from row data
+        // O projection: out_block = row_idx / BLOCK_DIM, in_block computed from column position
+        const BLOCK_DIM = 128;
+        const oFile = PARQUET_FILES.getRawWeightsFile(layer, 'o');
         const result = await coordinator.query(`
+          WITH expanded AS (
+            SELECT 
+              row_idx,
+              CAST((row_idx / ${BLOCK_DIM}) AS INTEGER) as out_block,
+              UNNEST(GENERATE_SERIES(0, col_end - 1)) as col_idx,
+              UNNEST(values) as weight_val
+            FROM '${dataPath}/${oFile}'
+          ),
+          block_aggregated AS (
+            SELECT 
+              out_block,
+              CAST((col_idx / ${BLOCK_DIM}) AS INTEGER) as in_block,
+              SQRT(SUM(POW(weight_val, 2))) as fro_norm
+            FROM expanded
+            GROUP BY out_block, in_block
+          )
           SELECT out_block, in_block, fro_norm
-          FROM tensor_blocks
-          WHERE layer = ${layer} AND role = 'o'
+          FROM block_aggregated
           ORDER BY out_block, in_block
         `);
         const rows = arrowTableToArray(result);
@@ -465,19 +482,160 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
     [coordinator]
   );
 
-  const queryDimsForLayer = useCallback(
-    async (layer: number, role: string): Promise<TensorDim[]> => {
+  const queryWeightRows = useCallback(
+    async (layer: number, role: string, rowStart?: number, rowEnd?: number): Promise<Array<{ row_idx: number; values: number[] }>> => {
+      if (!coordinator) return [];
+      try {
+        // Query raw_weights.parquet directly (on-demand) instead of loading entire table
+        const baseUrl = window.location.origin;
+        const hashBase = window.location.pathname.replace(/\/$/, "");
+        const dataPath = `${baseUrl}${hashBase}/data/llm`;
+        
+        const weightFile = PARQUET_FILES.getRawWeightsFile(layer, role);
+        let query = `
+          SELECT row_idx, values
+          FROM '${dataPath}/${weightFile}'
+        `;
+        if (rowStart !== undefined) {
+          query += ` AND row_idx >= ${rowStart}`;
+        }
+        if (rowEnd !== undefined) {
+          query += ` AND row_idx < ${rowEnd}`;
+        }
+        query += ` ORDER BY row_idx LIMIT 10000`; // Limit to prevent memory issues
+        
+        const result = await coordinator.query(query);
+        const rows = arrowTableToArray(result) as unknown as Record<string, unknown>[];
+        return rows.map((r) => ({
+          row_idx: Number(r.row_idx),
+          values: Array.isArray(r.values) ? (r.values as number[]) : [],
+        }));
+      } catch (err) {
+        console.error("queryWeightRows error:", err);
+        return [];
+      }
+    },
+    [coordinator]
+  );
+
+  const queryHiddenState = useCallback(
+    async (layer: number, position: number): Promise<{ norm: number; mean: number; std: number; top_dims: number[]; top_vals: number[] } | null> => {
+      if (!coordinator) return null;
+      try {
+        const result = await coordinator.query(`
+          SELECT * FROM hidden_states
+          WHERE layer = ${layer} AND position = ${position}
+          LIMIT 1
+        `);
+        const rows = arrowTableToArray(result);
+        if (rows.length === 0) return null;
+        const row = rows[0];
+        // Parse top_dims and top_vals from arrays (stored as JSON strings or lists)
+        let top_dims: number[] = [];
+        let top_vals: number[] = [];
+        if (row.top_dims) {
+          if (typeof row.top_dims === 'string') {
+            top_dims = JSON.parse(row.top_dims);
+          } else if (Array.isArray(row.top_dims)) {
+            top_dims = row.top_dims.map(Number);
+          }
+        }
+        if (row.top_vals) {
+          if (typeof row.top_vals === 'string') {
+            top_vals = JSON.parse(row.top_vals);
+          } else if (Array.isArray(row.top_vals)) {
+            top_vals = row.top_vals.map(Number);
+          }
+        }
+        return {
+          norm: Number(row.norm),
+          mean: Number(row.mean),
+          std: Number(row.std),
+          top_dims,
+          top_vals,
+        };
+      } catch (err) {
+        console.error("queryHiddenState error:", err);
+        return null;
+      }
+    },
+    [coordinator]
+  );
+
+  const queryAttentionPattern = useCallback(
+    async (layer: number, head: number): Promise<Array<{ query_pos: number; key_pos: number; weight: number }>> => {
       if (!coordinator) return [];
       try {
         const result = await coordinator.query(`
-          SELECT * FROM tensor_dims
-          WHERE layer = ${layer} AND role = '${role}'
-          ORDER BY head, dim
+          SELECT query_pos, key_pos, weight
+          FROM attention_patterns
+          WHERE layer = ${layer} AND head = ${head}
+          ORDER BY query_pos, key_pos
         `);
-        return arrowTableToArray(result) as TensorDim[];
+        const rows = arrowTableToArray(result) as unknown as Record<string, unknown>[];
+        return rows.map((r) => ({
+          query_pos: Number(r.query_pos),
+          key_pos: Number(r.key_pos),
+          weight: Number(r.weight),
+        }));
       } catch (err) {
-        console.error("queryDimsForLayer error:", err);
+        console.error("queryAttentionPattern error:", err);
         return [];
+      }
+    },
+    [coordinator]
+  );
+
+  const queryMLPActivation = useCallback(
+    async (layer: number, position: number, stage: string): Promise<{ norm: number; sparsity: number; top_dims: number[]; top_vals: number[] } | null> => {
+      if (!coordinator) return null;
+      try {
+        // Get values list and compute stats in JavaScript
+        const result = await coordinator.query(`
+          SELECT values
+          FROM mlp_activations
+          WHERE layer = ${layer} AND position = ${position} AND stage = '${stage}'
+          LIMIT 1
+        `);
+        const rows = arrowTableToArray(result);
+        if (rows.length === 0) return null;
+        const row = rows[0];
+        
+        // Extract values array
+        let values: number[] = [];
+        if (row.values) {
+          if (typeof row.values === 'string') {
+            values = JSON.parse(row.values);
+          } else if (Array.isArray(row.values)) {
+            values = row.values.map(Number);
+          }
+        }
+        
+        if (values.length === 0) return null;
+        
+        // Compute norm (Frobenius norm)
+        const norm = Math.sqrt(values.reduce((sum, val) => sum + val * val, 0));
+        
+        // Compute sparsity (fraction of near-zero values)
+        const nearZeroCount = values.filter(val => Math.abs(val) < 1e-6).length;
+        const sparsity = nearZeroCount / values.length;
+        
+        // Compute top dimensions and values
+        const indexed = values.map((val, idx) => ({ idx, val: Math.abs(val) }));
+        indexed.sort((a, b) => b.val - a.val);
+        const top_k = Math.min(10, indexed.length);
+        const top_dims = indexed.slice(0, top_k).map(item => item.idx);
+        const top_vals = indexed.slice(0, top_k).map(item => values[item.idx]);
+        
+        return {
+          norm,
+          sparsity,
+          top_dims,
+          top_vals,
+        };
+      } catch (err) {
+        console.error("queryMLPActivation error:", err);
+        return null;
       }
     },
     [coordinator]
@@ -491,6 +649,12 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
         layerBrush,
         headBrush,
         blockBrush,
+        selectedLayer,
+        selectedModule,
+        selectedNormType,
+        stackIndex,
+        setSelection: handleSetSelection,
+        navigateStack: handleNavigateStack,
         numLayers,
         numHeads,
         numKVHeads,
@@ -498,15 +662,15 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
         intermediateSize,
         headDim,
         tensors,
-        tensorStats,
-        headAggregates,
-        kvAggregates,
+        promptTokens,
+        numPositions,
         queryTensorStats,
-        queryDimStats,
-        queryHeadAggregate,
         queryHeadBlockProfile,
         queryOProjSignature,
-        queryDimsForLayer,
+        queryWeightRows,
+        queryHiddenState,
+        queryAttentionPattern,
+        queryMLPActivation,
       }}
     >
       {children}

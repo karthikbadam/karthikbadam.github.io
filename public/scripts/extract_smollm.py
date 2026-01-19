@@ -2,22 +2,17 @@
 """
 Extract SmolLM3-3B model architecture and weight statistics to Parquet files.
 
-Generates 6 semantic Parquet files in public/data/llm/:
-    1. tensors.parquet        - Tensor catalog (~326 rows)
-    2. tensor_stats.parquet   - Whole-tensor metrics (~326 rows)
-    3. tensor_dims.parquet    - Per-output-dimension metrics (~976k rows)
-    4. tensor_blocks.parquet  - Semantic block decomposition (~23k rows)
-    5. tensor_block_topk.parquet - Sparse weight anchors (~370k rows)
-    6. tensor_relations.parquet  - Semantic relations (~1k rows)
+Generates 2 consolidated Parquet files in public/data/llm/:
+    1. model_structure.parquet - Combined tensor catalog + stats + relations (~327 rows)
+    2. raw_weights.parquet     - Raw weight values, chunked by rows (~millions of rows, ~GB)
 
 Usage:
     pip install transformers torch pyarrow pandas numpy
     python public/scripts/extract_smollm.py
 """
 
-import os
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple
 import numpy as np
 import pandas as pd
 import pyarrow as pa
@@ -38,8 +33,6 @@ NUM_KV_HEADS = None
 HIDDEN_SIZE = None
 INTERMEDIATE_SIZE = None
 HEAD_DIM = None
-BLOCK_DIM = 128  # Fixed block size for visualization
-N_IN_BLOCKS = None
 VOCAB_SIZE = None
 
 
@@ -82,7 +75,7 @@ def load_model_weights() -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
 def initialize_config(config_dict: Dict[str, Any]) -> None:
     """Initialize global config variables from model config."""
     global NUM_LAYERS, NUM_HEADS, NUM_KV_HEADS, HIDDEN_SIZE
-    global INTERMEDIATE_SIZE, HEAD_DIM, N_IN_BLOCKS, VOCAB_SIZE
+    global INTERMEDIATE_SIZE, HEAD_DIM, VOCAB_SIZE
     
     NUM_LAYERS = config_dict["num_hidden_layers"]
     NUM_HEADS = config_dict["num_attention_heads"]
@@ -90,7 +83,6 @@ def initialize_config(config_dict: Dict[str, Any]) -> None:
     HIDDEN_SIZE = config_dict["hidden_size"]
     INTERMEDIATE_SIZE = config_dict["intermediate_size"]
     HEAD_DIM = HIDDEN_SIZE // NUM_HEADS
-    N_IN_BLOCKS = HIDDEN_SIZE // BLOCK_DIM
     VOCAB_SIZE = config_dict["vocab_size"]
 
 
@@ -172,7 +164,7 @@ def create_tensors(weights: Dict[str, np.ndarray], config_dict: Dict[str, Any]) 
 # =============================================================================
 
 def create_tensor_stats(weights: Dict[str, np.ndarray], tensors_df: pd.DataFrame) -> pd.DataFrame:
-    """Create tensor_stats.parquet with aggregate stats per tensor."""
+    """Create tensor_stats.parquet with whole-tensor statistics."""
     stats = []
     
     for _, row in tensors_df.iterrows():
@@ -210,620 +202,236 @@ def create_tensor_stats(weights: Dict[str, np.ndarray], tensors_df: pd.DataFrame
 
 
 # =============================================================================
-# 3. tensor_dims.parquet - Per-output-dimension metrics (~976k rows)
+# 3. model_structure.parquet - Combined tensor catalog + stats + relations
 # =============================================================================
 
-def create_tensor_dims(weights: Dict[str, np.ndarray]) -> pd.DataFrame:
-    """
-    Create tensor_dims.parquet with per-output-dimension metrics.
+def create_model_structure(weights: Dict[str, np.ndarray], tensors_df: pd.DataFrame, 
+                          tensor_stats_df: pd.DataFrame) -> pd.DataFrame:
+    """Create model_structure.parquet combining tensors + stats + relations."""
+    # Start with tensors
+    structure = tensors_df.copy()
     
-    Attention dims (~110k rows):
-    - Q: 16 heads x 128 dims x 36 layers = 73,728 rows
-    - K: 4 heads x 128 dims x 36 layers = 18,432 rows
-    - V: 4 heads x 128 dims x 36 layers = 18,432 rows
+    # Merge in stats
+    stats_map = {row["tensor_id"]: row for _, row in tensor_stats_df.iterrows()}
+    for idx, row in structure.iterrows():
+        tensor_id = row["tensor_id"]
+        if tensor_id in stats_map:
+            stats = stats_map[tensor_id]
+            structure.at[idx, "fro_norm"] = stats["fro_norm"]
+            structure.at[idx, "mean_abs"] = stats["mean_abs"]
+            structure.at[idx, "std"] = stats["std"]
+            structure.at[idx, "p95_abs"] = stats["p95_abs"]
+            structure.at[idx, "p99_abs"] = stats["p99_abs"]
+            structure.at[idx, "zero_frac"] = stats["zero_frac"]
+            structure.at[idx, "min"] = stats["min"]
+            structure.at[idx, "max"] = stats["max"]
+        else:
+            # Fill with None for tied tensors
+            for col in ["fro_norm", "mean_abs", "std", "p95_abs", "p99_abs", "zero_frac", "min", "max"]:
+                structure.at[idx, col] = None
     
-    MLP dims (~866k rows):
-    - down: 2048 dims x 36 layers = 73,728 rows
-    - up: 11008 dims x 36 layers = 396,288 rows
-    - gate: 11008 dims x 36 layers = 396,288 rows
+    # Add parent_id column for relations
+    structure["parent_id"] = None
     
-    Total: ~976,896 rows
-    """
-    dims = []
-    
-    print("  Computing per-dimension stats (this may take a minute)...")
-    
-    for layer_idx in range(NUM_LAYERS):
-        prefix = f"model.layers.{layer_idx}"
-        
-        # Q projection dims (16 heads x 128 dims)
-        q_key = f"{prefix}.self_attn.q_proj.weight"
-        if q_key in weights:
-            q_weight = weights[q_key].astype(np.float32)
-            for head in range(NUM_HEADS):
-                head_start = head * HEAD_DIM
-                for dim in range(HEAD_DIM):
-                    row_idx = head_start + dim
-                    row = q_weight[row_idx, :]
-                    abs_row = np.abs(row)
-                    dims.append({
-                        "tensor_id": f"L{layer_idx}.attn.q",
-                        "layer": layer_idx,
-                        "module": "attn",
-                        "role": "q",
-                        "head_kind": "q_head",
-                        "head": head,
-                        "dim": dim,
-                        "row_l2": float(np.linalg.norm(row)),
-                        "row_mean_abs": float(np.mean(abs_row)),
-                        "row_std": float(np.std(row)),
-                        "row_p95_abs": float(np.percentile(abs_row, 95)),
-                        "row_zero_frac": float(np.mean(row == 0)),
-                    })
-        
-        # K projection dims (4 heads x 128 dims)
-        k_key = f"{prefix}.self_attn.k_proj.weight"
-        if k_key in weights:
-            k_weight = weights[k_key].astype(np.float32)
-            for head in range(NUM_KV_HEADS):
-                head_start = head * HEAD_DIM
-                for dim in range(HEAD_DIM):
-                    row_idx = head_start + dim
-                    row = k_weight[row_idx, :]
-                    abs_row = np.abs(row)
-                    dims.append({
-                        "tensor_id": f"L{layer_idx}.attn.k",
-                        "layer": layer_idx,
-                        "module": "attn",
-                        "role": "k",
-                        "head_kind": "kv_head",
-                        "head": head,
-                        "dim": dim,
-                        "row_l2": float(np.linalg.norm(row)),
-                        "row_mean_abs": float(np.mean(abs_row)),
-                        "row_std": float(np.std(row)),
-                        "row_p95_abs": float(np.percentile(abs_row, 95)),
-                        "row_zero_frac": float(np.mean(row == 0)),
-                    })
-        
-        # V projection dims (4 heads x 128 dims)
-        v_key = f"{prefix}.self_attn.v_proj.weight"
-        if v_key in weights:
-            v_weight = weights[v_key].astype(np.float32)
-            for head in range(NUM_KV_HEADS):
-                head_start = head * HEAD_DIM
-                for dim in range(HEAD_DIM):
-                    row_idx = head_start + dim
-                    row = v_weight[row_idx, :]
-                    abs_row = np.abs(row)
-                    dims.append({
-                        "tensor_id": f"L{layer_idx}.attn.v",
-                        "layer": layer_idx,
-                        "module": "attn",
-                        "role": "v",
-                        "head_kind": "kv_head",
-                        "head": head,
-                        "dim": dim,
-                        "row_l2": float(np.linalg.norm(row)),
-                        "row_mean_abs": float(np.mean(abs_row)),
-                        "row_std": float(np.std(row)),
-                        "row_p95_abs": float(np.percentile(abs_row, 95)),
-                        "row_zero_frac": float(np.mean(row == 0)),
-                    })
-        
-        # MLP down_proj dims (2048 dims)
-        down_key = f"{prefix}.mlp.down_proj.weight"
-        if down_key in weights:
-            down_weight = weights[down_key].astype(np.float32)
-            for dim in range(HIDDEN_SIZE):
-                row = down_weight[dim, :]
-                abs_row = np.abs(row)
-                dims.append({
-                    "tensor_id": f"L{layer_idx}.mlp.down",
-                    "layer": layer_idx,
-                    "module": "mlp",
-                    "role": "down",
-                    "head_kind": "none",
-                    "head": None,
-                    "dim": dim,
-                    "row_l2": float(np.linalg.norm(row)),
-                    "row_mean_abs": float(np.mean(abs_row)),
-                    "row_std": float(np.std(row)),
-                    "row_p95_abs": float(np.percentile(abs_row, 95)),
-                    "row_zero_frac": float(np.mean(row == 0)),
-                })
-        
-        # MLP up_proj dims (11008 dims)
-        up_key = f"{prefix}.mlp.up_proj.weight"
-        if up_key in weights:
-            up_weight = weights[up_key].astype(np.float32)
-            for dim in range(INTERMEDIATE_SIZE):
-                row = up_weight[dim, :]
-                abs_row = np.abs(row)
-                dims.append({
-                    "tensor_id": f"L{layer_idx}.mlp.up",
-                    "layer": layer_idx,
-                    "module": "mlp",
-                    "role": "up",
-                    "head_kind": "none",
-                    "head": None,
-                    "dim": dim,
-                    "row_l2": float(np.linalg.norm(row)),
-                    "row_mean_abs": float(np.mean(abs_row)),
-                    "row_std": float(np.std(row)),
-                    "row_p95_abs": float(np.percentile(abs_row, 95)),
-                    "row_zero_frac": float(np.mean(row == 0)),
-                })
-        
-        # MLP gate_proj dims (11008 dims)
-        gate_key = f"{prefix}.mlp.gate_proj.weight"
-        if gate_key in weights:
-            gate_weight = weights[gate_key].astype(np.float32)
-            for dim in range(INTERMEDIATE_SIZE):
-                row = gate_weight[dim, :]
-                abs_row = np.abs(row)
-                dims.append({
-                    "tensor_id": f"L{layer_idx}.mlp.gate",
-                    "layer": layer_idx,
-                    "module": "mlp",
-                    "role": "gate",
-                    "head_kind": "none",
-                    "head": None,
-                    "dim": dim,
-                    "row_l2": float(np.linalg.norm(row)),
-                    "row_mean_abs": float(np.mean(abs_row)),
-                    "row_std": float(np.std(row)),
-                    "row_p95_abs": float(np.percentile(abs_row, 95)),
-                    "row_zero_frac": float(np.mean(row == 0)),
-                })
-        
-        if (layer_idx + 1) % 6 == 0:
-            print(f"    Layer {layer_idx + 1}/{NUM_LAYERS} complete...")
-    
-    df = pd.DataFrame(dims)
-    df["layer"] = df["layer"].astype("int16")
-    df["head"] = df["head"].astype("Int16")
-    df["dim"] = df["dim"].astype("int32")
-    for col in ["row_l2", "row_mean_abs", "row_std", "row_p95_abs", "row_zero_frac"]:
-        df[col] = df[col].astype("float32")
-    
-    return df
-
-
-# =============================================================================
-# 4. tensor_blocks.parquet - Semantic block decomposition (~23k rows)
-# =============================================================================
-
-def compute_gini(arr: np.ndarray) -> float:
-    """Compute Gini coefficient of an array."""
-    arr = np.abs(arr.flatten())
-    if len(arr) == 0 or arr.sum() == 0:
-        return 0.0
-    arr = np.sort(arr)
-    n = len(arr)
-    index = np.arange(1, n + 1)
-    return float((np.sum((2 * index - n - 1) * arr)) / (n * np.sum(arr)))
-
-
-def create_tensor_blocks(weights: Dict[str, np.ndarray]) -> pd.DataFrame:
-    """Create tensor_blocks.parquet with semantic block decomposition."""
-    blocks = []
-    
-    for layer_idx in range(NUM_LAYERS):
-        prefix = f"model.layers.{layer_idx}"
-        
-        # Q blocks: (q_head 0..15, in_block 0..15)
-        q_key = f"{prefix}.self_attn.q_proj.weight"
-        if q_key in weights:
-            q_weight = weights[q_key].astype(np.float32)
-            for head in range(NUM_HEADS):
-                out_start = head * HEAD_DIM
-                out_end = (head + 1) * HEAD_DIM
-                for in_block in range(N_IN_BLOCKS):
-                    in_start = in_block * BLOCK_DIM
-                    in_end = (in_block + 1) * BLOCK_DIM
-                    block = q_weight[out_start:out_end, in_start:in_end]
-                    flat = block.flatten()
-                    abs_flat = np.abs(flat)
-                    
-                    # Row and column Gini
-                    row_norms = np.linalg.norm(block, axis=1)
-                    col_norms = np.linalg.norm(block, axis=0)
-                    
-                    blocks.append({
-                        "tensor_id": f"L{layer_idx}.attn.q",
-                        "layer": layer_idx,
-                        "module": "attn",
-                        "role": "q",
-                        "head_kind": "q_head",
-                        "head": head,
-                        "out_block": None,
-                        "in_block": in_block,
-                        "out_start": out_start,
-                        "out_end": out_end,
-                        "in_start": in_start,
-                        "in_end": in_end,
-                        "fro_norm": float(np.linalg.norm(flat)),
-                        "mean_abs": float(np.mean(abs_flat)),
-                        "std": float(np.std(flat)),
-                        "p95_abs": float(np.percentile(abs_flat, 95)),
-                        "row_gini": compute_gini(row_norms),
-                        "col_gini": compute_gini(col_norms),
-                    })
-        
-        # K blocks: (kv_head 0..3, in_block 0..15)
-        k_key = f"{prefix}.self_attn.k_proj.weight"
-        if k_key in weights:
-            k_weight = weights[k_key].astype(np.float32)
-            for head in range(NUM_KV_HEADS):
-                out_start = head * HEAD_DIM
-                out_end = (head + 1) * HEAD_DIM
-                for in_block in range(N_IN_BLOCKS):
-                    in_start = in_block * BLOCK_DIM
-                    in_end = (in_block + 1) * BLOCK_DIM
-                    block = k_weight[out_start:out_end, in_start:in_end]
-                    flat = block.flatten()
-                    abs_flat = np.abs(flat)
-                    row_norms = np.linalg.norm(block, axis=1)
-                    col_norms = np.linalg.norm(block, axis=0)
-                    
-                    blocks.append({
-                        "tensor_id": f"L{layer_idx}.attn.k",
-                        "layer": layer_idx,
-                        "module": "attn",
-                        "role": "k",
-                        "head_kind": "kv_head",
-                        "head": head,
-                        "out_block": None,
-                        "in_block": in_block,
-                        "out_start": out_start,
-                        "out_end": out_end,
-                        "in_start": in_start,
-                        "in_end": in_end,
-                        "fro_norm": float(np.linalg.norm(flat)),
-                        "mean_abs": float(np.mean(abs_flat)),
-                        "std": float(np.std(flat)),
-                        "p95_abs": float(np.percentile(abs_flat, 95)),
-                        "row_gini": compute_gini(row_norms),
-                        "col_gini": compute_gini(col_norms),
-                    })
-        
-        # V blocks: (kv_head 0..3, in_block 0..15)
-        v_key = f"{prefix}.self_attn.v_proj.weight"
-        if v_key in weights:
-            v_weight = weights[v_key].astype(np.float32)
-            for head in range(NUM_KV_HEADS):
-                out_start = head * HEAD_DIM
-                out_end = (head + 1) * HEAD_DIM
-                for in_block in range(N_IN_BLOCKS):
-                    in_start = in_block * BLOCK_DIM
-                    in_end = (in_block + 1) * BLOCK_DIM
-                    block = v_weight[out_start:out_end, in_start:in_end]
-                    flat = block.flatten()
-                    abs_flat = np.abs(flat)
-                    row_norms = np.linalg.norm(block, axis=1)
-                    col_norms = np.linalg.norm(block, axis=0)
-                    
-                    blocks.append({
-                        "tensor_id": f"L{layer_idx}.attn.v",
-                        "layer": layer_idx,
-                        "module": "attn",
-                        "role": "v",
-                        "head_kind": "kv_head",
-                        "head": head,
-                        "out_block": None,
-                        "in_block": in_block,
-                        "out_start": out_start,
-                        "out_end": out_end,
-                        "in_start": in_start,
-                        "in_end": in_end,
-                        "fro_norm": float(np.linalg.norm(flat)),
-                        "mean_abs": float(np.mean(abs_flat)),
-                        "std": float(np.std(flat)),
-                        "p95_abs": float(np.percentile(abs_flat, 95)),
-                        "row_gini": compute_gini(row_norms),
-                        "col_gini": compute_gini(col_norms),
-                    })
-        
-        # O blocks: (out_block 0..15, in_block 0..15) where in_block = head chunk
-        o_key = f"{prefix}.self_attn.o_proj.weight"
-        if o_key in weights:
-            o_weight = weights[o_key].astype(np.float32)
-            for out_block in range(N_IN_BLOCKS):
-                out_start = out_block * BLOCK_DIM
-                out_end = (out_block + 1) * BLOCK_DIM
-                for in_block in range(NUM_HEADS):  # in_block = head chunk
-                    in_start = in_block * HEAD_DIM
-                    in_end = (in_block + 1) * HEAD_DIM
-                    block = o_weight[out_start:out_end, in_start:in_end]
-                    flat = block.flatten()
-                    abs_flat = np.abs(flat)
-                    row_norms = np.linalg.norm(block, axis=1)
-                    col_norms = np.linalg.norm(block, axis=0)
-                    
-                    blocks.append({
-                        "tensor_id": f"L{layer_idx}.attn.o",
-                        "layer": layer_idx,
-                        "module": "attn",
-                        "role": "o",
-                        "head_kind": "none",
-                        "head": None,
-                        "out_block": out_block,
-                        "in_block": in_block,
-                        "out_start": out_start,
-                        "out_end": out_end,
-                        "in_start": in_start,
-                        "in_end": in_end,
-                        "fro_norm": float(np.linalg.norm(flat)),
-                        "mean_abs": float(np.mean(abs_flat)),
-                        "std": float(np.std(flat)),
-                        "p95_abs": float(np.percentile(abs_flat, 95)),
-                        "row_gini": compute_gini(row_norms),
-                        "col_gini": compute_gini(col_norms),
-                    })
-    
-    df = pd.DataFrame(blocks)
-    df["layer"] = df["layer"].astype("int16")
-    df["head"] = df["head"].astype("Int16")
-    df["out_block"] = df["out_block"].astype("Int16")
-    df["in_block"] = df["in_block"].astype("int16")
-    df["out_start"] = df["out_start"].astype("int32")
-    df["out_end"] = df["out_end"].astype("int32")
-    df["in_start"] = df["in_start"].astype("int32")
-    df["in_end"] = df["in_end"].astype("int32")
-    for col in ["fro_norm", "mean_abs", "std", "p95_abs", "row_gini", "col_gini"]:
-        df[col] = df[col].astype("float32")
-    
-    return df
-
-
-# =============================================================================
-# 5. tensor_block_topk.parquet - Sparse weight anchors (~370k rows at k=32)
-# =============================================================================
-
-def create_tensor_block_topk(weights: Dict[str, np.ndarray], k: int = 32) -> pd.DataFrame:
-    """Create tensor_block_topk.parquet with top-k weight values per block."""
-    topk_rows = []
-    
-    for layer_idx in range(NUM_LAYERS):
-        prefix = f"model.layers.{layer_idx}"
-        
-        # Q top-k
-        q_key = f"{prefix}.self_attn.q_proj.weight"
-        if q_key in weights:
-            q_weight = weights[q_key].astype(np.float32)
-            for head in range(NUM_HEADS):
-                out_start = head * HEAD_DIM
-                out_end = (head + 1) * HEAD_DIM
-                for in_block in range(N_IN_BLOCKS):
-                    in_start = in_block * BLOCK_DIM
-                    in_end = (in_block + 1) * BLOCK_DIM
-                    block = q_weight[out_start:out_end, in_start:in_end]
-                    flat = block.flatten()
-                    abs_flat = np.abs(flat)
-                    
-                    # Get top-k indices by absolute value
-                    topk_idx = np.argpartition(abs_flat, -k)[-k:]
-                    topk_idx = topk_idx[np.argsort(abs_flat[topk_idx])[::-1]]
-                    
-                    row_indices = (topk_idx // block.shape[1]).tolist()
-                    col_indices = (topk_idx % block.shape[1]).tolist()
-                    values = flat[topk_idx].tolist()
-                    
-                    topk_rows.append({
-                        "tensor_id": f"L{layer_idx}.attn.q",
-                        "layer": layer_idx,
-                        "role": "q",
-                        "head": head,
-                        "out_block": None,
-                        "in_block": in_block,
-                        "k": k,
-                        "row_idx": row_indices,
-                        "col_idx": col_indices,
-                        "value": values,
-                    })
-        
-        # K top-k
-        k_key = f"{prefix}.self_attn.k_proj.weight"
-        if k_key in weights:
-            k_weight = weights[k_key].astype(np.float32)
-            for head in range(NUM_KV_HEADS):
-                out_start = head * HEAD_DIM
-                out_end = (head + 1) * HEAD_DIM
-                for in_block in range(N_IN_BLOCKS):
-                    in_start = in_block * BLOCK_DIM
-                    in_end = (in_block + 1) * BLOCK_DIM
-                    block = k_weight[out_start:out_end, in_start:in_end]
-                    flat = block.flatten()
-                    abs_flat = np.abs(flat)
-                    
-                    topk_idx = np.argpartition(abs_flat, -k)[-k:]
-                    topk_idx = topk_idx[np.argsort(abs_flat[topk_idx])[::-1]]
-                    
-                    row_indices = (topk_idx // block.shape[1]).tolist()
-                    col_indices = (topk_idx % block.shape[1]).tolist()
-                    values = flat[topk_idx].tolist()
-                    
-                    topk_rows.append({
-                        "tensor_id": f"L{layer_idx}.attn.k",
-                        "layer": layer_idx,
-                        "role": "k",
-                        "head": head,
-                        "out_block": None,
-                        "in_block": in_block,
-                        "k": k,
-                        "row_idx": row_indices,
-                        "col_idx": col_indices,
-                        "value": values,
-                    })
-        
-        # V top-k
-        v_key = f"{prefix}.self_attn.v_proj.weight"
-        if v_key in weights:
-            v_weight = weights[v_key].astype(np.float32)
-            for head in range(NUM_KV_HEADS):
-                out_start = head * HEAD_DIM
-                out_end = (head + 1) * HEAD_DIM
-                for in_block in range(N_IN_BLOCKS):
-                    in_start = in_block * BLOCK_DIM
-                    in_end = (in_block + 1) * BLOCK_DIM
-                    block = v_weight[out_start:out_end, in_start:in_end]
-                    flat = block.flatten()
-                    abs_flat = np.abs(flat)
-                    
-                    topk_idx = np.argpartition(abs_flat, -k)[-k:]
-                    topk_idx = topk_idx[np.argsort(abs_flat[topk_idx])[::-1]]
-                    
-                    row_indices = (topk_idx // block.shape[1]).tolist()
-                    col_indices = (topk_idx % block.shape[1]).tolist()
-                    values = flat[topk_idx].tolist()
-                    
-                    topk_rows.append({
-                        "tensor_id": f"L{layer_idx}.attn.v",
-                        "layer": layer_idx,
-                        "role": "v",
-                        "head": head,
-                        "out_block": None,
-                        "in_block": in_block,
-                        "k": k,
-                        "row_idx": row_indices,
-                        "col_idx": col_indices,
-                        "value": values,
-                    })
-        
-        # O top-k
-        o_key = f"{prefix}.self_attn.o_proj.weight"
-        if o_key in weights:
-            o_weight = weights[o_key].astype(np.float32)
-            for out_block in range(N_IN_BLOCKS):
-                out_start = out_block * BLOCK_DIM
-                out_end = (out_block + 1) * BLOCK_DIM
-                for in_block in range(NUM_HEADS):
-                    in_start = in_block * HEAD_DIM
-                    in_end = (in_block + 1) * HEAD_DIM
-                    block = o_weight[out_start:out_end, in_start:in_end]
-                    flat = block.flatten()
-                    abs_flat = np.abs(flat)
-                    
-                    topk_idx = np.argpartition(abs_flat, -k)[-k:]
-                    topk_idx = topk_idx[np.argsort(abs_flat[topk_idx])[::-1]]
-                    
-                    row_indices = (topk_idx // block.shape[1]).tolist()
-                    col_indices = (topk_idx % block.shape[1]).tolist()
-                    values = flat[topk_idx].tolist()
-                    
-                    topk_rows.append({
-                        "tensor_id": f"L{layer_idx}.attn.o",
-                        "layer": layer_idx,
-                        "role": "o",
-                        "head": None,
-                        "out_block": out_block,
-                        "in_block": in_block,
-                        "k": k,
-                        "row_idx": row_indices,
-                        "col_idx": col_indices,
-                        "value": values,
-                    })
-    
-    df = pd.DataFrame(topk_rows)
-    df["layer"] = df["layer"].astype("int16")
-    df["head"] = df["head"].astype("Int16")
-    df["out_block"] = df["out_block"].astype("Int16")
-    df["in_block"] = df["in_block"].astype("int16")
-    df["k"] = df["k"].astype("int16")
-    
-    return df
-
-
-# =============================================================================
-# 6. tensor_relations.parquet - Semantic relations (~1k rows)
-# =============================================================================
-
-def create_tensor_relations() -> pd.DataFrame:
-    """Create tensor_relations.parquet with semantic relationships."""
-    relations = []
-    
+    # Add relations as parent_id references
     # Tied embeddings
-    relations.append({
-        "src_tensor_id": "lm_head",
-        "dst_tensor_id": "embed_tokens",
-        "relation": "tied_to",
-        "layer": None,
-        "note": "LM head shares weights with input embeddings",
-    })
+    lm_head_idx = structure[structure["tensor_id"] == "lm_head"].index
+    if len(lm_head_idx) > 0:
+        structure.at[lm_head_idx[0], "parent_id"] = "embed_tokens"
     
-    # Per-layer relations
+    # Per-layer relations - set parent_id for components
     for layer_idx in range(NUM_LAYERS):
-        # Input norm feeds into Q/K/V
+        # Q/K/V have input_norm as parent
         for proj in ["q", "k", "v"]:
-            relations.append({
-                "src_tensor_id": f"L{layer_idx}.norm.input_norm",
-                "dst_tensor_id": f"L{layer_idx}.attn.{proj}",
-                "relation": "feeds_into",
-                "layer": layer_idx,
-                "note": None,
-            })
+            tensor_id = f"L{layer_idx}.attn.{proj}"
+            idx = structure[structure["tensor_id"] == tensor_id].index
+            if len(idx) > 0:
+                structure.at[idx[0], "parent_id"] = f"L{layer_idx}.norm.input_norm"
         
-        # Q/K/V project to attention operation
-        for proj in ["q", "k", "v"]:
-            relations.append({
-                "src_tensor_id": f"L{layer_idx}.attn.{proj}",
-                "dst_tensor_id": f"L{layer_idx}.attn.o",
-                "relation": "projects_to",
-                "layer": layer_idx,
-                "note": f"{proj.upper()} to O projection",
-            })
+        # O has attention operation as parent (use Q as representative)
+        tensor_id = f"L{layer_idx}.attn.o"
+        idx = structure[structure["tensor_id"] == tensor_id].index
+        if len(idx) > 0:
+            structure.at[idx[0], "parent_id"] = f"L{layer_idx}.attn.q"
         
-        # O adds to residual
-        relations.append({
-            "src_tensor_id": f"L{layer_idx}.attn.o",
-            "dst_tensor_id": f"L{layer_idx}.norm.post_norm",
-            "relation": "residual_adds_to",
-            "layer": layer_idx,
-            "note": "Attention output to post-attention norm",
-        })
-        
-        # Post-norm feeds into MLP
+        # MLP gate/up have post_norm as parent
         for proj in ["gate", "up"]:
-            relations.append({
-                "src_tensor_id": f"L{layer_idx}.norm.post_norm",
-                "dst_tensor_id": f"L{layer_idx}.mlp.{proj}",
-                "relation": "feeds_into",
-                "layer": layer_idx,
-                "note": None,
-            })
+            tensor_id = f"L{layer_idx}.mlp.{proj}"
+            idx = structure[structure["tensor_id"] == tensor_id].index
+            if len(idx) > 0:
+                structure.at[idx[0], "parent_id"] = f"L{layer_idx}.norm.post_norm"
         
-        # Gate/Up to Down
-        for proj in ["gate", "up"]:
-            relations.append({
-                "src_tensor_id": f"L{layer_idx}.mlp.{proj}",
-                "dst_tensor_id": f"L{layer_idx}.mlp.down",
-                "relation": "projects_to",
-                "layer": layer_idx,
-                "note": f"{proj} to down projection",
-            })
-        
-        # GQA sharing: Q heads share KV
-        heads_per_kv = NUM_HEADS // NUM_KV_HEADS
-        for q_head in range(NUM_HEADS):
-            kv_head = q_head // heads_per_kv
-            relations.append({
-                "src_tensor_id": f"L{layer_idx}.attn.q",
-                "dst_tensor_id": f"L{layer_idx}.attn.k",
-                "relation": "shares_kv",
-                "layer": layer_idx,
-                "note": f"Q head {q_head} shares KV head {kv_head}",
-            })
+        # MLP down has gate/up as parent (use gate as representative)
+        tensor_id = f"L{layer_idx}.mlp.down"
+        idx = structure[structure["tensor_id"] == tensor_id].index
+        if len(idx) > 0:
+            structure.at[idx[0], "parent_id"] = f"L{layer_idx}.mlp.gate"
     
-    df = pd.DataFrame(relations)
-    df["layer"] = df["layer"].astype("Int16")
-    
-    return df
+    return structure
 
 
 # =============================================================================
-# Main
+# 4. raw_weights.parquet - Raw weight values, row-by-row
 # =============================================================================
+
+def create_raw_weights_split(weights: Dict[str, np.ndarray]) -> pd.DataFrame:
+    """Create split raw_weights files by layer and role for on-demand loading."""
+    print("  Storing raw weight values split by layer and role...")
+    print("  This creates smaller files that can be loaded on-demand...")
+    
+    # Define schema
+    schema = pa.schema([
+        ("tensor_id", pa.string()),
+        ("layer", pa.int16()),
+        ("module", pa.string()),
+        ("role", pa.string()),
+        ("row_idx", pa.int32()),
+        ("col_start", pa.int32()),
+        ("col_end", pa.int32()),
+        ("values", pa.list_(pa.float32())),
+    ])
+    
+    chunk_size = 10000  # Write in chunks of 10k rows
+    total_rows = 0
+    files_created = []
+    
+    def write_file(data: list[dict], layer: int, role: str):
+        """Write a single file for a specific layer and role."""
+        if not data:
+            return
+        filename = f"raw_weights_l{layer}_{role}.parquet"
+        filepath = OUTPUT_DIR / filename
+        
+        df = pd.DataFrame(data)
+        df["layer"] = df["layer"].replace({None: -1}).astype("int16")
+        table = pa.Table.from_pandas(df, schema=schema)
+        
+        with pq.ParquetWriter(filepath, schema, compression='snappy') as writer:
+            writer.write_table(table)
+        
+        file_size_mb = filepath.stat().st_size / 1024 / 1024
+        files_created.append((filename, len(data), file_size_mb))
+        return len(data)
+    
+    # Process layers - split by layer and role
+    for layer_idx in range(NUM_LAYERS):
+        if layer_idx % 5 == 0:
+            print(f"    Processing layer {layer_idx}/{NUM_LAYERS}...")
+        
+        prefix = f"model.layers.{layer_idx}"
+        
+        # Attention projections: Q, K, V, O
+        for proj in ["q", "k", "v", "o"]:
+            key = f"{prefix}.self_attn.{proj}_proj.weight"
+            if key in weights:
+                weight_matrix = weights[key].astype(np.float32)
+                num_rows, num_cols = weight_matrix.shape
+                
+                current_chunk = []
+                for row_idx in range(num_rows):
+                    current_chunk.append({
+                        "tensor_id": f"L{layer_idx}.attn.{proj}",
+                        "layer": layer_idx,
+                        "module": "attn",
+                        "role": proj,
+                        "row_idx": row_idx,
+                        "col_start": 0,
+                        "col_end": num_cols,
+                        "values": weight_matrix[row_idx, :].tolist(),
+                    })
+                
+                rows_written = write_file(current_chunk, layer_idx, proj)
+                total_rows += rows_written
+        
+        # MLP projections: gate, up, down
+        for proj in ["gate", "up", "down"]:
+            key = f"{prefix}.mlp.{proj}_proj.weight"
+            if key in weights:
+                weight_matrix = weights[key].astype(np.float32)
+                num_rows, num_cols = weight_matrix.shape
+                
+                current_chunk = []
+                for row_idx in range(num_rows):
+                    current_chunk.append({
+                        "tensor_id": f"L{layer_idx}.mlp.{proj}",
+                        "layer": layer_idx,
+                        "module": "mlp",
+                        "role": proj,
+                        "row_idx": row_idx,
+                        "col_start": 0,
+                        "col_end": num_cols,
+                        "values": weight_matrix[row_idx, :].tolist(),
+                    })
+                
+                rows_written = write_file(current_chunk, layer_idx, proj)
+                total_rows += rows_written
+    
+    # Global tensors (layer=-1)
+    if "model.embed_tokens.weight" in weights:
+        embed_matrix = weights["model.embed_tokens.weight"].astype(np.float32)
+        num_rows, num_cols = embed_matrix.shape
+        print(f"    Processing embedding ({num_rows:,} rows)...")
+        current_chunk = []
+        for row_idx in range(num_rows):
+            current_chunk.append({
+                "tensor_id": "embed_tokens",
+                "layer": -1,
+                "module": "embed",
+                "role": "embed_tokens",
+                "row_idx": row_idx,
+                "col_start": 0,
+                "col_end": num_cols,
+                "values": embed_matrix[row_idx, :].tolist(),
+            })
+        rows_written = write_file(current_chunk, -1, "embed_tokens")
+        total_rows += rows_written
+    
+    # Final norm (layer=-1)
+    for key in ["model.norm.weight", "model.layer_norm.weight"]:
+        if key in weights:
+            norm_vec = weights[key].astype(np.float32).flatten()
+            current_chunk = [{
+                "tensor_id": "final_norm",
+                "layer": -1,
+                "module": "norm",
+                "role": "final_norm",
+                "row_idx": 0,
+                "col_start": 0,
+                "col_end": len(norm_vec),
+                "values": norm_vec.tolist(),
+            }]
+            rows_written = write_file(current_chunk, -1, "final_norm")
+            total_rows += rows_written
+            break
+    
+    # Layer norms
+    for layer_idx in range(NUM_LAYERS):
+        prefix = f"model.layers.{layer_idx}"
+        for norm_name, role in [("input_layernorm", "input_norm"), ("post_attention_layernorm", "post_norm")]:
+            key = f"{prefix}.{norm_name}.weight"
+            if key in weights:
+                norm_vec = weights[key].astype(np.float32).flatten()
+                current_chunk = [{
+                    "tensor_id": f"L{layer_idx}.norm.{role}",
+                    "layer": layer_idx,
+                    "module": "norm",
+                    "role": role,
+                    "row_idx": 0,
+                    "col_start": 0,
+                    "col_end": len(norm_vec),
+                    "values": norm_vec.tolist(),
+                }]
+                rows_written = write_file(current_chunk, layer_idx, role)
+                total_rows += rows_written
+    
+    print(f"    Completed: {total_rows:,} rows written across {len(files_created)} files")
+    total_size_mb = sum(f[2] for f in files_created)
+    print(f"    Total size: {total_size_mb:.1f} MB")
+    print(f"    Average file size: {total_size_mb / len(files_created):.2f} MB per file")
+    
+    # Return summary
+    return pd.DataFrame([{"total_rows": total_rows, "total_files": len(files_created), "total_size_mb": total_size_mb}])
+
 
 def save_parquet(df: pd.DataFrame, filename: str) -> None:
     """Save DataFrame to Parquet file."""
@@ -849,29 +457,15 @@ def main():
     # Create all tables
     print("\n2. Creating Parquet files...")
     
-    print("\n   [1/6] tensors.parquet")
+    print("\n   [1/2] model_structure.parquet (consolidated)")
     tensors_df = create_tensors(weights, config_dict)
-    save_parquet(tensors_df, "tensors.parquet")
-    
-    print("\n   [2/6] tensor_stats.parquet")
     tensor_stats_df = create_tensor_stats(weights, tensors_df)
-    save_parquet(tensor_stats_df, "tensor_stats.parquet")
+    model_structure_df = create_model_structure(weights, tensors_df, tensor_stats_df)
+    save_parquet(model_structure_df, "model_structure.parquet")
     
-    print("\n   [3/6] tensor_dims.parquet (~976k rows)")
-    tensor_dims_df = create_tensor_dims(weights)
-    save_parquet(tensor_dims_df, "tensor_dims.parquet")
-    
-    print("\n   [4/6] tensor_blocks.parquet")
-    tensor_blocks_df = create_tensor_blocks(weights)
-    save_parquet(tensor_blocks_df, "tensor_blocks.parquet")
-    
-    print("\n   [5/6] tensor_block_topk.parquet")
-    tensor_block_topk_df = create_tensor_block_topk(weights, k=32)
-    save_parquet(tensor_block_topk_df, "tensor_block_topk.parquet")
-    
-    print("\n   [6/6] tensor_relations.parquet")
-    tensor_relations_df = create_tensor_relations()
-    save_parquet(tensor_relations_df, "tensor_relations.parquet")
+    print("\n   [2/2] raw_weights_*.parquet (split by layer and role)")
+    print("  Creating smaller files for on-demand loading...")
+    raw_weights_df = create_raw_weights_split(weights)
     
     # Summary
     print("\n" + "=" * 60)
@@ -883,16 +477,16 @@ def main():
     for f in sorted(OUTPUT_DIR.glob("*.parquet")):
         size = f.stat().st_size
         total_size += size
-        print(f"  - {f.name}: {size / 1024:.1f} KB")
+        if size > 1024 * 1024:
+            print(f"  - {f.name}: {size / 1024 / 1024:.1f} MB")
+        else:
+            print(f"  - {f.name}: {size / 1024:.1f} KB")
     print(f"\nTotal size: {total_size / 1024 / 1024:.1f} MB")
     
     print(f"\nRow counts:")
-    print(f"  - tensors: {len(tensors_df):,}")
-    print(f"  - tensor_stats: {len(tensor_stats_df):,}")
-    print(f"  - tensor_dims: {len(tensor_dims_df):,}")
-    print(f"  - tensor_blocks: {len(tensor_blocks_df):,}")
-    print(f"  - tensor_block_topk: {len(tensor_block_topk_df):,}")
-    print(f"  - tensor_relations: {len(tensor_relations_df):,}")
+    print(f"  - model_structure: {len(model_structure_df):,}")
+    if "total_rows" in raw_weights_df.columns:
+        print(f"  - raw_weights: {raw_weights_df.iloc[0]['total_rows']:,.0f} rows (storing full weight matrices)")
 
 
 if __name__ == "__main__":
