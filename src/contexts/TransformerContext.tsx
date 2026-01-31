@@ -9,110 +9,141 @@ import {
 } from "react";
 import * as vg from "@uwdata/vgplot";
 import { LoadingState } from "../types/loading";
-import type {
-  Tensor,
-  TensorStats,
-  HeadBlockProfile,
-  OProjSignature,
-} from "../types/transformer";
 
 /**
  * Context for Transformer architecture visualization via DuckDB WASM + Mosaic vgplot
  *
- * Loads 6 parquet tables:
- * 1. model_structure.parquet      - Combined tensor catalog + stats + relations (~1.5k rows)
- * 2. weight_blocks.parquet        - Block-level weight decomposition (~23k rows)
- * 3. activation_snapshot.parquet  - Tokens + layer norm stats (~500 rows)
- * 4. hidden_states.parquet        - Per-position aggregated hidden states (~2M rows)
- * 5. attention_patterns.parquet   - Sparse attention weights (~150k rows)
- * 6. mlp_activations.parquet      - MLP intermediate activations (~100k rows)
+ * Loads parquet tables:
+ * - activation_snapshot.parquet  - Tokens + layer norm stats
+ * - hidden_states.parquet        - Per-position aggregated hidden states
+ * - attention_patterns.parquet   - Sparse attention weights
+ * - mlp_activations.parquet      - MLP intermediate activations
+ * - attention_scores.parquet     - Pre-softmax attention scores (optional, only if SAVE_ATTENTION_SCORES=True)
+ * - attn_head_metrics.parquet    - Attention head metrics
+ * - mlp_metrics.parquet          - MLP metrics
+ * - hidden_metrics.parquet       - Hidden state metrics
+ * - head_contrib_metrics.parquet - Head contribution metrics
  */
 
-type VgSelection = vg.Selection;
 type Coordinator = vg.Coordinator;
 
 interface TransformerContextValue {
   state: LoadingState;
   coordinator: Coordinator | null;
   
-  // Selections for cross-filtering
-  layerBrush: VgSelection | null;
-  headBrush: VgSelection | null;
-  blockBrush: VgSelection | null;
-  
-  // Selection state for two-panel navigation
-  selectedLayer: number | null;
-  selectedModule: 'attn' | 'mlp' | 'norm' | 'embed' | null;
-  selectedNormType: 'input_norm' | 'post_norm' | 'final_norm' | null;
-  stackIndex: number;
-  setSelection: (layer: number | null, module: 'attn' | 'mlp' | 'norm' | 'embed' | null, normType?: 'input_norm' | 'post_norm' | 'final_norm') => void;
-  navigateStack: (delta: number) => void;
-  
   // Model config (from model_structure table)
   numLayers: number;
   numHeads: number;
   numKVHeads: number;
-  hiddenSize: number;
-  intermediateSize: number;
-  headDim: number;
-  
-  // Pre-loaded data for rendering
-  tensors: Tensor[]; // Used in ArchitectureGraph for node generation
   
   // Prompt info
   promptTokens: Array<{ position: number; token_id: number; token_text: string; is_input: boolean; log_prob: number | null }>;
-  numPositions: number;
+  availablePrompts: Array<{ prompt_id: number; prompt_text: string }>;
+  selectedPromptId: number | null;
+  setSelectedPromptId: (id: number) => void;
   
-  // Query helpers
-  queryTensorStats: (tensorId: string) => Promise<TensorStats | null>;
-  queryHeadBlockProfile: (layer: number, head: number) => Promise<HeadBlockProfile | null>;
-  queryOProjSignature: (layer: number) => Promise<OProjSignature | null>;
-  queryWeightRows: (layer: number, role: string, rowStart?: number, rowEnd?: number) => Promise<Array<{ row_idx: number; values: number[] }>>;
+  // Global mode (replaces independent selectors)
+  selectedMode: 'overview' | 'attention' | 'mlp' | 'contribution';
+  setSelectedMode: (mode: 'overview' | 'attention' | 'mlp' | 'contribution') => void;
+  advancedMode: boolean;
+  setAdvancedMode: (enabled: boolean) => void;
+  
+  // Metric selection (constrained by mode)
+  selectedMetric: string;
+  setSelectedMetric: (metric: string) => void;
+  
+  // Aggregation method (explicitly defined)
+  aggregationMethod: 'mean' | 'max' | 'min' | 'topk_mean';
+  setAggregationMethod: (method: 'mean' | 'max' | 'min' | 'topk_mean') => void;
+  
+  // Token selection (brushing + multi-token)
+  selectedTokenRange: [number, number] | null;
+  setSelectedTokenRange: (range: [number, number] | null) => void;
+  selectedTokenSet: number[];
+  setSelectedTokenSet: (tokens: number[]) => void;
+  addTokenToSet: (token: number) => void;
+  addRangeToSet: (range: [number, number]) => void;
+  
+  // Layer selection (for faceting)
+  selectedLayerRange: [number, number] | null;
+  setSelectedLayerRange: (range: [number, number] | null) => void;
+  
+  // Query helpers for heatmap visualization
   queryHiddenState: (layer: number, position: number) => Promise<{ norm: number; mean: number; std: number; top_dims: number[]; top_vals: number[] } | null>;
-  queryAttentionPattern: (layer: number, head: number) => Promise<Array<{ query_pos: number; key_pos: number; weight: number }>>;
   queryMLPActivation: (layer: number, position: number, stage: string) => Promise<{ norm: number; sparsity: number; top_dims: number[]; top_vals: number[] } | null>;
+  queryTokenLayerHeatmap: (
+    promptId: number,
+    metric: string,
+    aggregation: 'mean' | 'max' | 'min' | 'topk_mean',
+    tokenRange?: [number, number] | null,
+    layerRange?: [number, number] | null
+  ) => Promise<Array<{ position: number; layer: number; value: number }>>;
+  queryTokenHeadHeatmap: (
+    promptId: number,
+    layer: number,
+    metric: string
+  ) => Promise<Array<{ position: number; head: number; value: number }>>;
+  queryLayerSummary: (
+    promptId: number,
+    metric: string,
+    aggregation: 'mean' | 'max' | 'min'
+  ) => Promise<Array<{ layer: number; mean: number; max: number; min: number }>>;
+  queryTopKHeads: (
+    promptId: number,
+    layer: number,
+    metric: 'contrib_l2' | 'contrib_to_argmax_logit_normed',
+    k: number
+  ) => Promise<Array<{ head: number; position: number; value: number }>>;
 }
 
 const defaultContext: TransformerContextValue = {
   state: { status: "idle" },
   coordinator: null,
-  layerBrush: null,
-  headBrush: null,
-  blockBrush: null,
-  selectedLayer: null,
-  selectedModule: null,
-  selectedNormType: null,
-  stackIndex: 0,
-  setSelection: () => {},
-  navigateStack: () => {},
   numLayers: 36,
   numHeads: 16,
   numKVHeads: 4,
-  hiddenSize: 2048,
-  intermediateSize: 11008,
-  headDim: 128,
-  tensors: [],
   promptTokens: [],
-  numPositions: 0,
-  queryTensorStats: async () => null,
-  queryHeadBlockProfile: async () => null,
-  queryOProjSignature: async () => null,
-  queryWeightRows: async () => [],
+  availablePrompts: [],
+  selectedPromptId: null,
+  setSelectedPromptId: () => {},
+  selectedMode: 'overview',
+  setSelectedMode: () => {},
+  advancedMode: false,
+  setAdvancedMode: () => {},
+  selectedMetric: 'hidden_norm',
+  setSelectedMetric: () => {},
+  aggregationMethod: 'mean',
+  setAggregationMethod: () => {},
+  selectedTokenRange: null,
+  setSelectedTokenRange: () => {},
+  selectedTokenSet: [],
+  setSelectedTokenSet: () => {},
+  addTokenToSet: () => {},
+  addRangeToSet: () => {},
+  selectedLayerRange: null,
+  setSelectedLayerRange: () => {},
   queryHiddenState: async () => null,
-  queryAttentionPattern: async () => [],
   queryMLPActivation: async () => null,
+  queryTokenLayerHeatmap: async () => [],
+  queryTokenHeadHeatmap: async () => [],
+  queryLayerSummary: async () => [],
+  queryTopKHeads: async () => [],
 };
 
 const TransformerContext = createContext<TransformerContextValue>(defaultContext);
 
 // Parquet file names
 const PARQUET_FILES = {
-  modelStructure: "model_structure.parquet",
   activationSnapshot: "activation_snapshot.parquet",
   hiddenStates: "hidden_states.parquet",
   attentionPatterns: "attention_patterns.parquet",
   attentionScores: "attention_scores.parquet",
   mlpActivations: "mlp_activations.parquet",
+  // New metric tables
+  attnHeadMetrics: "attn_head_metrics.parquet",
+  mlpMetrics: "mlp_metrics.parquet",
+  hiddenMetrics: "hidden_metrics.parquet",
+  headContribMetrics: "head_contrib_metrics.parquet",
   // raw_weights split into files by layer and role: raw_weights_l{layer}_{role}.parquet
   getRawWeightsFile: (layer: number, role: string) => `raw_weights_l${layer}_${role}.parquet`,
 };
@@ -136,46 +167,56 @@ function arrowTableToArray(table: any): Record<string, unknown>[] {
 export function TransformerProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<LoadingState>({ status: "idle" });
   const [coordinator, setCoordinator] = useState<Coordinator | null>(null);
-  const [layerBrush, setLayerBrush] = useState<VgSelection | null>(null);
-  const [headBrush, setHeadBrush] = useState<VgSelection | null>(null);
-  const [blockBrush, setBlockBrush] = useState<VgSelection | null>(null);
-  
-  // Selection state
-  const [selectedLayer, setSelectedLayer] = useState<number | null>(null);
-  const [selectedModule, setSelectedModule] = useState<'attn' | 'mlp' | 'norm' | 'embed' | null>(null);
-  const [selectedNormType, setSelectedNormType] = useState<'input_norm' | 'post_norm' | 'final_norm' | null>(null);
-  const [stackIndex, setStackIndex] = useState(0);
   
   // Model config
   const [numLayers, setNumLayers] = useState(36);
   const [numHeads] = useState(16);
   const [numKVHeads] = useState(4);
-  const [hiddenSize] = useState(2048);
-  const [intermediateSize] = useState(11008);
-  const [headDim] = useState(128);
   
-  // Pre-loaded data
-  const [tensors, setTensors] = useState<Tensor[]>([]);
+  // Prompt info
   const [promptTokens, setPromptTokens] = useState<Array<{ position: number; token_id: number; token_text: string; is_input: boolean; log_prob: number | null }>>([]);
-  const [numPositions, setNumPositions] = useState(0);
+  const [availablePrompts, setAvailablePrompts] = useState<Array<{ prompt_id: number; prompt_text: string }>>([]);
+  const [selectedPromptId, setSelectedPromptId] = useState<number | null>(null);
+  
+  // Global mode
+  const [selectedMode, setSelectedMode] = useState<'overview' | 'attention' | 'mlp' | 'contribution'>('overview');
+  const [advancedMode, setAdvancedMode] = useState(false);
+  
+  // Metric selection
+  const [selectedMetric, setSelectedMetric] = useState<string>('hidden_norm');
+  
+  // Aggregation method
+  const [aggregationMethod, setAggregationMethod] = useState<'mean' | 'max' | 'min' | 'topk_mean'>('mean');
+  
+  // Token selection
+  const [selectedTokenRange, setSelectedTokenRange] = useState<[number, number] | null>(null);
+  const [selectedTokenSet, setSelectedTokenSet] = useState<number[]>([]);
+  
+  // Layer selection
+  const [selectedLayerRange, setSelectedLayerRange] = useState<[number, number] | null>(null);
   
   const initRef = useRef(false);
-  
-  // Selection handlers
-  const handleSetSelection = useCallback((layer: number | null, module: 'attn' | 'mlp' | 'norm' | 'embed' | null, normType?: 'input_norm' | 'post_norm' | 'final_norm') => {
-    setSelectedLayer(layer);
-    setSelectedModule(module);
-    setSelectedNormType(normType || null);
-    setStackIndex(0); // Reset stack when selection changes
-  }, []);
-  
-  const handleNavigateStack = useCallback((delta: number) => {
-    setStackIndex((prev) => {
-      const maxIndex = selectedModule === 'attn' ? 3 : selectedModule === 'mlp' ? 2 : selectedModule === 'norm' || selectedModule === 'embed' ? 0 : 0;
-      const newIndex = prev + delta;
-      return Math.max(0, Math.min(maxIndex, newIndex));
+
+  // Token set handlers
+  const handleAddTokenToSet = useCallback((token: number) => {
+    setSelectedTokenSet((prev) => {
+      if (prev.includes(token)) {
+        return prev.filter((t) => t !== token);
+      } else {
+        return [...prev, token];
+      }
     });
-  }, [selectedModule]);
+  }, []);
+
+  const handleAddRangeToSet = useCallback((range: [number, number]) => {
+    setSelectedTokenSet((prev) => {
+      const newSet = new Set(prev);
+      for (let i = range[0]; i <= range[1]; i++) {
+        newSet.add(i);
+      }
+      return Array.from(newSet);
+    });
+  }, []);
 
   useEffect(() => {
     if (initRef.current) return;
@@ -207,134 +248,170 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
         });
 
         await coord.exec(`INSTALL httpfs; LOAD httpfs;`);
-        await coord.exec(`SET threads = 1;`);
-        await coord.exec(`SET memory_limit = '6GB';`);
 
-        // Load all 6 parquet tables
+         // Load new metric tables
+         const attnHeadMetricsQuery = `CREATE TABLE IF NOT EXISTS attn_head_metrics AS SELECT * FROM '${dataPath}/${PARQUET_FILES.attnHeadMetrics}'`;
+         setState({
+           status: "creating-tables",
+           table: "attn_head_metrics",
+           query: attnHeadMetricsQuery,
+         });
+         await coord.exec(attnHeadMetricsQuery);
+
+
+        const mlpMetricsQuery = `CREATE TABLE IF NOT EXISTS mlp_metrics AS SELECT * FROM '${dataPath}/${PARQUET_FILES.mlpMetrics}'`;
         setState({
           status: "creating-tables",
-          table: "model_structure",
-          query: "Loading model structure...",
+          table: "mlp_metrics",
+          query: mlpMetricsQuery,
         });
-        await coord.exec(`
-          CREATE TABLE IF NOT EXISTS model_structure AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.modelStructure}'
-        `);
+        await coord.exec(mlpMetricsQuery);
 
-        // NOTE: raw_weights.parquet is 4.5GB - too large to load entirely in browser
-        // Instead, we'll query it on-demand when needed via direct parquet queries
-        // Don't create a table for it - use direct file queries instead
+        const hiddenMetricsQuery = `CREATE TABLE IF NOT EXISTS hidden_metrics AS SELECT * FROM '${dataPath}/${PARQUET_FILES.hiddenMetrics}'`;
         setState({
           status: "creating-tables",
-          table: "raw_weights",
-          query: "Skipping raw weights table (will query on-demand)...",
+          table: "hidden_metrics",
+          query: hiddenMetricsQuery,
         });
+        await coord.exec(hiddenMetricsQuery);
+
+        const headContribMetricsQuery = `CREATE TABLE IF NOT EXISTS head_contrib_metrics AS SELECT * FROM '${dataPath}/${PARQUET_FILES.headContribMetrics}'`;
+        setState({
+          status: "creating-tables",
+          table: "head_contrib_metrics",
+          query: headContribMetricsQuery,
+        });
+        await coord.exec(headContribMetricsQuery);
+
+
         // Skip loading raw_weights into a table - we'll query it directly when needed
 
+        const activationSnapshotQuery = `CREATE TABLE IF NOT EXISTS activation_snapshot AS SELECT * FROM '${dataPath}/${PARQUET_FILES.activationSnapshot}'`;
         setState({
           status: "creating-tables",
           table: "activation_snapshot",
-          query: "Loading activation snapshot...",
+          query: activationSnapshotQuery,
         });
-        await coord.exec(`
-          CREATE TABLE IF NOT EXISTS activation_snapshot AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.activationSnapshot}'
-        `);
+        await coord.exec(activationSnapshotQuery);
 
+        const hiddenStatesQuery = `CREATE TABLE IF NOT EXISTS hidden_states AS SELECT * FROM '${dataPath}/${PARQUET_FILES.hiddenStates}'`;
         setState({
           status: "creating-tables",
           table: "hidden_states",
-          query: "Loading hidden states...",
+          query: hiddenStatesQuery,
         });
-        await coord.exec(`
-          CREATE TABLE IF NOT EXISTS hidden_states AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.hiddenStates}'
-        `);
+        await coord.exec(hiddenStatesQuery);
 
+        const attentionPatternsQuery = `CREATE TABLE IF NOT EXISTS attention_patterns AS SELECT * FROM '${dataPath}/${PARQUET_FILES.attentionPatterns}'`;
         setState({
           status: "creating-tables",
           table: "attention_patterns",
-          query: "Loading attention patterns...",
+          query: attentionPatternsQuery,
         });
-        await coord.exec(`
-          CREATE TABLE IF NOT EXISTS attention_patterns AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.attentionPatterns}'
-        `);
+        await coord.exec(attentionPatternsQuery);
 
+        const mlpActivationsQuery = `CREATE TABLE IF NOT EXISTS mlp_activations AS SELECT * FROM '${dataPath}/${PARQUET_FILES.mlpActivations}'`;
         setState({
           status: "creating-tables",
           table: "mlp_activations",
-          query: "Loading MLP activations...",
+          query: mlpActivationsQuery,
         });
-        await coord.exec(`
-          CREATE TABLE IF NOT EXISTS mlp_activations AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.mlpActivations}'
-        `);
+        await coord.exec(mlpActivationsQuery);
 
-        setState({
-          status: "creating-tables",
-          table: "attention_scores",
-          query: "Loading attention scores...",
-        });
-        await coord.exec(`
-          CREATE TABLE IF NOT EXISTS attention_scores AS
-          SELECT * FROM '${dataPath}/${PARQUET_FILES.attentionScores}'
-        `);
-
-        // Fetch model config from model_structure table
-        const configResult = await coord.query(`
-          SELECT 
-            MAX(layer) + 1 as num_layers,
-            COUNT(DISTINCT CASE WHEN role = 'q' AND layer = 0 THEN 1 END) as has_q
-          FROM model_structure
-          WHERE layer IS NOT NULL
-        `);
-        const configRows = arrowTableToArray(configResult);
-        if (configRows.length > 0) {
-          const nl = Number(configRows[0].num_layers);
-          if (nl > 0) setNumLayers(nl);
+        // attention_scores is optional (only created if SAVE_ATTENTION_SCORES=True)
+        // Try to load it, but don't fail if it doesn't exist
+        try {
+          const attentionScoresQuery = `CREATE TABLE IF NOT EXISTS attention_scores AS SELECT * FROM '${dataPath}/${PARQUET_FILES.attentionScores}'`;
+          setState({
+            status: "creating-tables",
+            table: "attention_scores",
+            query: attentionScoresQuery,
+          });
+          await coord.exec(attentionScoresQuery);
+        } catch (err) {
+          console.warn("attention_scores.parquet not found or invalid (this is OK if SAVE_ATTENTION_SCORES=False):", err);
+          // Create empty table to avoid errors in queries
+          const emptyAttentionScoresQuery = `CREATE TABLE IF NOT EXISTS attention_scores AS SELECT CAST(NULL AS INTEGER) as prompt_id, CAST(NULL AS INTEGER) as layer, CAST(NULL AS INTEGER) as head, CAST(NULL AS INTEGER) as query_pos, CAST(NULL AS INTEGER) as key_pos, CAST(NULL AS DOUBLE) as score WHERE FALSE`;
+          setState({
+            status: "creating-tables",
+            table: "attention_scores",
+            query: emptyAttentionScoresQuery,
+          });
+          await coord.exec(emptyAttentionScoresQuery);
         }
 
-        // Fetch tensors from model_structure
-        const tensorsResult = await coord.query(`SELECT * FROM model_structure ORDER BY layer, module, role`);
-        const tensorsRows = arrowTableToArray(tensorsResult) as unknown as Tensor[];
-        setTensors(tensorsRows);
+      
+        // Derive numLayers from actual data (hidden_metrics or attn_head_metrics)
+        // This is more reliable than model_structure and doesn't require that file
+        try {
+          const numLayersQuery = `SELECT MAX(layer) + 1 as num_layers FROM (SELECT layer FROM hidden_metrics UNION SELECT layer FROM attn_head_metrics) WHERE layer IS NOT NULL`;
+          setState({
+            status: "updating-tables",
+            message: "Deriving model configuration",
+            query: numLayersQuery,
+          });
+          const configResult = await coord.query(numLayersQuery);
+          const configRows = arrowTableToArray(configResult);
+          if (configRows.length > 0 && configRows[0].num_layers !== null) {
+            const nl = Number(configRows[0].num_layers);
+            if (nl > 0) setNumLayers(nl);
+          }
+        } catch (err) {
+          console.warn("Could not derive numLayers from data, using default (36):", err);
+          // Keep default value of 36
+        }
 
-        // Tensor stats are available via queryTensorStats, no need to pre-load
-
-        // Fetch prompt tokens
-        const tokensResult = await coord.query(`
-          SELECT * FROM activation_snapshot 
-          WHERE type = 'token'
-          ORDER BY position
-        `);
-        const tokenRows = arrowTableToArray(tokensResult);
-        const tokens = tokenRows.map((row) => ({
-          position: Number(row.position),
-          token_id: Number(row.token_id),
-          token_text: String(row.token_text || ''),
-          is_input: Boolean(row.is_input),
-          log_prob: row.log_prob !== null ? Number(row.log_prob) : null,
+        // Extract available prompts
+        const promptsQuery = `SELECT DISTINCT prompt_id, prompt_text FROM activation_snapshot WHERE prompt_id IS NOT NULL AND prompt_text IS NOT NULL ORDER BY prompt_id`;
+        setState({
+          status: "updating-tables",
+          message: "Extracting available prompts",
+          query: promptsQuery,
+        });
+        const promptsResult = await coord.query(promptsQuery);
+        const promptRows = arrowTableToArray(promptsResult);
+        const prompts = promptRows.map((row) => ({
+          prompt_id: Number(row.prompt_id),
+          prompt_text: String(row.prompt_text || ''),
         }));
-        setPromptTokens(tokens);
-        setNumPositions(tokens.length);
+        setAvailablePrompts(prompts);
+        
+        // Set first prompt as default if available
+        if (prompts.length > 0) {
+          setSelectedPromptId(prompts[0].prompt_id);
+        }
 
-        // Head/KV aggregates can be queried on-demand, no need to pre-load
+        // Create tokens view for performance (reduces repeated joins)
+        const tokensViewQuery = `CREATE VIEW IF NOT EXISTS tokens AS SELECT prompt_id, position, token_id, token_text, is_input, log_prob FROM activation_snapshot WHERE type = 'token'`;
+        setState({
+          status: "updating-tables",
+          message: "Creating tokens view",
+          query: tokensViewQuery,
+        });
+        await coord.exec(tokensViewQuery);
 
-        // Create crossfilter selections
-        const $layerBrush = vg.Selection.crossfilter();
-        setLayerBrush($layerBrush);
-
-        const $headBrush = vg.Selection.single();
-        setHeadBrush($headBrush);
-
-        const $blockBrush = vg.Selection.crossfilter();
-        setBlockBrush($blockBrush);
+        // Fetch prompt tokens for selected prompt (or first prompt if none selected)
+        const currentPromptId = prompts.length > 0 ? prompts[0].prompt_id : null;
+        if (currentPromptId !== null) {
+          const tokensResult = await coord.query(`
+            SELECT * FROM activation_snapshot 
+            WHERE type = 'token' AND prompt_id = ${currentPromptId}
+            ORDER BY position
+          `);
+          const tokenRows = arrowTableToArray(tokensResult);
+          const tokens = tokenRows.map((row) => ({
+            position: Number(row.position),
+            token_id: Number(row.token_id),
+            token_text: String(row.token_text || ''),
+            is_input: Boolean(row.is_input),
+            log_prob: row.log_prob !== null ? Number(row.log_prob) : null,
+          }));
+          setPromptTokens(tokens);
+        } else {
+          setPromptTokens([]);
+        }
 
         setState({ status: "ready" });
-        
-        // Set embedding as default selection
-        handleSetSelection(null, "embed");
       } catch (err) {
         console.error("Failed to initialize Transformer context:", err);
         setState({
@@ -350,187 +427,317 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
     init();
   }, []);
 
-  // Query helpers
-  const queryTensorStats = useCallback(
-    async (tensorId: string): Promise<TensorStats | null> => {
-      if (!coordinator) return null;
+  // Update prompt tokens when selected prompt changes
+  useEffect(() => {
+    if (!coordinator || selectedPromptId === null) return;
+    
+    const updateTokens = async () => {
       try {
-        const result = await coordinator.query(
-          `SELECT * FROM model_structure WHERE tensor_id = '${tensorId}' LIMIT 1`
-        );
-        const rows = arrowTableToArray(result);
-        if (rows.length === 0) return null;
-        const row = rows[0];
-        return {
-          tensor_id: String(row.tensor_id),
-          fro_norm: Number(row.fro_norm || 0),
-          mean_abs: Number(row.mean_abs || 0),
-          std: Number(row.std || 0),
-          p95_abs: Number(row.p95_abs || 0),
-          p99_abs: Number(row.p99_abs || 0),
-          zero_frac: Number(row.zero_frac || 0),
-          min: Number(row.min || 0),
-          max: Number(row.max || 0),
-        };
-      } catch (err) {
-        console.error("queryTensorStats error:", err);
-        return null;
-      }
-    },
-    [coordinator]
-  );
-
-  const queryHeadBlockProfile = useCallback(
-    async (layer: number, head: number): Promise<HeadBlockProfile | null> => {
-      if (!coordinator) return null;
-      try {
-        // Query raw_weights.parquet directly (on-demand) instead of loading entire table
-        const baseUrl = window.location.origin;
-        const hashBase = window.location.pathname.replace(/\/$/, "");
-        const dataPath = `${baseUrl}${hashBase}/data/llm`;
-        
-        // For raw_weights, compute block-level stats from row data
-        // Each head has 128 rows (HEAD_DIM), group by input block (chunk columns into blocks of 128)
-        const BLOCK_DIM = 128;
-        const HEAD_DIM = 128; // 2048 / 16 = 128
-        const qFile = PARQUET_FILES.getRawWeightsFile(layer, 'q');
-        const result = await coordinator.query(`
-          WITH head_rows AS (
-            SELECT row_idx, values, col_end
-            FROM '${dataPath}/${qFile}'
-            WHERE row_idx >= ${head * HEAD_DIM} AND row_idx < ${(head + 1) * HEAD_DIM}
-          ),
-          block_stats AS (
-            SELECT 
-              CAST((col_end / ${BLOCK_DIM}) AS INTEGER) - 1 as in_block,
-              SQRT(SUM(LIST_SUM(LIST_TRANSFORM(values, x -> x * x)))) as fro_norm
-            FROM head_rows
-            GROUP BY in_block
-          )
-          SELECT in_block, fro_norm
-          FROM block_stats
-          ORDER BY in_block
+        const tokensResult = await coordinator.query(`
+          SELECT * FROM activation_snapshot 
+          WHERE type = 'token' AND prompt_id = ${selectedPromptId}
+          ORDER BY position
         `);
-        const rows = arrowTableToArray(result);
-        if (rows.length === 0) return null;
-        return {
-          layer,
-          head,
-          in_block_norms: rows.map((r) => Number(r.fro_norm)),
-        };
+        const tokenRows = arrowTableToArray(tokensResult);
+        const tokens = tokenRows.map((row) => ({
+          position: Number(row.position),
+          token_id: Number(row.token_id),
+          token_text: String(row.token_text || ''),
+          is_input: Boolean(row.is_input),
+          log_prob: row.log_prob !== null ? Number(row.log_prob) : null,
+        }));
+        setPromptTokens(tokens);
       } catch (err) {
-        console.error("queryHeadBlockProfile error:", err);
-        return null;
+        console.error("Failed to update prompt tokens:", err);
       }
-    },
-    [coordinator]
-  );
+    };
+    
+    updateTokens();
+  }, [coordinator, selectedPromptId]);
 
-  const queryOProjSignature = useCallback(
-    async (layer: number): Promise<OProjSignature | null> => {
-      if (!coordinator) return null;
-      try {
-        // Query raw_weights.parquet directly (on-demand) instead of loading entire table
-        const baseUrl = window.location.origin;
-        const hashBase = window.location.pathname.replace(/\/$/, "");
-        const dataPath = `${baseUrl}${hashBase}/data/llm`;
-        
-        // For raw_weights, compute block-level stats from row data
-        // O projection: out_block = row_idx / BLOCK_DIM, in_block computed from column position
-        const BLOCK_DIM = 128;
-        const oFile = PARQUET_FILES.getRawWeightsFile(layer, 'o');
-        const result = await coordinator.query(`
-          WITH expanded AS (
-            SELECT 
-              row_idx,
-              CAST((row_idx / ${BLOCK_DIM}) AS INTEGER) as out_block,
-              UNNEST(GENERATE_SERIES(0, col_end - 1)) as col_idx,
-              UNNEST(values) as weight_val
-            FROM '${dataPath}/${oFile}'
-          ),
-          block_aggregated AS (
-            SELECT 
-              out_block,
-              CAST((col_idx / ${BLOCK_DIM}) AS INTEGER) as in_block,
-              SQRT(SUM(POW(weight_val, 2))) as fro_norm
-            FROM expanded
-            GROUP BY out_block, in_block
-          )
-          SELECT out_block, in_block, fro_norm
-          FROM block_aggregated
-          ORDER BY out_block, in_block
-        `);
-        const rows = arrowTableToArray(result);
-        if (rows.length === 0) return null;
-        
-        // Build 16x16 matrix
-        const matrix: number[][] = Array.from({ length: 16 }, () => Array(16).fill(0));
-        rows.forEach((r) => {
-          const outBlock = Number(r.out_block);
-          const inBlock = Number(r.in_block);
-          if (outBlock < 16 && inBlock < 16) {
-            matrix[outBlock][inBlock] = Number(r.fro_norm);
-          }
-        });
-        
-        return { layer, matrix };
-      } catch (err) {
-        console.error("queryOProjSignature error:", err);
-        return null;
-      }
-    },
-    [coordinator]
-  );
-
-  const queryWeightRows = useCallback(
-    async (layer: number, role: string, rowStart?: number, rowEnd?: number): Promise<Array<{ row_idx: number; values: number[] }>> => {
+  // Query helpers for heatmap visualization
+  const queryTokenLayerHeatmap = useCallback(
+    async (
+      promptId: number,
+      metric: string,
+      aggregation: 'mean' | 'max' | 'min' | 'topk_mean',
+      tokenRange?: [number, number] | null,
+      layerRange?: [number, number] | null
+    ): Promise<Array<{ position: number; layer: number; value: number }>> => {
       if (!coordinator) return [];
       try {
-        // Query raw_weights.parquet directly (on-demand) instead of loading entire table
-        const baseUrl = window.location.origin;
-        const hashBase = window.location.pathname.replace(/\/$/, "");
-        const dataPath = `${baseUrl}${hashBase}/data/llm`;
+        // Determine which table to query based on metric
+        let tableName = '';
+        const metricColumn = metric;
         
-        const weightFile = PARQUET_FILES.getRawWeightsFile(layer, role);
-        let query = `
-          SELECT row_idx, values
-          FROM '${dataPath}/${weightFile}'
-        `;
-        if (rowStart !== undefined) {
-          query += ` AND row_idx >= ${rowStart}`;
+        if (metric === 'hidden_norm' || metric === 'cosine_similarity_prev_layer') {
+          tableName = 'hidden_metrics';
+        } else if (['entropy', 'top1_mass', 'topk_mass', 'diagonal_mass', 'band_mass'].includes(metric)) {
+          tableName = 'attn_head_metrics';
+        } else if (['gate_sparsity_proxy', 'topk_energy_fraction', 'gate_l2_norm', 'up_l2_norm', 'down_l2_norm'].includes(metric)) {
+          tableName = 'mlp_metrics';
+        } else if (['contrib_l2', 'contrib_to_argmax_logit', 'contrib_to_argmax_logit_normed'].includes(metric)) {
+          tableName = 'head_contrib_metrics';
+        } else {
+          console.warn(`Unknown metric: ${metric}`);
+          return [];
         }
-        if (rowEnd !== undefined) {
-          query += ` AND row_idx < ${rowEnd}`;
+
+        let whereClause = `WHERE prompt_id = ${promptId}`;
+        if (tokenRange) {
+          whereClause += ` AND position >= ${tokenRange[0]} AND position <= ${tokenRange[1]}`;
         }
-        query += ` ORDER BY row_idx LIMIT 10000`; // Limit to prevent memory issues
-        
+        if (layerRange) {
+          whereClause += ` AND layer >= ${layerRange[0]} AND layer <= ${layerRange[1]}`;
+        }
+
+        let query = '';
+        if (tableName === 'mlp_metrics' || tableName === 'hidden_metrics') {
+          // No head dimension, direct query
+          query = `
+            SELECT position, layer, ${metricColumn} as value
+            FROM ${tableName}
+            ${whereClause}
+            ORDER BY layer, position
+          `;
+        } else {
+          // Has head dimension, need aggregation
+          if (aggregation === 'topk_mean') {
+            // Top-k mean requires join with head_contrib_metrics
+            query = `
+              WITH ranked AS (
+                SELECT 
+                  a.position,
+                  a.layer,
+                  a.head,
+                  a.${metricColumn},
+                  ROW_NUMBER() OVER (PARTITION BY a.position, a.layer ORDER BY h.contrib_l2 DESC) as rank
+                FROM ${tableName} a
+                JOIN head_contrib_metrics h ON 
+                  a.prompt_id = h.prompt_id AND 
+                  a.layer = h.layer AND 
+                  a.position = h.position AND 
+                  a.head = h.head
+                ${whereClause.replace('prompt_id', 'a.prompt_id')}
+              )
+              SELECT 
+                position,
+                layer,
+                AVG(${metricColumn}) as value
+              FROM ranked
+              WHERE rank <= 5
+              GROUP BY position, layer
+              ORDER BY layer, position
+            `;
+          } else {
+            // Simple aggregation (mean, max, min)
+            const aggFunc = aggregation.toUpperCase();
+            query = `
+              SELECT 
+                position,
+                layer,
+                ${aggFunc}(${metricColumn}) as value
+              FROM ${tableName}
+              ${whereClause}
+              GROUP BY position, layer
+              ORDER BY layer, position
+            `;
+          }
+        }
+
         const result = await coordinator.query(query);
-        const rows = arrowTableToArray(result) as unknown as Record<string, unknown>[];
-        return rows.map((r) => ({
-          row_idx: Number(r.row_idx),
-          values: Array.isArray(r.values) ? (r.values as number[]) : [],
+        const rows = arrowTableToArray(result);
+        return rows.map((row) => ({
+          position: Number(row.position),
+          layer: Number(row.layer),
+          value: Number(row.value),
         }));
       } catch (err) {
-        console.error("queryWeightRows error:", err);
+        console.error("queryTokenLayerHeatmap error:", err);
         return [];
       }
     },
     [coordinator]
   );
 
+  const queryTokenHeadHeatmap = useCallback(
+    async (
+      promptId: number,
+      layer: number,
+      metric: string
+    ): Promise<Array<{ position: number; head: number; value: number }>> => {
+      if (!coordinator) return [];
+      try {
+        // Determine which table to query based on metric
+        let tableName = '';
+        
+        if (['entropy', 'top1_mass', 'topk_mass', 'diagonal_mass', 'band_mass'].includes(metric)) {
+          tableName = 'attn_head_metrics';
+        } else if (['contrib_l2', 'contrib_to_argmax_logit', 'contrib_to_argmax_logit_normed'].includes(metric)) {
+          tableName = 'head_contrib_metrics';
+        } else {
+          console.warn(`Unknown metric for Token×Head: ${metric}`);
+          return [];
+        }
+
+        const query = `
+          SELECT position, head, ${metric} as value
+          FROM ${tableName}
+          WHERE prompt_id = ${promptId} AND layer = ${layer}
+          ORDER BY head, position
+        `;
+
+        const result = await coordinator.query(query);
+        const rows = arrowTableToArray(result);
+        return rows.map((row) => ({
+          position: Number(row.position),
+          head: Number(row.head),
+          value: Number(row.value),
+        }));
+      } catch (err) {
+        console.error("queryTokenHeadHeatmap error:", err);
+        return [];
+      }
+    },
+    [coordinator]
+  );
+
+  const queryLayerSummary = useCallback(
+    async (
+      promptId: number,
+      metric: string,
+      aggregation: 'mean' | 'max' | 'min'
+    ): Promise<Array<{ layer: number; mean: number; max: number; min: number }>> => {
+      if (!coordinator) return [];
+      try {
+        // Determine which table to query based on metric
+        let tableName = '';
+        const metricColumn = metric;
+        
+        if (metric === 'hidden_norm' || metric === 'cosine_similarity_prev_layer') {
+          tableName = 'hidden_metrics';
+        } else if (['entropy', 'top1_mass', 'topk_mass', 'diagonal_mass', 'band_mass'].includes(metric)) {
+          tableName = 'attn_head_metrics';
+        } else if (['gate_sparsity_proxy', 'topk_energy_fraction', 'gate_l2_norm', 'up_l2_norm', 'down_l2_norm'].includes(metric)) {
+          tableName = 'mlp_metrics';
+        } else if (['contrib_l2', 'contrib_to_argmax_logit', 'contrib_to_argmax_logit_normed'].includes(metric)) {
+          tableName = 'head_contrib_metrics';
+        } else {
+          console.warn(`Unknown metric: ${metric}`);
+          return [];
+        }
+
+        let query = '';
+        if (tableName === 'mlp_metrics' || tableName === 'hidden_metrics') {
+          // No head dimension
+          query = `
+            SELECT 
+              layer,
+              AVG(${metricColumn}) as mean,
+              MAX(${metricColumn}) as max,
+              MIN(${metricColumn}) as min
+            FROM ${tableName}
+            WHERE prompt_id = ${promptId}
+            GROUP BY layer
+            ORDER BY layer
+          `;
+        } else {
+          // Has head dimension, aggregate first
+          const aggFunc = aggregation.toUpperCase();
+          query = `
+            SELECT 
+              layer,
+              AVG(${metricColumn}) as mean,
+              MAX(${metricColumn}) as max,
+              MIN(${metricColumn}) as min
+            FROM (
+              SELECT 
+                layer,
+                position,
+                ${aggFunc}(${metricColumn}) as ${metricColumn}
+              FROM ${tableName}
+              WHERE prompt_id = ${promptId}
+              GROUP BY layer, position
+            )
+            GROUP BY layer
+            ORDER BY layer
+          `;
+        }
+
+        const result = await coordinator.query(query);
+        const rows = arrowTableToArray(result);
+        return rows.map((row) => ({
+          layer: Number(row.layer),
+          mean: Number(row.mean),
+          max: Number(row.max),
+          min: Number(row.min),
+        }));
+      } catch (err) {
+        console.error("queryLayerSummary error:", err);
+        return [];
+      }
+    },
+    [coordinator]
+  );
+
+  const queryTopKHeads = useCallback(
+    async (
+      promptId: number,
+      layer: number,
+      metric: 'contrib_l2' | 'contrib_to_argmax_logit_normed',
+      k: number
+    ): Promise<Array<{ head: number; position: number; value: number }>> => {
+      if (!coordinator) return [];
+      try {
+        const query = `
+          WITH ranked AS (
+            SELECT 
+              head,
+              position,
+              ${metric} as value,
+              ROW_NUMBER() OVER (PARTITION BY position ORDER BY ${metric} DESC) as rank
+            FROM head_contrib_metrics
+            WHERE prompt_id = ${promptId} AND layer = ${layer}
+          )
+          SELECT 
+            head,
+            position,
+            value
+          FROM ranked
+          WHERE rank <= ${k}
+          ORDER BY position, head
+        `;
+
+        const result = await coordinator.query(query);
+        const rows = arrowTableToArray(result);
+        return rows.map((row) => ({
+          head: Number(row.head),
+          position: Number(row.position),
+          value: Number(row.value),
+        }));
+      } catch (err) {
+        console.error("queryTopKHeads error:", err);
+        return [];
+      }
+    },
+    [coordinator]
+  );
+
+  // Query helpers for activation inspection
   const queryHiddenState = useCallback(
     async (layer: number, position: number): Promise<{ norm: number; mean: number; std: number; top_dims: number[]; top_vals: number[] } | null> => {
-      if (!coordinator) return null;
+      if (!coordinator || selectedPromptId === null) return null;
       try {
         const result = await coordinator.query(`
-          SELECT * FROM hidden_states
-          WHERE layer = ${layer} AND position = ${position}
+          SELECT norm, mean, std, top_dims, top_vals
+          FROM hidden_states
+          WHERE prompt_id = ${selectedPromptId} AND layer = ${layer} AND position = ${position}
           LIMIT 1
         `);
         const rows = arrowTableToArray(result);
         if (rows.length === 0) return null;
         const row = rows[0];
-        // Parse top_dims and top_vals from arrays (stored as JSON strings or lists)
+        // Parse top_dims and top_vals from arrays
         let top_dims: number[] = [];
         let top_vals: number[] = [];
         if (row.top_dims) {
@@ -548,9 +755,9 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
           }
         }
         return {
-          norm: Number(row.norm),
-          mean: Number(row.mean),
-          std: Number(row.std),
+          norm: Number(row.norm || 0),
+          mean: Number(row.mean || 0),
+          std: Number(row.std || 0),
           top_dims,
           top_vals,
         };
@@ -559,42 +766,17 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
         return null;
       }
     },
-    [coordinator]
-  );
-
-  const queryAttentionPattern = useCallback(
-    async (layer: number, head: number): Promise<Array<{ query_pos: number; key_pos: number; weight: number }>> => {
-      if (!coordinator) return [];
-      try {
-        const result = await coordinator.query(`
-          SELECT query_pos, key_pos, weight
-          FROM attention_patterns
-          WHERE layer = ${layer} AND head = ${head}
-          ORDER BY query_pos, key_pos
-        `);
-        const rows = arrowTableToArray(result) as unknown as Record<string, unknown>[];
-        return rows.map((r) => ({
-          query_pos: Number(r.query_pos),
-          key_pos: Number(r.key_pos),
-          weight: Number(r.weight),
-        }));
-      } catch (err) {
-        console.error("queryAttentionPattern error:", err);
-        return [];
-      }
-    },
-    [coordinator]
+    [coordinator, selectedPromptId]
   );
 
   const queryMLPActivation = useCallback(
     async (layer: number, position: number, stage: string): Promise<{ norm: number; sparsity: number; top_dims: number[]; top_vals: number[] } | null> => {
-      if (!coordinator) return null;
+      if (!coordinator || selectedPromptId === null) return null;
       try {
-        // Get values list and compute stats in JavaScript
         const result = await coordinator.query(`
           SELECT values
           FROM mlp_activations
-          WHERE layer = ${layer} AND position = ${position} AND stage = '${stage}'
+          WHERE prompt_id = ${selectedPromptId} AND layer = ${layer} AND position = ${position} AND stage = '${stage}'
           LIMIT 1
         `);
         const rows = arrowTableToArray(result);
@@ -638,7 +820,7 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
         return null;
       }
     },
-    [coordinator]
+    [coordinator, selectedPromptId]
   );
 
   return (
@@ -646,31 +828,35 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
       value={{
         state,
         coordinator,
-        layerBrush,
-        headBrush,
-        blockBrush,
-        selectedLayer,
-        selectedModule,
-        selectedNormType,
-        stackIndex,
-        setSelection: handleSetSelection,
-        navigateStack: handleNavigateStack,
         numLayers,
         numHeads,
         numKVHeads,
-        hiddenSize,
-        intermediateSize,
-        headDim,
-        tensors,
         promptTokens,
-        numPositions,
-        queryTensorStats,
-        queryHeadBlockProfile,
-        queryOProjSignature,
-        queryWeightRows,
+        availablePrompts,
+        selectedPromptId,
+        setSelectedPromptId,
+        selectedMode,
+        setSelectedMode,
+        advancedMode,
+        setAdvancedMode,
+        selectedMetric,
+        setSelectedMetric,
+        aggregationMethod,
+        setAggregationMethod,
+        selectedTokenRange,
+        setSelectedTokenRange,
+        selectedTokenSet,
+        setSelectedTokenSet,
+        addTokenToSet: handleAddTokenToSet,
+        addRangeToSet: handleAddRangeToSet,
+        selectedLayerRange,
+        setSelectedLayerRange,
         queryHiddenState,
-        queryAttentionPattern,
         queryMLPActivation,
+        queryTokenLayerHeatmap,
+        queryTokenHeadHeatmap,
+        queryLayerSummary,
+        queryTopKHeads,
       }}
     >
       {children}
