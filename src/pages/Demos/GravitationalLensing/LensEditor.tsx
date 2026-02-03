@@ -48,7 +48,7 @@ export function LensEditor() {
       border="1px solid"
       borderColor="gray.subtle"
     >
-      <Box flex="1" minH="200px">
+      <Box flex="1">
         <MosaicChart
           title="Lens Editor"
           build={build}

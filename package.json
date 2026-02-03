@@ -15,7 +15,6 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/react": "^3.17.0",
     "@duckdb/duckdb-wasm": "^1.30.0",
     "@emotion/react": "^11.14.0",
