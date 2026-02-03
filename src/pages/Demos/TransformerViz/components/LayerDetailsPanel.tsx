@@ -1,29 +1,23 @@
-import { Text, VStack, HStack, Box } from "@chakra-ui/react";
-import { useEffect, useState, useRef } from "react";
+import { Box, HStack, Text, VStack } from "@chakra-ui/react";
 import * as vg from "@uwdata/vgplot";
+import { useEffect, useRef, useState } from "react";
 import {
-  useTransformer,
-  getMetricInfo,
-  isHeadMetric,
   SelectionStats,
+  useTransformer,
 } from "../../../../contexts/TransformerContext";
-import { PanelContainer } from "./shared/PanelContainer";
-import { formatValue, formatLayerLabel } from "../utils/formatting";
-import { DETAIL_PANEL_CHART } from "../utils/styleConstants";
+import { formatLayerLabel, formatValue } from "../utils/formatting";
+import { PanelContainer } from "../../../../components/PanelContainer";
+import { getMetricInfo, isHeadMetric } from "../config/metrics";
 
-/**
- * LayerDetailsPanel - Shows detailed statistics for a selected layer
- */
 export function LayerDetailsPanel({ layer }: { layer: number }) {
-  const {
-    selectedMetric,
-    queryLayerAcrossTokens,
-    coordinator,
-  } = useTransformer();
+  const { selectedMetric, queryLayerAcrossTokens, coordinator } =
+    useTransformer();
 
   const [stats, setStats] = useState<SelectionStats | null>(null);
   const [headBreakdown, setHeadBreakdown] = useState<number[]>([]);
-  const [topTokens, setTopTokens] = useState<Array<{ tokenText: string; value: number }>>([]);
+  const [topTokens, setTopTokens] = useState<
+    Array<{ tokenText: string; value: number }>
+  >([]);
   const headChartRef = useRef<HTMLDivElement>(null);
 
   const metricInfo = getMetricInfo(selectedMetric);
@@ -38,15 +32,14 @@ export function LayerDetailsPanel({ layer }: { layer: number }) {
   }, [layer, selectedMetric, queryLayerAcrossTokens]);
 
   useEffect(() => {
-    if (!headChartRef.current || !coordinator || headBreakdown.length === 0) return;
+    if (!headChartRef.current || !coordinator || headBreakdown.length === 0)
+      return;
 
     const viewName = `layer_detail_${layer}`;
-    const values = headBreakdown.map((value, head) => `(${head}, ${value})`).join(", ");
+    const values = headBreakdown
+      .map((value, head) => `(${head}, ${value})`)
+      .join(", ");
     const createViewSQL = `CREATE OR REPLACE TEMP VIEW ${viewName} AS SELECT * FROM (VALUES ${values}) AS t(head, value)`;
-
-    const { width, barHeight, marginBottom, marginLeft, marginRight, marginTop } =
-      DETAIL_PANEL_CHART.layerByHead;
-    const chartHeight = Math.max(120, headBreakdown.length * barHeight);
 
     coordinator.exec(createViewSQL).then(() => {
       const spec = vg.plot(
@@ -56,15 +49,11 @@ export function LayerDetailsPanel({ layer }: { layer: number }) {
           fill: "steelblue",
           tip: true,
         }),
-        vg.width(width),
-        vg.height(chartHeight),
-        vg.marginLeft(marginLeft),
-        vg.marginRight(marginRight),
-        vg.marginTop(marginTop),
-        vg.marginBottom(marginBottom),
-        vg.yLabel(null),
-        vg.xLabel(null),
-        vg.xTicks(0)
+        vg.width(500),
+        vg.height(400),
+        vg.marginTop(5),
+        vg.marginLeft(50),
+        vg.marginBottom(50)
       );
 
       if (headChartRef.current) {
@@ -75,18 +64,19 @@ export function LayerDetailsPanel({ layer }: { layer: number }) {
   }, [headBreakdown, coordinator, layer]);
 
   return (
-    <PanelContainer>
+    <PanelContainer h="100%">
       <Text fontSize="xs" fontWeight="semibold" color="accentSubtle" mb={2}>
         Layer Details
       </Text>
       <Text fontSize="xs" color="fg.muted" mb={2}>
         {formatLayerLabel(layer, 36)}
-        <Text as="span" fontWeight="normal" ml={1}>
-          {" • Metric: "}{metricInfo?.label || selectedMetric}
+        <Text as="span" fontWeight="normal">
+          {" • Metric: "}
+          {metricInfo?.label || selectedMetric}
         </Text>
       </Text>
 
-      <VStack align="stretch" gap={2} flex={1} overflow="auto">
+      <VStack align="stretch" gap={2} flex={1}>
         {/* Statistics */}
         {stats && (
           <Box>
@@ -116,12 +106,7 @@ export function LayerDetailsPanel({ layer }: { layer: number }) {
             <Text fontSize="xs" color="fg.muted" mb={1}>
               By Head (all {headBreakdown.length})
             </Text>
-            <Box
-              ref={headChartRef}
-              w="100%"
-              minW={DETAIL_PANEL_CHART.layerByHead.width}
-              h={Math.max(120, headBreakdown.length * DETAIL_PANEL_CHART.layerByHead.barHeight)}
-            />
+            <Box ref={headChartRef} w="100%" />
           </Box>
         )}
 
@@ -132,9 +117,11 @@ export function LayerDetailsPanel({ layer }: { layer: number }) {
               Top Tokens
             </Text>
             <VStack gap={0.5} align="stretch" fontSize="xs">
-              {topTokens.slice(0, 10).map((t, i) => (
+              {topTokens.slice(0, 20).map((t, i) => (
                 <HStack key={i} justify="space-between">
-                  <Text truncate maxW="140px">{t.tokenText}</Text>
+                  <Text truncate maxW="140px">
+                    {t.tokenText}
+                  </Text>
                   <Text fontFamily="mono">{formatValue(t.value)}</Text>
                 </HStack>
               ))}

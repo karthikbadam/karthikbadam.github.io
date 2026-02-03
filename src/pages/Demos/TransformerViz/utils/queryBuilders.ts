@@ -25,17 +25,18 @@ export function resolveMetricColumn(metric: string, category?: string): string {
     return 'value';
   }
 
-  const metricInfo = getMetricInfo(metric);
-
-  // For hidden_norm, use normalized column (but don't double-append if already ends with _norm)
-  if (metricInfo?.useNormalized && !metric.endsWith('_norm')) {
-    return `${metric}_norm`;
-  }
-
-  // For layernorm category, map metric names to actual column names
+  // For layernorm category, map metric names to actual table column names first
+  // (activation_snapshot has "mean" and "variance", not norm_mean_norm etc.)
   if (category === 'layernorm') {
     if (metric === 'norm_mean') return 'mean';
     if (metric === 'norm_variance') return 'variance';
+  }
+
+  const metricInfo = getMetricInfo(metric);
+
+  // For hidden_norm, etc., use normalized column (but don't double-append if already ends with _norm)
+  if (metricInfo?.useNormalized && !metric.endsWith('_norm')) {
+    return `${metric}_norm`;
   }
 
   return metric;

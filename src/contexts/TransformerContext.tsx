@@ -1,21 +1,15 @@
+import * as vg from "@uwdata/vgplot";
 import {
   createContext,
+  ReactNode,
+  useCallback,
   useContext,
   useEffect,
-  useState,
   useRef,
-  useCallback,
-  ReactNode,
+  useState,
 } from "react";
-import * as vg from "@uwdata/vgplot";
 import { LoadingState } from "../types/loading";
-import {
-  METRIC_CATALOG,
-  ALL_METRICS,
-  getMetricInfo as getMetricInfoUtil,
-  getMetricCategory as getMetricCategoryUtil,
-  isHeadMetric as isHeadMetricUtil,
-} from "../pages/Demos/TransformerViz/config/metrics";
+import { getMetricCategory, isHeadMetric } from "../pages/Demos/TransformerViz/config/metrics";
 
 /**
  * Context for Transformer architecture visualization via DuckDB WASM + Mosaic vgplot
@@ -25,12 +19,6 @@ import {
  */
 
 type Coordinator = vg.Coordinator;
-
-// Re-export for backward compatibility
-export { METRIC_CATALOG, ALL_METRICS };
-export const getMetricInfo = getMetricInfoUtil;
-export const getMetricCategory = getMetricCategoryUtil;
-export const isHeadMetric = isHeadMetricUtil;
 
 // Brush selection state
 export interface BrushSelection {
@@ -307,14 +295,14 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
 
         for (const { name, file } of tables) {
           const query = `CREATE TABLE IF NOT EXISTS ${name} AS SELECT * FROM '${dataPath}/${file}'`;
-          setState({ status: "creating-tables", table: name, query });
+          setState({ status: "creating-tables", table: name });
           await coord.exec(query);
         }
 
         // attention_scores is optional
         try {
           const attentionScoresQuery = `CREATE TABLE IF NOT EXISTS attention_scores AS SELECT * FROM '${dataPath}/${PARQUET_FILES.attentionScores}'`;
-          setState({ status: "creating-tables", table: "attention_scores", query: attentionScoresQuery });
+          setState({ status: "creating-tables", table: "attention_scores" });
           await coord.exec(attentionScoresQuery);
         } catch {
           console.warn("attention_scores.parquet not found (optional)");
@@ -323,7 +311,7 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
 
         // Derive numLayers from actual data
         try {
-          const numLayersQuery = `SELECT MAX(layer) + 1 as num_layers FROM (SELECT layer FROM hidden_metrics UNION SELECT layer FROM attn_head_metrics) WHERE layer IS NOT NULL`;
+          const numLayersQuery = `SELECT MAX(layer) as num_layers FROM (SELECT layer FROM hidden_metrics UNION SELECT layer FROM attn_head_metrics) WHERE layer IS NOT NULL`;
           setState({ status: "updating-tables", message: "Deriving model configuration", query: numLayersQuery });
           const configResult = await coord.query(numLayersQuery);
           const configRows = arrowTableToArray(configResult);
@@ -750,7 +738,7 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
           WHERE m.prompt_id = ${selectedPromptId} AND m.layer = ${layer}${extraWhere}
           GROUP BY t.token_text
           ORDER BY value DESC
-          LIMIT 5
+          LIMIT 50
         `;
         const topResult = await coordinator.query(topTokensQuery);
         const topRows = arrowTableToArray(topResult);

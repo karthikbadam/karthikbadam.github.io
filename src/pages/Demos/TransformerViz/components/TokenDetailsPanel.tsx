@@ -1,24 +1,17 @@
-import { Text, VStack, HStack, Box } from "@chakra-ui/react";
-import { useEffect, useState, useRef } from "react";
+import { Box, HStack, Text, VStack } from "@chakra-ui/react";
 import * as vg from "@uwdata/vgplot";
-import {
-  useTransformer,
-  getMetricInfo,
-} from "../../../../contexts/TransformerContext";
-import { PanelContainer } from "./shared/PanelContainer";
+import { useEffect, useRef, useState } from "react";
+import { useTransformer } from "../../../../contexts/TransformerContext";
+import { getMetricInfo } from "../config/metrics";
 import { formatValue } from "../utils/formatting";
-import { DETAIL_PANEL_CHART } from "../utils/styleConstants";
+import { PanelContainer } from "../../../../components/PanelContainer";
 
 /**
  * TokenDetailsPanel - Shows detailed statistics for a selected token
  */
 export function TokenDetailsPanel({ position }: { position: number }) {
-  const {
-    promptTokens,
-    selectedMetric,
-    queryTokenAcrossLayers,
-    coordinator,
-  } = useTransformer();
+  const { promptTokens, selectedMetric, queryTokenAcrossLayers, coordinator } =
+    useTransformer();
 
   const [layerValues, setLayerValues] = useState<number[]>([]);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -34,18 +27,10 @@ export function TokenDetailsPanel({ position }: { position: number }) {
     if (!chartRef.current || !coordinator || layerValues.length === 0) return;
 
     const viewName = `token_detail_${position}`;
-    const values = layerValues.map((value, layer) => `(${layer}, ${value})`).join(", ");
+    const values = layerValues
+      .map((value, layer) => `(${layer}, ${value})`)
+      .join(", ");
     const createViewSQL = `CREATE OR REPLACE TEMP VIEW ${viewName} AS SELECT * FROM (VALUES ${values}) AS t(layer, value)`;
-
-    const {
-      width,
-      height,
-      marginBottom,
-      marginLeft,
-      marginRight,
-      marginTop,
-      xTickCount,
-    } = DETAIL_PANEL_CHART.tokenAcrossLayers;
 
     coordinator.exec(createViewSQL).then(() => {
       const spec = vg.plot(
@@ -55,15 +40,13 @@ export function TokenDetailsPanel({ position }: { position: number }) {
           fill: "steelblue",
           tip: true,
         }),
-        vg.width(width),
-        vg.height(height),
-        vg.marginBottom(marginBottom),
-        vg.marginLeft(marginLeft),
-        vg.marginRight(marginRight),
-        vg.marginTop(marginTop),
-        vg.xLabel(null),
-        vg.yLabel(null),
-        vg.xTicks(xTickCount)
+        vg.width(500),
+        vg.height(200),
+        vg.marginLeft(20),
+        vg.marginRight(10),
+        vg.marginBottom(50),
+        vg.xTickFormat((d: number) => (d % 5 === 0 ? String(d) : "")),
+        vg.xTickSize(0)
       );
 
       if (chartRef.current) {
@@ -80,13 +63,10 @@ export function TokenDetailsPanel({ position }: { position: number }) {
       </Text>
 
       <VStack align="stretch" gap={2} flex={1} overflow="auto">
-        {/* Token info */}
-        <Box>
-          <Text fontSize="xs" color="fg.muted" mb={1}>
-            Token {position}: "{token?.token_text}"
-            {token?.is_input ? " (Input)" : " (Generated)"}
-          </Text>
-        </Box>
+        <HStack justify="space-between" fontSize="xs">
+          <Text color="fg.muted">Token {position}</Text>
+          <Text fontFamily="mono">{token?.token_text}</Text>
+        </HStack>
 
         {token?.log_prob !== null && token?.log_prob !== undefined && (
           <HStack justify="space-between" fontSize="xs">
@@ -97,15 +77,10 @@ export function TokenDetailsPanel({ position }: { position: number }) {
 
         {/* Metric across layers chart */}
         <Box w="100%">
-          <Text fontSize="xs" color="fg.muted" mb={1}>
+          <Text fontSize="xs" color="fg.muted" mb={2}>
             {metricInfo?.label || selectedMetric} Across Layers
           </Text>
-          <Box
-            ref={chartRef}
-            w="100%"
-            minW={DETAIL_PANEL_CHART.tokenAcrossLayers.width}
-            h={DETAIL_PANEL_CHART.tokenAcrossLayers.height}
-          />
+          <Box ref={chartRef} w="100%" />
         </Box>
       </VStack>
     </PanelContainer>

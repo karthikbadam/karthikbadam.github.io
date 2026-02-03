@@ -95,8 +95,8 @@ export const HEATMAP_CONFIGS: Record<string, HeatmapConfig> = {
 export const HEATMAP_MARGINS = {
   faceted: {
     marginLeft: 150,
-    marginRight: 30,
-    marginTop: 30,
+    marginRight: 10,
+    marginTop: 5,
     marginBottom: 40,
   },
   compact: {
@@ -111,7 +111,7 @@ export const HEATMAP_MARGINS = {
  * Standard cell configuration for heatmaps
  */
 export const CELL_CONFIG = {
-  inset: 0.05,
+  inset: 0.01,
 };
 
 /**
