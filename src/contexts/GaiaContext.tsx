@@ -7,7 +7,7 @@ import {
   ReactNode,
 } from "react";
 import * as vg from "@uwdata/vgplot";
-import { LoadingState } from "./SWEBenchContext";
+import { LoadingState } from "../types/loading";
 
 /**
  * Context for Gaia star catalog data access via DuckDB WASM + Mosaic vgplot
@@ -109,10 +109,6 @@ export function GaiaProvider({ children }: { children: ReactNode }) {
             parallax,
             phot_g_mean_mag,
             bp_rp,
-            
-            -- Wrap l for nicer continuity if you use it elsewhere
-            CASE WHEN l > 180 THEN l - 360 ELSE l END AS l_wrap,
-            -- Distance proxy (pc). You'll gate parallax later.
             (1000.0 / parallax) AS r_pc,
             
             -- Galactic unit direction u(l,b)
