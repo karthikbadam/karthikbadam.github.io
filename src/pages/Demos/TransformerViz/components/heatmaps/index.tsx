@@ -6,8 +6,6 @@ import {
 } from "../../../../../components/MosaicChart";
 import { useColorModeValue } from "../../../../../components/ui/color-mode";
 import {
-  getMetricCategory,
-  getMetricInfo,
   useTransformer,
 } from "../../../../../contexts/TransformerContext";
 import {
@@ -20,6 +18,7 @@ import {
   HEATMAP_CONFIGS,
   HEATMAP_MARGINS
 } from "./config";
+import { getMetricCategory, getMetricInfo } from "../../config/metrics";
 
 /**
  * Heatmap - Consolidated component for all metric category visualizations
@@ -131,15 +130,12 @@ export function Heatmap() {
         }),
         ...createChartOptions({
           colorScheme,
-          width,
-          height,
+          width: 1.2 * width,
+          height: 1.2 * height,
           margins: HEATMAP_MARGINS.faceted,
-          xLabel:
-            category === "hidden"
-              ? "Layer"
-              : config.xField !== "layer"
-                ? config.xField.charAt(0).toUpperCase() + config.xField.slice(1)
-                : null,
+          xLabel: category === "hidden" ? "layer" : config.xField,
+          yLabel: "Token",
+          fxLabel: category === "hidden" ? null : "layer",
         }),
       ];
 

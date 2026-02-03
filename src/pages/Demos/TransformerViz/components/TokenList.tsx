@@ -38,8 +38,12 @@ export function TokenList() {
     >
       <Text fontSize="xs" fontWeight="semibold" color="accentSubtle" mb={2}>
         Tokens
-        <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
+        <Text as="span" ml={1}>
           ({promptTokens.length})
+        </Text>
+        <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
+          {"• "}
+          {"Select a token"}
         </Text>
       </Text>
 
@@ -56,7 +60,9 @@ export function TokenList() {
                 content={
                   <VStack gap={0} align="start" fontSize="xs">
                     <Text fontWeight="semibold">{token.token_text}</Text>
-                    <Text>Position: ({token.position.toString().padStart(2, '0')})</Text>
+                    <Text>
+                      Position: ({token.position.toString().padStart(2, "0")})
+                    </Text>
                     <Text>Type: {token.is_input ? "Input" : "Generated"}</Text>
                     <Text>Mean: {stats.mean.toFixed(3)}</Text>
                     <Text>Max: {stats.max.toFixed(3)}</Text>
@@ -70,15 +76,20 @@ export function TokenList() {
                   cursor="pointer"
                   onClick={() => {
                     if (!$tokenHighlight) return;
-                    const newToken = highlightedToken === token.position ? null : token.position;
+                    const newToken =
+                      highlightedToken === token.position
+                        ? null
+                        : token.position;
                     setHighlightedToken(newToken);
                     setContextHighlightedToken(newToken); // Update context for DetailsPanel
-                    
+
                     // Update Mosaic selection (this will propagate to heatmaps automatically)
                     if (newToken !== null) {
-                      $tokenHighlight.update({value: [{position: newToken}]});
+                      $tokenHighlight.update({
+                        value: [{ position: newToken }],
+                      });
                     } else {
-                      $tokenHighlight.update({value: []});
+                      $tokenHighlight.update({ value: [] });
                     }
                   }}
                   bg={isSelected ? "blue.subtle" : "transparent"}
@@ -89,18 +100,23 @@ export function TokenList() {
                   {/* Position + token text */}
                   <Text
                     fontSize="xs"
-                    fontFamily="mono"
                     w="140px"
                     truncate
                     color={isSelected ? "accent" : "fg"}
                     fontWeight={isSelected ? "semibold" : "normal"}
                   >
-                    ({token.position.toString().padStart(2, '0')}) {token.token_text}
+                    ({token.position.toString().padStart(2, "0")}){" "}
+                    {token.token_text}
                   </Text>
 
                   {/* Mini bar chart showing metric across layers */}
                   <Box flex={1} color={isSelected ? "accent" : "fg.muted"}>
-                    <MiniBarChart data={barData} width={40} height={12} vertical />
+                    <MiniBarChart
+                      data={barData}
+                      width={40}
+                      height={12}
+                      vertical
+                    />
                   </Box>
                 </HStack>
               </Tooltip>

@@ -58,7 +58,7 @@ export function HistogramCharts() {
   return (
     <MosaicChart
       title="Distributions"
-      subtitle="G Magnitude • Parallax"
+      subtitle="Select a range of values"
       build={build}
       dependencies={[brushSelection]}
       isReady={state.status === "ready" && !!brushSelection}
