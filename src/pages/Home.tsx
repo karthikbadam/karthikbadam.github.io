@@ -108,7 +108,7 @@ export const Home = () => {
                   color="accent"
                   variant="underline"
                 >
-                  karthikbadam7[at]gmail.com
+                  karthikbadam7@gmail.com
                 </Link>
               </Text>
             </Stack>
