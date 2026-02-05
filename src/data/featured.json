@@ -1,7 +1,7 @@
 [
   {
     "title": "Interpret Language Model Activations",
-    "abstract": "Interpretability demo of activations in SmolLM3-3B. Explore attention, contribution, hidden state, MLP metrics, and layer norms through heatmaps. Select prompts, switch metrics, and inspect token- and layer-level details to understand how the model processes text.",
+    "abstract": "Interpretability of activations in SmolLM3-3B. Explore attention, contribution, hidden state, MLP metrics, and layer norms through heatmaps. Select prompts, switch metrics, and inspect token- and layer-level details to understand how the model processes text.",
     "link": "/transformer",
     "image": {
       "dark": "transformer-viz-dark.png",

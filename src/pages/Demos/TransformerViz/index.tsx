@@ -1,6 +1,7 @@
 import {
   Box,
   Container,
+  Flex,
   Heading,
   HStack,
   NativeSelect,
@@ -10,6 +11,7 @@ import {
 import { useMemo } from "react";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
 import { Page } from "../../../components/Page";
+import { PanelContainer } from "../../../components/PanelContainer";
 import {
   TransformerProvider,
   useTransformer,
@@ -51,7 +53,7 @@ function DashboardContent() {
     return (
       <LoadingIndicator
         state={state}
-        title="Loading Transformer Architecture"
+        title="Loading Transformer Activation Signals"
       />
     );
   }
@@ -65,77 +67,63 @@ function DashboardContent() {
       bg="bg.muted"
       pb={2}
     >
-      {/* Compact 2-row Header */}
+      {/* Header */}
       <Container maxW="120ch" px={4} py={4}>
-        <VStack align="stretch" gap={0} mx="auto">
-          {/* Row 1: Title + Prompt/Response */}
-          <HStack align="center" columnGap={8} flexWrap="wrap">
-            {/* Left: Title */}
-            <Box flexShrink={0}>
-              <Heading as="h1" size="lg" color="accent">
-                Transformer Activations
-              </Heading>
-              <Text fontSize="xs" color="fg.muted">
-                SmolLM3-3B | {numLayers} layers, {numHeads} heads
+        <Flex mb={2} gap={1} align="end">
+          <Heading as="h1" size="lg" color="accent">
+            Transformer Activations
+          </Heading>
+          <Text fontSize="sm" color="gray.fg">
+            {"• "}
+            SmolLM3-3B | {numLayers} layers, {numHeads} heads
+          </Text>
+        </Flex>
+
+        <VStack gap={2} align="stretch" fontSize="xs">
+          {availablePrompts.length > 0 && (
+            <HStack gap={2} align="center">
+              <Text color="fg.muted" flexShrink={0} w="60px">
+                Prompt:
               </Text>
-            </Box>
+              <NativeSelect.Root size="xs" variant="outline">
+                <NativeSelect.Field
+                  value={selectedPromptId ?? ""}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    setSelectedPromptId(Number(e.target.value))
+                  }
+                  fontSize="xs"
+                >
+                  {availablePrompts.map((prompt) => (
+                    <option key={prompt.prompt_id} value={prompt.prompt_id}>
+                      {prompt.prompt_text}
+                    </option>
+                  ))}
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </HStack>
+          )}
 
-            {/* Right: Prompt dropdown + Response */}
-            {availablePrompts.length > 0 && (
-              <VStack gap={0} align="stretch" flex={1} maxW="100%">
-                <HStack gap={2} align="center">
-                  <Text fontSize="xs" color="fg.muted" flexShrink={0} w="60px">
-                    Prompt:
-                  </Text>
-                  <NativeSelect.Root size="xs" variant="outline">
-                    <NativeSelect.Field
-                      value={selectedPromptId ?? ""}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        setSelectedPromptId(Number(e.target.value))
-                      }
-                      fontSize="xs"
-                    >
-                      {availablePrompts.map((prompt) => (
-                        <option key={prompt.prompt_id} value={prompt.prompt_id}>
-                          {prompt.prompt_text}
-                        </option>
-                      ))}
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
-                </HStack>
-                {responseText && (
-                  <HStack gap={2}>
-                    <Text
-                      fontSize="xs"
-                      color="fg.muted"
-                      flexShrink={0}
-                      w="60px"
-                    >
-                      Response:
-                    </Text>
-                    <Text fontSize="xs" color="fg" truncate pl={2}>
-                      {responseText}
-                    </Text>
-                  </HStack>
-                )}
-              </VStack>
-            )}
-          </HStack>
-
-          {/* Row 2: Metric dropdown + Details */}
-          <HStack
-            columnGap={2}
-            rowGap={0}
-            align="center"
-            fontSize="xs"
-            flexWrap="wrap"
-          >
-            <HStack gap={1}>
+          {responseText && (
+            <HStack
+              gap={2}
+              align="center"
+              display={{ base: "none", md: "flex" }}
+            >
+              <Text color="fg.muted" flexShrink={0} w="70px">
+                Response:
+              </Text>
+              <Text fontSize="xs" color="fg" truncate>
+                {responseText}
+              </Text>
+            </HStack>
+          )}
+          <HStack gap={2} flexWrap="wrap">
+            <HStack gap={2} align="center">
               <Text color="fg.muted" flexShrink={0} w="60px">
                 Metric:
               </Text>
-              <NativeSelect.Root size="xs" variant="outline" w="200px" pl={1}>
+              <NativeSelect.Root size="xs" variant="outline" maxW="300px">
                 <NativeSelect.Field
                   value={selectedMetric}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -195,6 +183,7 @@ function DashboardContent() {
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
             </HStack>
+
             {metricInfo && (
               <>
                 <Text color="fg">{metricInfo.description}</Text>
@@ -216,13 +205,8 @@ function DashboardContent() {
         gap={4}
         minH={0}
       >
-        {/* Left: Token List */}
-        <Box
-          w={{ base: "100%", md: "200px" }}
-          flexShrink={0}
-          display={{ base: "none", md: "block" }}
-          h={{ md: "100%" }}
-        >
+        {/* Token List */}
+        <Box w={{ base: "100%", md: "200px" }} flexShrink={0} minH={0}>
           <TokenList />
         </Box>
 
@@ -232,7 +216,8 @@ function DashboardContent() {
           minW={0}
           display="flex"
           flexDirection="column"
-          h={{ base: "60vh", md: "100%" }}
+          h={{ base: "60vh", md: "auto" }}
+          minH={0}
         >
           {/* Layer Strip - compact horizontal strip */}
           <Box flexShrink={0} mb={2}>
@@ -249,8 +234,8 @@ function DashboardContent() {
         <Box
           w={{ base: "100%", md: "300px" }}
           flexShrink={0}
-          display={{ base: "none", md: "block" }}
-          h={{ base: "60vh", md: "100%" }}
+          overflow="auto"
+          minH={0}
         >
           {showTokenDetails && (
             <Box mb={2}>
@@ -262,6 +247,14 @@ function DashboardContent() {
             <Box>
               <LayerDetailsPanel layer={highlightedLayer} />
             </Box>
+          )}
+
+          {!showTokenDetails && !showLayerDetails && (
+            <PanelContainer>
+              <Text fontSize="xs" color="fg.muted" textAlign="center" my="auto">
+                Select a token or layer to view details
+              </Text>
+            </PanelContainer>
           )}
         </Box>
       </Box>

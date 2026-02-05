@@ -62,7 +62,7 @@ export function TokenDetailsPanel({ position }: { position: number }) {
         Token Details
       </Text>
 
-      <VStack align="stretch" gap={2} flex={1} overflow="auto">
+      <VStack align="stretch" gap={1} flex={1} overflow="auto">
         <HStack justify="space-between" fontSize="xs">
           <Text color="fg.muted">Token {position}</Text>
           <Text fontFamily="mono">{token?.token_text}</Text>

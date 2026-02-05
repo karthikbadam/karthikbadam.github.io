@@ -12,7 +12,7 @@ import { LoadingState } from "../types/loading";
 import { getMetricCategory, isHeadMetric } from "../pages/Demos/TransformerViz/config/metrics";
 
 /**
- * Context for Transformer architecture visualization via DuckDB WASM + Mosaic vgplot
+ * Context for Transformer activation visualization via DuckDB WASM + Mosaic vgplot
  *
  * Reorganized around a single faceted heatmap with metric selection as the primary control.
  * No modes - metric selection determines faceting strategy.
@@ -273,7 +273,7 @@ export function TransformerProvider({ children }: { children: ReactNode }) {
         // Install httpfs for remote parquet access
         setState({
           status: "loading-parquet",
-          message: "Transformer architecture data",
+          message: "Transformer activation data",
         });
 
         await coord.exec(`INSTALL httpfs; LOAD httpfs;`);
