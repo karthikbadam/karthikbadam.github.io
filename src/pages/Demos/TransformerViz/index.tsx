@@ -82,7 +82,7 @@ function DashboardContent() {
         <VStack gap={2} align="stretch" fontSize="xs">
           {availablePrompts.length > 0 && (
             <HStack gap={2} align="center">
-              <Text color="fg.muted" flexShrink={0}>
+              <Text color="fg.muted" flexShrink={0} w="60px">
                 Prompt:
               </Text>
               <NativeSelect.Root size="xs" variant="outline">
@@ -105,16 +105,22 @@ function DashboardContent() {
           )}
 
           {responseText && (
-            <Text fontSize="xs" color="fg" truncate>
-              <Text as="span" color="fg.muted">
-                Response:{" "}
+            <HStack
+              gap={2}
+              align="center"
+              display={{ base: "none", md: "flex" }}
+            >
+              <Text color="fg.muted" flexShrink={0} w="70px">
+                Response:
               </Text>
-              {responseText}
-            </Text>
+              <Text fontSize="xs" color="fg" truncate>
+                {responseText}
+              </Text>
+            </HStack>
           )}
           <HStack gap={2} flexWrap="wrap">
             <HStack gap={2} align="center">
-              <Text color="fg.muted" flexShrink={0} mr={1}>
+              <Text color="fg.muted" flexShrink={0} w="60px">
                 Metric:
               </Text>
               <NativeSelect.Root size="xs" variant="outline" maxW="300px">
@@ -245,7 +251,7 @@ function DashboardContent() {
 
           {!showTokenDetails && !showLayerDetails && (
             <PanelContainer>
-              <Text fontSize="xs" color="fg.muted" textAlign="center" my='auto'>
+              <Text fontSize="xs" color="fg.muted" textAlign="center" my="auto">
                 Select a token or layer to view details
               </Text>
             </PanelContainer>
