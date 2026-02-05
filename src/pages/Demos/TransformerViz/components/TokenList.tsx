@@ -83,6 +83,7 @@ export function TokenList() {
                   display="flex"
                   flexDirection={{ base: "column", md: "row" }}
                   alignItems="center"
+                  justifyContent="flex-end"
                   gap={2}
                   px={1}
                   py={{ base: 0.5, md: 1 }}

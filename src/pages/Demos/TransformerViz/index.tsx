@@ -61,21 +61,21 @@ function DashboardContent() {
   return (
     <Box
       h={{ base: "auto", md: "100%" }}
-      overflow="hidden"
+      overflow={{ base: "scroll", md: "hidden" }}
       display="flex"
       flexDirection="column"
       bg="bg.muted"
       pb={2}
     >
       {/* Header */}
-      <Container maxW="120ch" px={4} py={4}>
-        <Flex mb={2} gap={1} align="end">
+      <Container maxW="100ch" px={4} py={4}>
+        <Flex mb={2} gap={1} align="end" flexWrap="wrap">
           <Heading as="h1" size="lg" color="accent">
             Transformer Activations
           </Heading>
           <Text fontSize="sm" color="gray.fg">
             {"• "}
-            SmolLM3-3B | {numLayers} layers, {numHeads} heads
+            SmolLM3-3B {numLayers} layers, {numHeads} heads
           </Text>
         </Flex>
 
@@ -123,7 +123,7 @@ function DashboardContent() {
               <Text color="fg.muted" flexShrink={0} w="60px">
                 Metric:
               </Text>
-              <NativeSelect.Root size="xs" variant="outline" maxW="300px">
+              <NativeSelect.Root size="xs" variant="outline" maxW="200px">
                 <NativeSelect.Field
                   value={selectedMetric}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -186,8 +186,12 @@ function DashboardContent() {
 
             {metricInfo && (
               <>
-                <Text color="fg">{metricInfo.description}</Text>
-                <Text color="fg.muted">{metricInfo.interpretation}</Text>
+                <Text color="fg" display={{ base: "none", md: "flex" }}>
+                  {metricInfo.description}
+                </Text>
+                <Text color="fg.muted" display={{ base: "none", md: "flex" }}>
+                  {metricInfo.interpretation}
+                </Text>
               </>
             )}
           </HStack>
@@ -202,7 +206,7 @@ function DashboardContent() {
         overflow={{ base: "auto", md: "hidden" }}
         display="flex"
         flexDirection={{ base: "column", md: "row" }}
-        gap={4}
+        gap={2}
         minH={0}
       >
         {/* Token List */}
@@ -225,7 +229,7 @@ function DashboardContent() {
           </Box>
 
           {/* Heatmap takes remaining space */}
-          <Box flex={1} minH={0}>
+          <Box flex={1} minH={{ base: "50vh", md: 0 }}>
             <Heatmap />
           </Box>
         </Box>
@@ -236,6 +240,10 @@ function DashboardContent() {
           flexShrink={0}
           overflow="auto"
           minH={0}
+          display={{
+            base: showTokenDetails || showLayerDetails ? "block" : "none",
+            md: "block",
+          }}
         >
           {showTokenDetails && (
             <Box mb={2}>
