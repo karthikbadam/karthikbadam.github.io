@@ -8,7 +8,7 @@ This repository contains the source code for my personal website and blog, hoste
 - React 18 + TypeScript
 - Chakra UI (https://chakra-ui.com/)
 - MDX for writing blog posts
-- D3 & visx for data visualizations
+- D3 & visx & Mosaic for data visualizations
 - Framer Motion for animations
 - React Router DOM for client-side routing (using HashRouter for GitHub Pages compatibility)
 
