@@ -103,6 +103,8 @@ export function Heatmap() {
         }
       }
 
+      const scale = window.innerWidth < 768 ? 1.6 : 1.2;
+
       const marks = [
         vg.cell(vg.from(viewName), {
           fx: category === "hidden" ? null : "layer",
@@ -130,8 +132,8 @@ export function Heatmap() {
         }),
         ...createChartOptions({
           colorScheme,
-          width: 1.2 * width,
-          height: 1.2 * height,
+          width: scale * width,
+          height: scale * height,
           margins: HEATMAP_MARGINS.faceted,
           xLabel: category === "hidden" ? "layer" : config.xField,
           yLabel: "Token",
