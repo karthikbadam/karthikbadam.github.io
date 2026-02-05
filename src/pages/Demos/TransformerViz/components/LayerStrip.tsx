@@ -73,13 +73,12 @@ export function LayerStrip() {
                 bg={isSelected ? "blue.subtle" : "transparent"}
                 _hover={{ bg: isSelected ? "blue.subtle" : "bg.subtle" }}
                 borderRadius="sm"
-                minW="36px"
+                minW="30px"
                 align="center"
                 transition="all 0.1s"
               >
                 <Text
                   fontSize="xs"
-                  fontFamily="mono"
                   color={isSelected ? "accent" : "fg"}
                   fontWeight={isSelected ? "semibold" : "normal"}
                 >
