@@ -1,9 +1,9 @@
+import { Box, Text, VStack } from "@chakra-ui/react";
 import { useState } from "react";
-import { Box, Text, HStack, VStack } from "@chakra-ui/react";
 import { Tooltip } from "../../../../components/ui/tooltip";
 import { useTransformer } from "../../../../contexts/TransformerContext";
-import { MiniBarChart } from "./MiniBarChart";
 import { calculateStats } from "../utils/interpretability";
+import { MiniBarChart } from "./MiniBarChart";
 
 /**
  * TokenList - Left panel showing tokens with mini bar charts
@@ -47,8 +47,17 @@ export function TokenList() {
         </Text>
       </Text>
 
-      <Box flex={1} overflowY="auto">
-        <VStack gap={0} align="stretch">
+      <Box
+        flex={1}
+        overflowY={{ base: "hidden", md: "auto" }}
+        overflowX={{ base: "auto", md: "hidden" }}
+      >
+        <Box
+          display="flex"
+          flexDirection={{ base: "row", md: "column" }}
+          gap={0}
+          alignItems={{ base: "stretch", md: "stretch" }}
+        >
           {promptTokens.map((token) => {
             const isSelected = highlightedToken === token.position;
             const barData = tokenMetrics?.get(token.position);
@@ -68,11 +77,15 @@ export function TokenList() {
                     <Text>Max: {stats.max.toFixed(3)}</Text>
                   </VStack>
                 }
-                positioning={{ placement: "right" }}
+                positioning={{ placement: "bottom" }}
               >
-                <HStack
+                <Box
+                  display="flex"
+                  flexDirection={{ base: "column", md: "row" }}
+                  alignItems="center"
                   gap={2}
-                  py={1}
+                  px={1}
+                  py={{ base: 0.5, md: 1 }}
                   cursor="pointer"
                   onClick={() => {
                     if (!$tokenHighlight) return;
@@ -81,9 +94,8 @@ export function TokenList() {
                         ? null
                         : token.position;
                     setHighlightedToken(newToken);
-                    setContextHighlightedToken(newToken); // Update context for DetailsPanel
+                    setContextHighlightedToken(newToken);
 
-                    // Update Mosaic selection (this will propagate to heatmaps automatically)
                     if (newToken !== null) {
                       $tokenHighlight.update({
                         value: [{ position: newToken }],
@@ -97,20 +109,23 @@ export function TokenList() {
                   borderRadius="sm"
                   transition="all 0.1s"
                 >
-                  {/* Position + token text */}
                   <Text
                     fontSize="xs"
-                    w="140px"
                     truncate
                     color={isSelected ? "accent" : "fg"}
                     fontWeight={isSelected ? "semibold" : "normal"}
+                    w={{ base: "auto", md: "140px" }}
                   >
-                    ({token.position.toString().padStart(2, "0")}){" "}
+                    <Text as="span" display={{ base: "none", md: "inline" }}>
+                      ({token.position.toString().padStart(2, "0")}){" "}
+                    </Text>
                     {token.token_text}
                   </Text>
 
-                  {/* Mini bar chart showing metric across layers */}
-                  <Box flex={1} color={isSelected ? "accent" : "fg.muted"}>
+                  <Box
+                    flex={{ md: 1 }}
+                    color={isSelected ? "accent" : "fg.muted"}
+                  >
                     <MiniBarChart
                       data={barData}
                       width={40}
@@ -118,11 +133,11 @@ export function TokenList() {
                       vertical
                     />
                   </Box>
-                </HStack>
+                </Box>
               </Tooltip>
             );
           })}
-        </VStack>
+        </Box>
       </Box>
     </Box>
   );

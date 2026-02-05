@@ -1,5 +1,5 @@
 /**
- * Utility functions for Transformer architecture visualization.
+ * Utility functions for Transformer activation visualization.
  *
  * Provides layout calculations, color scales, and size functions
  * for rendering the 3D tower visualization.
