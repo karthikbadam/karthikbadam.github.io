@@ -1,6 +1,7 @@
 import {
   Box,
   Container,
+  Flex,
   Heading,
   HStack,
   NativeSelect,
@@ -52,7 +53,7 @@ function DashboardContent() {
     return (
       <LoadingIndicator
         state={state}
-        title="Loading Transformer Architecture"
+        title="Loading Transformer Activation Signals"
       />
     );
   }
@@ -68,14 +69,15 @@ function DashboardContent() {
     >
       {/* Header */}
       <Container maxW="120ch" px={4} py={4}>
-        <Box mb={2}>
-          <Heading as="h1" size="lg" color="accent" mb={1}>
+        <Flex mb={2} gap={1} align="end">
+          <Heading as="h1" size="lg" color="accent">
             Transformer Activations
           </Heading>
           <Text fontSize="sm" color="gray.fg">
+            {"• "}
             SmolLM3-3B | {numLayers} layers, {numHeads} heads
           </Text>
-        </Box>
+        </Flex>
 
         <VStack gap={2} align="stretch" fontSize="xs">
           {availablePrompts.length > 0 && (
@@ -243,7 +245,7 @@ function DashboardContent() {
 
           {!showTokenDetails && !showLayerDetails && (
             <PanelContainer>
-              <Text fontSize="xs" color="fg.muted" textAlign="center" py={2}>
+              <Text fontSize="xs" color="fg.muted" textAlign="center" my='auto'>
                 Select a token or layer to view details
               </Text>
             </PanelContainer>

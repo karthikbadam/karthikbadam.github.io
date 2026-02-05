@@ -82,8 +82,8 @@ export function TokenList() {
                 <Box
                   display="flex"
                   flexDirection={{ base: "column", md: "row" }}
-                  alignItems={{ base: "center", md: "center" }}
-                  gap={{ base: 0.5, md: 2 }}
+                  alignItems="center"
+                  gap={2}
                   px={1}
                   py={{ base: 0.5, md: 1 }}
                   cursor="pointer"
@@ -108,15 +108,13 @@ export function TokenList() {
                   _hover={{ bg: isSelected ? "blue.subtle" : "bg.subtle" }}
                   borderRadius="sm"
                   transition="all 0.1s"
-                  minW={{ base: "50px", md: "auto" }}
                 >
                   <Text
                     fontSize="xs"
                     truncate
                     color={isSelected ? "accent" : "fg"}
                     fontWeight={isSelected ? "semibold" : "normal"}
-                    w={{ md: "140px" }}
-                    maxW={{ base: "60px", md: "140px" }}
+                    w={{ base: "auto", md: "140px" }}
                   >
                     <Text as="span" display={{ base: "none", md: "inline" }}>
                       ({token.position.toString().padStart(2, "0")}){" "}
