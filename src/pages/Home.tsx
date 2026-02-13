@@ -61,11 +61,10 @@ export const Home = () => {
               <Box
                 position="relative"
                 borderRadius="full"
-                width="200px"
+                width="170px"
                 overflow="hidden"
-                boxShadow="lg"
                 border="1px solid"
-                borderColor="accentBackground"
+                borderColor="gray.border"
                 bgColor="accentBackground"
               >
                 <Image
@@ -84,8 +83,8 @@ export const Home = () => {
             </Stack>
             <Stack gap={4}>
               <Heading
-                fontWeight="medium"
-                size="3xl"
+                fontWeight="semibold"
+                size="2xl"
                 css={{
                   background: highlightColor,
                   WebkitBackgroundClip: "text",
@@ -122,8 +121,10 @@ export const Home = () => {
             </Stack>
           </TwoPanelWithScroll.LeftPanel>
           <TwoPanelWithScroll.RightPanel py={2}>
-            <Stack gap={4} maxW={{ base: "100%", lg: "76ch" }}>
-              <Heading color="accent">Featured Explorations</Heading>
+            <Stack gap={2} maxW={{ base: "100%", lg: "76ch" }}>
+              <Heading color="accent" fontWeight="semibold">
+                Featured Explorations
+              </Heading>
               {/* Featured Posts as Large Cards - Side by Side */}
               {featuredPosts.length > 0 && (
                 <Grid
