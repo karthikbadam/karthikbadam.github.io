@@ -8,13 +8,13 @@ import {
 import { formatLayerLabel, formatValue } from "../utils/formatting";
 import { PanelContainer } from "../../../../components/PanelContainer";
 import { getMetricInfo, isHeadMetric } from "../config/metrics";
+import { buildLayerHeadViewQuery } from "../utils/queryBuilders";
 
 export function LayerDetailsPanel({ layer }: { layer: number }) {
-  const { selectedMetric, queryLayerAcrossTokens, coordinator } =
+  const { selectedMetric, queryLayerAcrossTokens, coordinator, numHeads, selectedPromptId } =
     useTransformer();
 
   const [stats, setStats] = useState<SelectionStats | null>(null);
-  const [headBreakdown, setHeadBreakdown] = useState<number[]>([]);
   const [topTokens, setTopTokens] = useState<
     Array<{ tokenText: string; value: number }>
   >([]);
@@ -26,22 +26,16 @@ export function LayerDetailsPanel({ layer }: { layer: number }) {
   useEffect(() => {
     queryLayerAcrossTokens(layer, selectedMetric).then((data) => {
       setStats(data.stats);
-      setHeadBreakdown(data.headBreakdown);
       setTopTokens(data.topTokens);
     });
-  }, [layer, selectedMetric, queryLayerAcrossTokens]);
 
-  useEffect(() => {
-    if (!headChartRef.current || !coordinator || headBreakdown.length === 0)
-      return;
+    if (!hasHeadDim || !coordinator || selectedPromptId === null) return;
 
     const viewName = `layer_detail_${layer}`;
-    const values = headBreakdown
-      .map((value, head) => `(${head}, ${value})`)
-      .join(", ");
-    const createViewSQL = `CREATE OR REPLACE TEMP VIEW ${viewName} AS SELECT * FROM (VALUES ${values}) AS t(head, value)`;
+    const query = buildLayerHeadViewQuery(viewName, selectedPromptId, layer, selectedMetric);
+    if (!query) return;
 
-    coordinator.exec(createViewSQL).then(() => {
+    coordinator.exec(query).then(() => {
       const spec = vg.plot(
         vg.barX(vg.from(viewName), {
           y: "head",
@@ -61,7 +55,7 @@ export function LayerDetailsPanel({ layer }: { layer: number }) {
         headChartRef.current.appendChild(spec);
       }
     });
-  }, [headBreakdown, coordinator, layer]);
+  }, [layer, selectedMetric, queryLayerAcrossTokens, coordinator, hasHeadDim, selectedPromptId]);
 
   return (
     <PanelContainer h="100%">
@@ -101,10 +95,10 @@ export function LayerDetailsPanel({ layer }: { layer: number }) {
         )}
 
         {/* Head breakdown chart */}
-        {hasHeadDim && headBreakdown.length > 0 && (
+        {hasHeadDim && (
           <Box w="100%">
             <Text fontSize="xs" color="fg.muted" mb={1}>
-              By Head (all {headBreakdown.length})
+              By Head (all {numHeads})
             </Text>
             <Box ref={headChartRef} w="100%" />
           </Box>

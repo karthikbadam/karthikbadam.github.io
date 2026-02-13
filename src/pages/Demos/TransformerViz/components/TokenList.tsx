@@ -105,8 +105,8 @@ export function TokenList() {
                       $tokenHighlight.update({ value: [] });
                     }
                   }}
-                  bg={isSelected ? "blue.subtle" : "transparent"}
-                  _hover={{ bg: isSelected ? "blue.subtle" : "bg.subtle" }}
+                  bg={isSelected ? "gray.subtle" : "transparent"}
+                  _hover={{ bg: "gray.subtle" }}
                   borderRadius="sm"
                   transition="all 0.1s"
                 >

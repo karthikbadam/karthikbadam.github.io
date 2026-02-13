@@ -1,5 +1,5 @@
 import type { Coordinator } from "@uwdata/mosaic-core";
-import { getMetricInfo } from "../config/metrics";
+import { getMetricCategory, getMetricInfo, type MetricCatalog } from "../config/metrics";
 
 /**
  * Token label SQL fragment for consistent formatting across all heatmaps
@@ -123,4 +123,93 @@ export async function createHeatmapView(
     console.error(`Error creating ${config.tableName} heatmap view:`, err);
     return null;
   }
+}
+
+/**
+ * Resolves the table name and metric column for a given category/metric.
+ * Shared by detail-panel query builders.
+ */
+function resolveTableAndColumn(category: keyof MetricCatalog, metric: string): {
+  tableName: string;
+  metricColumn: string;
+  extraWhere: string;
+  needsAvg: boolean;
+} {
+  switch (category) {
+    case 'attention':
+      return { tableName: 'attn_head_metrics', metricColumn: metric, extraWhere: '', needsAvg: true };
+    case 'contribution':
+      return { tableName: 'head_contrib_metrics', metricColumn: metric, extraWhere: '', needsAvg: true };
+    case 'hidden':
+      return { tableName: 'hidden_metrics', metricColumn: metric, extraWhere: '', needsAvg: false };
+    case 'mlp':
+      return { tableName: 'mlp_metrics', metricColumn: metric, extraWhere: '', needsAvg: true };
+    case 'mlpNeurons':
+      return { tableName: 'mlp_topk', metricColumn: 'value', extraWhere: '', needsAvg: true };
+    case 'hiddenTrajectory':
+      return { tableName: 'hidden_topk', metricColumn: 'value', extraWhere: '', needsAvg: true };
+    case 'layernorm':
+      return {
+        tableName: 'activation_snapshot',
+        metricColumn: metric === 'norm_mean' ? 'mean' : 'variance',
+        extraWhere: " AND type = 'norm'",
+        needsAvg: true,
+      };
+  }
+}
+
+/**
+ * Builds a CREATE OR REPLACE TEMP VIEW query that aggregates a metric
+ * across layers for a single token position.
+ * Result columns: (layer, value)
+ */
+export function buildTokenDetailViewQuery(
+  viewName: string,
+  promptId: number,
+  position: number,
+  metric: string
+): string | null {
+  const category = getMetricCategory(metric);
+  if (!category) return null;
+
+  const { tableName, metricColumn, extraWhere, needsAvg } = resolveTableAndColumn(category, metric);
+
+  const valueExpr = needsAvg ? `AVG(${metricColumn})` : metricColumn;
+  const groupBy = needsAvg ? 'GROUP BY layer' : '';
+
+  return `
+    CREATE OR REPLACE TEMP VIEW ${viewName} AS
+    SELECT layer, ${valueExpr} as value
+    FROM ${tableName}
+    WHERE prompt_id = ${promptId} AND position = ${position}${extraWhere}
+    ${groupBy}
+    ORDER BY layer
+  `;
+}
+
+/**
+ * Builds a CREATE OR REPLACE TEMP VIEW query that aggregates a head metric
+ * across heads for a single layer.
+ * Result columns: (head, value)
+ * Only valid for head metrics (attention/contribution categories).
+ */
+export function buildLayerHeadViewQuery(
+  viewName: string,
+  promptId: number,
+  layer: number,
+  metric: string
+): string | null {
+  const category = getMetricCategory(metric);
+  if (category !== 'attention' && category !== 'contribution') return null;
+
+  const { tableName, metricColumn } = resolveTableAndColumn(category, metric);
+
+  return `
+    CREATE OR REPLACE TEMP VIEW ${viewName} AS
+    SELECT head, AVG(${metricColumn}) as value
+    FROM ${tableName}
+    WHERE prompt_id = ${promptId} AND layer = ${layer}
+    GROUP BY head
+    ORDER BY head
+  `;
 }
