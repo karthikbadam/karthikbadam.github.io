@@ -43,21 +43,6 @@ interface Post {
 export const Home = () => {
   const highlightColor = useColorModeValue(accent.light, accent.dark);
 
-  // Create a more realistic gradient with better color stops
-  const gradientStartColor = useColorModeValue(
-    "#E8F1F8", // subtle blue tint at center
-    "#4A433B", // lighter brown at center for depth
-  );
-  const gradientMidColor = useColorModeValue(
-    "#F5F8FB", // intermediate light blue
-    "#3A332B", // base dark brown
-  );
-  const gradientEndColor = useColorModeValue(
-    "#FFFFFF", // pure white at edges for seamless blend
-    "rgba(0, 0, 0, 0.4)", // darker shadow at edges
-  );
-  const borderColor = useColorModeValue("gray.100", "accentBackground");
-
   const featuredPosts = (featuredData as Post[]).filter(
     (post) => post.featured,
   );
@@ -80,14 +65,8 @@ export const Home = () => {
                 overflow="hidden"
                 boxShadow="lg"
                 border="1px solid"
-                borderColor={borderColor}
-                css={{
-                  background: `radial-gradient(ellipse 80% 100% at 50% 40%, 
-                    ${gradientStartColor} 0%,
-                    ${gradientStartColor} 30%,
-                    ${gradientMidColor} 60%,
-                    ${gradientEndColor} 100%)`,
-                }}
+                borderColor="accentBackground"
+                bgColor="accentBackground"
               >
                 <Image
                   src="profile.png"
