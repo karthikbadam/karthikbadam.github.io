@@ -68,7 +68,7 @@ function DashboardContent() {
       pb={2}
     >
       {/* Header */}
-      <Container maxW="100ch" px={4} py={4}>
+      <Container maxW="90ch" px={4} py={4}>
         <Flex mb={2} gap={1} align="end" flexWrap="wrap">
           <Heading as="h1" size="lg" color="accent">
             Transformer Activations
@@ -110,7 +110,7 @@ function DashboardContent() {
               align="center"
               display={{ base: "none", md: "flex" }}
             >
-              <Text color="fg.muted" flexShrink={0} w="70px">
+              <Text color="fg.muted" flexShrink={0} w="60px">
                 Response:
               </Text>
               <Text fontSize="xs" color="fg" truncate>
@@ -123,7 +123,7 @@ function DashboardContent() {
               <Text color="fg.muted" flexShrink={0} w="60px">
                 Metric:
               </Text>
-              <NativeSelect.Root size="xs" variant="outline" maxW="200px">
+              <NativeSelect.Root size="xs" variant="outline">
                 <NativeSelect.Field
                   value={selectedMetric}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>

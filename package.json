@@ -15,7 +15,7 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@chakra-ui/react": "^3.17.0",
+    "@chakra-ui/react": "^3.32.0",
     "@duckdb/duckdb-wasm": "^1.30.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -67,6 +67,7 @@
     "globals": "^16.0.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.26.1",
-    "vite": "^6.3.1"
+    "vite": "^6.3.1",
+    "vite-tsconfig-paths": "^6.1.0"
   }
 }

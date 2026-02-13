@@ -1,38 +1,32 @@
 import { Box, HStack, Text, VStack } from "@chakra-ui/react";
 import * as vg from "@uwdata/vgplot";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTransformer } from "../../../../contexts/TransformerContext";
 import { getMetricInfo } from "../config/metrics";
 import { formatValue } from "../utils/formatting";
 import { PanelContainer } from "../../../../components/PanelContainer";
+import { buildTokenDetailViewQuery } from "../utils/queryBuilders";
 
 /**
  * TokenDetailsPanel - Shows detailed statistics for a selected token
  */
 export function TokenDetailsPanel({ position }: { position: number }) {
-  const { promptTokens, selectedMetric, queryTokenAcrossLayers, coordinator } =
+  const { promptTokens, selectedMetric, coordinator, selectedPromptId } =
     useTransformer();
 
-  const [layerValues, setLayerValues] = useState<number[]>([]);
   const chartRef = useRef<HTMLDivElement>(null);
 
   const token = promptTokens.find((t) => t.position === position);
   const metricInfo = getMetricInfo(selectedMetric);
 
   useEffect(() => {
-    queryTokenAcrossLayers(position, selectedMetric).then(setLayerValues);
-  }, [position, selectedMetric, queryTokenAcrossLayers]);
-
-  useEffect(() => {
-    if (!chartRef.current || !coordinator || layerValues.length === 0) return;
+    if (!chartRef.current || !coordinator || selectedPromptId === null) return;
 
     const viewName = `token_detail_${position}`;
-    const values = layerValues
-      .map((value, layer) => `(${layer}, ${value})`)
-      .join(", ");
-    const createViewSQL = `CREATE OR REPLACE TEMP VIEW ${viewName} AS SELECT * FROM (VALUES ${values}) AS t(layer, value)`;
+    const query = buildTokenDetailViewQuery(viewName, selectedPromptId, position, selectedMetric);
+    if (!query) return;
 
-    coordinator.exec(createViewSQL).then(() => {
+    coordinator.exec(query).then(() => {
       const spec = vg.plot(
         vg.barY(vg.from(viewName), {
           x: "layer",
@@ -54,7 +48,7 @@ export function TokenDetailsPanel({ position }: { position: number }) {
         chartRef.current.appendChild(spec);
       }
     });
-  }, [layerValues, coordinator, position]);
+  }, [position, selectedMetric, coordinator, selectedPromptId]);
 
   return (
     <PanelContainer>

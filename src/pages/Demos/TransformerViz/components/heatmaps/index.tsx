@@ -5,9 +5,7 @@ import {
   MosaicChart,
 } from "../../../../../components/MosaicChart";
 import { useColorModeValue } from "../../../../../components/ui/color-mode";
-import {
-  useTransformer,
-} from "../../../../../contexts/TransformerContext";
+import { useTransformer } from "../../../../../contexts/TransformerContext";
 import {
   createHeatmapView,
   resolveMetricColumn,
@@ -16,7 +14,7 @@ import {
   CELL_CONFIG,
   createChartOptions,
   HEATMAP_CONFIGS,
-  HEATMAP_MARGINS
+  HEATMAP_MARGINS,
 } from "./config";
 import { getMetricCategory, getMetricInfo } from "../../config/metrics";
 
@@ -34,13 +32,8 @@ import { getMetricCategory, getMetricInfo } from "../../config/metrics";
  * - layernorm: Layer normalization metrics
  */
 export function Heatmap() {
-  const {
-    state,
-    coordinator,
-    selectedPromptId,
-    selectedMetric,
-    promptTokens,
-  } = useTransformer();
+  const { state, coordinator, selectedPromptId, selectedMetric, promptTokens } =
+    useTransformer();
   const category = getMetricCategory(selectedMetric);
   const config = HEATMAP_CONFIGS[category as keyof typeof HEATMAP_CONFIGS];
   const metricInfo = getMetricInfo(selectedMetric);
@@ -86,6 +79,7 @@ export function Heatmap() {
         token: "token_text",
         pos: "position",
         metric: "value",
+        layer: "layer",
       };
 
       // Add x-axis attribute to tooltip if it exists
@@ -118,6 +112,7 @@ export function Heatmap() {
               token: true,
               pos: true,
               metric: true,
+              layer: true,
               head: config.xField === "head",
               stage: config.xField === "stage",
               neuron: config.xField === "neuron_rank",
