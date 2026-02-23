@@ -38,7 +38,7 @@ export const Posts = () => {
           {posts.map((post, index) => (
             <Box
               key={index}
-              p={6}
+              p={4}
               borderWidth="1px"
               borderRadius="lg"
               fontSize="sm"
