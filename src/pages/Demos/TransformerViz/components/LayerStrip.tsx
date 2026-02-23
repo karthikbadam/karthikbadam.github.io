@@ -70,10 +70,10 @@ export function LayerStrip() {
                     $layerHighlight.update({ value: [] });
                   }
                 }}
-                bg={isSelected ? "blue.subtle" : "transparent"}
-                _hover={{ bg: isSelected ? "blue.subtle" : "bg.subtle" }}
+                bg={isSelected ? "gray.subtle" : "transparent"}
+                _hover={{ bg: "gray.subtle" }}
                 borderRadius="sm"
-                minW="30px"
+                minW="40px"
                 align="center"
                 transition="all 0.1s"
               >

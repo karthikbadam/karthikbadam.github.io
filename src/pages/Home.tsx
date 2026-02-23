@@ -42,37 +42,44 @@ interface Post {
 
 export const Home = () => {
   const highlightColor = useColorModeValue(accent.light, accent.dark);
+
   const featuredPosts = (featuredData as Post[]).filter(
-    (post) => post.featured
+    (post) => post.featured,
   );
   const restPosts = (featuredData as Post[]).filter((post) => !post.featured);
-  const colorModeImage = useColorModeValue(
-    "/profile-light.jpg",
-    "/profile-dark.jpg"
-  );
 
   return (
     <Page>
-      <Container maxW="container.xl" px={8}>
+      <Container maxW="container.xl">
         <TwoPanelWithScroll
-          leftWidth="360px"
+          leftWidth="320px"
           rightWidth="1fr"
-          gap={{ base: 10, md: 100 }}
+          gap={{ base: 10, md: "120px" }}
         >
           <TwoPanelWithScroll.LeftPanel gap={6}>
             <Stack position="relative" mt={10} mb={6}>
-              <Image
-                src={colorModeImage}
-                alt="Karthik Badam"
+              <Box
+                position="relative"
                 borderRadius="full"
-                width="100%"
-                maxWidth="150px"
-                boxShadow="lg"
-                height="auto"
-                objectFit="cover"
-                transition="transform 0.3s"
-                _hover={{ transform: "scale(1.05)" }}
-              />
+                width="170px"
+                overflow="hidden"
+                border="1px solid"
+                borderColor="gray.border"
+                bgColor="accentBackground"
+              >
+                <Image
+                  src="profile.png"
+                  alt="Karthik Badam"
+                  borderRadius="full"
+                  width="100%"
+                  height="100%"
+                  objectFit="cover"
+                  position="relative"
+                  zIndex={1}
+                  transition="transform 0.3s"
+                  _hover={{ transform: "scale(1.05)" }}
+                />
+              </Box>
             </Stack>
             <Stack gap={4}>
               <Heading
@@ -86,24 +93,24 @@ export const Home = () => {
               >
                 Karthik Badam
               </Heading>
-              <HStack gap={2} wrap="wrap">
-                <Tag.Root>
-                  <Tag.Label>Full-Stack Engineer</Tag.Label>
-                </Tag.Root>
-                <Tag.Root>
-                  <Tag.Label>Machine Learning</Tag.Label>
-                </Tag.Root>
-                <Tag.Root>
-                  <Tag.Label>Apple</Tag.Label>
-                </Tag.Root>
-              </HStack>
               <Text fontSize="sm" color="gray.fg" lineHeight="tall">
-                Full-stack engineer building visualization tools for exploratory
-                data analysis, LLM evaluation, and ML training at Apple.
+                I am a{" "}
+                <Text as="span" color="accent" fontWeight="semibold">
+                  full-stack engineer
+                </Text>{" "}
+                building visualization tools for metrics reporting, LLM
+                evaluation, and ML training data augmentation at{" "}
+                <Text as="span" color="accent" fontWeight="semibold">
+                  Apple.
+                </Text>{" "}
+                I received a Ph.D. in Computer Science from the University of
+                Maryland, College Park, where I published novel research in HCI
+                and ML.
               </Text>
               <Text fontSize="sm">
                 Get in touch:{" "}
                 <Link
+                  fontWeight="medium"
                   href="mailto:karthikbadam7@gmail.com"
                   color="accent"
                   variant="underline"
@@ -114,8 +121,10 @@ export const Home = () => {
             </Stack>
           </TwoPanelWithScroll.LeftPanel>
           <TwoPanelWithScroll.RightPanel py={2}>
-            <Stack gap={4} maxW={{ base: "100%", lg: "76ch" }}>
-              <Heading color="accent">Featured Works</Heading>
+            <Stack gap={2} maxW={{ base: "100%", lg: "76ch" }}>
+              <Heading color="accent" fontWeight="semibold">
+                Featured Explorations
+              </Heading>
               {/* Featured Posts as Large Cards - Side by Side */}
               {featuredPosts.length > 0 && (
                 <Grid
@@ -178,14 +187,14 @@ interface FeaturedPostCardProps {
 const FeaturedPostCard = ({ post }: FeaturedPostCardProps) => {
   const colorModeImage = useColorModeValue(
     post.image && typeof post.image === "object" ? post.image.light : undefined,
-    post.image && typeof post.image === "object" ? post.image.dark : undefined
+    post.image && typeof post.image === "object" ? post.image.dark : undefined,
   );
   const postImage =
     post && typeof post.image === "object"
       ? colorModeImage
       : post && typeof post.image === "string"
-      ? post.image
-      : undefined;
+        ? post.image
+        : undefined;
 
   return (
     <Box>
@@ -230,7 +239,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       <Heading size="sm" fontWeight="medium">
         {post.title}
       </Heading>
-      <Text fontSize="sm" lineClamp={2} color="gray.focusRing">
+      <Text fontSize="sm" lineClamp={3} color="gray.focusRing">
         {post.abstract}
       </Text>
       <HStack gap={2} pt={2}>

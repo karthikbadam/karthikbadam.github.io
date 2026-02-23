@@ -11,6 +11,11 @@ export const accentSubtle = {
   dark: "#E8E0D0",
 };
 
+export const accentBackground = {
+  light: "#F0F5F9", // subtle blue-grey that blends with gradient
+  dark: "#3A332B", // darker for better contrast with person in image
+};
+
 export const theme = defineConfig({
   theme: {
     textStyles,
@@ -21,6 +26,9 @@ export const theme = defineConfig({
         },
         accentSubtle: {
           value: { _light: accentSubtle.light, _dark: accentSubtle.dark },
+        },
+        accentBackground: {
+          value: { _light: accentBackground.light, _dark: accentBackground.dark },
         },
       },
     },
