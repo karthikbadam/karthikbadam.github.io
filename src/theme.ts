@@ -28,7 +28,10 @@ export const theme = defineConfig({
           value: { _light: accentSubtle.light, _dark: accentSubtle.dark },
         },
         accentBackground: {
-          value: { _light: accentBackground.light, _dark: accentBackground.dark },
+          value: {
+            _light: accentBackground.light,
+            _dark: accentBackground.dark,
+          },
         },
       },
     },
