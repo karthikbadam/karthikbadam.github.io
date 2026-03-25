@@ -289,7 +289,7 @@ function DashboardContent() {
       pb={2}
     >
       {/* Header */}
-      <Flex px={4} py={2} gap={4} w="100ch" mx="auto" align="flex-start">
+      <Flex px={4} py={2} gap={4} maxW="100ch" mx="auto" align="flex-start">
         <Box
           as="button"
           onClick={() => {
@@ -381,8 +381,7 @@ function DashboardContent() {
               mb={1}
               px={1}
             >
-              Dataset{" "}
-              {`${datasetFileName} (${threadCountForTitle} threads)`}
+              Dataset {`${datasetFileName} (${threadCountForTitle} threads)`}
               <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
                 {"• "}click a node to inspect
               </Text>
