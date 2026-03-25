@@ -196,7 +196,7 @@ export const EventFeed: React.FC = () => {
         overflowX="hidden"
         onScroll={handleScroll}
         fontFamily="mono"
-        p={4}
+        px={2}
         fontSize="xs"
         lineHeight="1.5"
       >
