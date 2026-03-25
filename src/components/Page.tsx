@@ -8,7 +8,7 @@ interface PageProps {
 
 export const Page = ({ children }: PageProps) => {
   return (
-    <Flex direction="column" height="100vh" width="100%">
+    <Flex direction="column" height="100dvh" width="100%">
       {/* Header */}
       <Box as="header" flex="none">
         <Navbar />
@@ -22,8 +22,8 @@ export const Page = ({ children }: PageProps) => {
       {/* Footer */}
       <Box
         as="footer"
-        py={2}
-        px={{ base: 4, md: 10 }}
+        py={4}
+        px={{ base: 2, md: 6 }}
         borderTop="1px solid"
         borderColor="gray.subtle"
       >
