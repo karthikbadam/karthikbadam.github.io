@@ -46,6 +46,37 @@ function hasExpandableContent(entry: FeedEntry): boolean {
   );
 }
 
+function feedEntryToSelectedNode(entry: FeedEntry): SelectedNode | null {
+  const id = entry.id;
+  if (id.startsWith("ts:")) {
+    return { type: "thread", threadId: id.slice(3) };
+  }
+  if (id.startsWith("tc:")) {
+    return { type: "thread_end", threadId: id.slice(3), threadStatus: "complete" };
+  }
+  if (id.startsWith("tw:")) {
+    return { type: "thread_end", threadId: id.slice(3), threadStatus: "waiting" };
+  }
+  if (id.startsWith("ss:")) {
+    const parts = id.slice(3).split(":");
+    return { type: "step", threadId: parts[0], stepNumber: Number(parts[1]) };
+  }
+  if (id.startsWith("sc:")) {
+    const parts = id.slice(3).split(":");
+    return { type: "step", threadId: parts[0], stepNumber: Number(parts[1]) };
+  }
+  if (id.startsWith("ev:")) {
+    const parts = id.slice(3).split(":");
+    return {
+      type: "event",
+      threadId: parts[0],
+      stepNumber: Number(parts[1]),
+      eventIndex: Number(parts[2]),
+    };
+  }
+  return null;
+}
+
 function selectedNodeToFeedId(node: SelectedNode | null): string | null {
   if (!node) return null;
   switch (node.type) {
@@ -67,13 +98,16 @@ function selectedNodeToFeedId(node: SelectedNode | null): string | null {
 }
 
 export const EventFeed: React.FC = () => {
-  const { state } = useLatentInsights();
+  const { state, selectNode } = useLatentInsights();
   const { feedEntries, session, selectedNode } = state;
 
   const isDark = useColorModeValue(false, true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoScrollRef = useRef(true);
+  const feedInitiatedRef = useRef(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const expandedIdRef = useRef<string | null>(null);
+  expandedIdRef.current = expandedId;
 
   const threadIds = useMemo(() => {
     if (!session?.threads) return [];
@@ -87,23 +121,44 @@ export const EventFeed: React.FC = () => {
   }, [feedEntries.length]);
 
   useEffect(() => {
+    if (feedInitiatedRef.current) {
+      feedInitiatedRef.current = false;
+      return;
+    }
     const targetId = selectedNodeToFeedId(selectedNode);
     if (!targetId) return;
     setExpandedId(targetId);
     autoScrollRef.current = false;
-    setTimeout(() => {
+    const scrollToTarget = () => {
       const container = scrollRef.current;
       if (!container) return;
-      const el = container.querySelector(`[data-entry-id="${targetId}"]`) as HTMLElement | null;
+      const el = container.querySelector(
+        `[data-entry-id="${targetId}"]`
+      ) as HTMLElement | null;
       if (!el) return;
-      const elTop = el.offsetTop;
-      const elH = el.offsetHeight;
-      const containerH = container.clientHeight;
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const targetTop =
+        container.scrollTop +
+        (elRect.top - containerRect.top) -
+        container.clientHeight / 2 +
+        elRect.height / 2;
       container.scrollTo({
-        top: elTop - containerH / 2 + elH / 2,
+        top: Math.max(0, targetTop),
         behavior: "smooth",
       });
-    }, 50);
+      if (el.tabIndex < 0) el.tabIndex = -1;
+      el.focus({ preventScroll: true });
+    };
+
+    const container = scrollRef.current;
+    const feedPanel = container?.closest("[data-feed-panel]") as HTMLElement | null;
+    if (feedPanel) {
+      feedPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    requestAnimationFrame(() => {
+      setTimeout(scrollToTarget, 120);
+    });
   }, [selectedNode]);
 
   const handleScroll = useCallback(() => {
@@ -114,18 +169,31 @@ export const EventFeed: React.FC = () => {
   }, []);
 
   const toggleExpand = useCallback(
-    (id: string) => {
-      setExpandedId((prev) => (prev === id ? null : id));
+    (id: string, entry: FeedEntry) => {
+      feedInitiatedRef.current = true;
+      const prev = expandedIdRef.current;
+      const next = prev === id ? null : id;
+      setExpandedId(next);
+      if (next) {
+        const node = feedEntryToSelectedNode(entry);
+        if (node) selectNode(node);
+      } else {
+        selectNode(null);
+      }
     },
-    []
+    [selectNode]
   );
 
   return (
-    <Flex direction="column" h="100%" overflow="hidden">
+    <Flex direction="column" h="100%" minW={0} maxW="100%" overflow="hidden">
       <Box
         ref={scrollRef}
         flex={1}
+        minW={0}
+        w="100%"
+        maxW="100%"
         overflowY="auto"
+        overflowX="hidden"
         onScroll={handleScroll}
         fontFamily="mono"
         p={4}
@@ -159,7 +227,7 @@ interface FeedRowProps {
   threadIds: string[];
   isDark: boolean;
   isExpanded: boolean;
-  onToggle: (id: string) => void;
+  onToggle: (id: string, entry: FeedEntry) => void;
 }
 
 const FeedRow: React.FC<FeedRowProps> = React.memo(
@@ -177,12 +245,15 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         data-entry-id={entry.id}
         px={1}
         py="2px"
+        minW={0}
+        maxW="100%"
+        w="100%"
         cursor={expandable ? "pointer" : "default"}
         _hover={expandable ? { bg: isDark ? "whiteAlpha.50" : "blackAlpha.50" } : undefined}
         borderRadius="sm"
-        onClick={() => expandable && onToggle(entry.id)}
+        onClick={() => expandable && onToggle(entry.id, entry)}
       >
-        <Flex gap="6px" align="baseline">
+        <Flex gap="6px" align="center" minW={0} w="100%">
           <Text as="span" color={threadColor} flexShrink={0}>
             {entry.thread_id.slice(0, 6)}
           </Text>
@@ -207,9 +278,24 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             </Text>
           )}
           {entry.message && (
-            <Text as="span" color={dimColor} truncate>
-              {entry.message}
-            </Text>
+            <Box
+              flex="1 1 0%"
+              minW={0}
+              maxW="100%"
+              overflow="hidden"
+              title={entry.message}
+            >
+              <Box
+                as="div"
+                color={dimColor}
+                overflow="hidden"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
+                w="100%"
+              >
+                {entry.message}
+              </Box>
+            </Box>
           )}
         </Flex>
 

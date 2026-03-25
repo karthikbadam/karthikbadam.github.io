@@ -1,4 +1,4 @@
-import { Box } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import React, { useMemo, useCallback, useRef, useEffect, useState } from "react";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
@@ -10,7 +10,6 @@ const EVENT_H = 8;
 const EVENT_GAP = 1;
 const EVENT_WIDTH_RATIO = 0.55;
 const THREAD_GAP = 8;
-const SESSION_H = 20;
 const TOP_PAD = 4;
 const MARKER_H = 12;
 
@@ -20,7 +19,15 @@ const MOVE_ABBR: Record<string, string> = {
   FRAME: "FR",
   INTERROGATE: "IN",
   SYNTHESIZE: "SY",
+  ERROR: "ER",
+  UNKNOWN: "??",
 };
+
+function moveAbbr(move: string | undefined): string {
+  if (!move) return "";
+  const upper = move.toUpperCase();
+  return MOVE_ABBR[upper] || upper.slice(0, 2);
+}
 
 export const FlowViz: React.FC = () => {
   const { state, selectNode } = useLatentInsights();
@@ -42,7 +49,6 @@ export const FlowViz: React.FC = () => {
 
   const isDark = useColorModeValue(false, true);
   const textColor = useColorModeValue("#222", "#ddd");
-  const sessionFill = useColorModeValue("#d8d8d8", "#2e2e2e");
   const selectedStroke = useColorModeValue("#000", "#fff");
 
   const stepFill = useCallback(
@@ -92,7 +98,7 @@ export const FlowViz: React.FC = () => {
 
     const columns = threads.map((thread, ti) => {
       const x = ti * (threadW + THREAD_GAP);
-      let y = SESSION_H + TOP_PAD;
+      let y = TOP_PAD;
 
       const startY = y;
       y += MARKER_H + STEP_GAP;
@@ -150,7 +156,7 @@ export const FlowViz: React.FC = () => {
       };
     });
 
-    const svgH = Math.max(maxColH + 8, SESSION_H + 40);
+    const svgH = Math.max(maxColH + 8, 40);
     return { columns, svgW: containerWidth, svgH, threadW };
   }, [session, containerWidth]);
 
@@ -194,29 +200,6 @@ export const FlowViz: React.FC = () => {
         viewBox={`0 0 ${svgW} ${svgH}`}
         style={{ display: "block", background: "transparent", userSelect: "none" }}
       >
-        {/* Session root */}
-        <rect
-          x={0}
-          y={0}
-          width={svgW}
-          height={SESSION_H}
-          fill={sessionFill}
-          rx={2}
-          style={{ cursor: "pointer" }}
-          onClick={() => handleClick({ type: "session" })}
-        />
-        <text
-          x={4}
-          y={SESSION_H / 2}
-          fill={textColor}
-          fontSize={5.5}
-          fontFamily="monospace"
-          dominantBaseline="central"
-          style={{ pointerEvents: "none", opacity: 0.8 }}
-        >
-          {session.dataset_path.split("/").pop()} — {session.threads.length} threads
-        </text>
-
         {/* Thread columns */}
         {columns.map((col) => (
           <g key={col.threadId}>
@@ -257,7 +240,7 @@ export const FlowViz: React.FC = () => {
 
             {col.steps.map((step) => {
               const sel = isSelected("step", col.threadId, step.stepNumber);
-              const abbr = MOVE_ABBR[step.move] || step.move?.slice(0, 2) || "";
+              const abbr = moveAbbr(step.move);
               return (
                 <g key={`s-${step.stepNumber}`}>
                   <rect
@@ -370,6 +353,22 @@ export const FlowViz: React.FC = () => {
           </g>
         ))}
       </svg>
+      <Text
+        fontSize="xs"
+        color="fg.muted"
+        fontFamily="mono"
+        px={1}
+        py={1}
+        lineHeight="1.4"
+        position="sticky"
+        bottom={0}
+        zIndex={1}
+        bg="bg.panel"
+        borderTop="1px solid"
+        borderColor="gray.subtle"
+      >
+        ST Start &nbsp; SC Scope &nbsp; FO Forage &nbsp; FR Frame &nbsp; IN Interrogate &nbsp; SY Synthesize &nbsp; OK Complete &nbsp; WT Waiting &nbsp; ER Error
+      </Text>
     </Box>
   );
 };

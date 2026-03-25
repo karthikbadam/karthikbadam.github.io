@@ -213,14 +213,15 @@ function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
       ? firstEventTs - 0.01
       : new Date(thread.updated_at).getTime() / 1000 - 1000;
 
+    const seed = thread.seed_question ?? "";
     entries.push({
       id: `ts:${thread.id}`,
       event_type: "thread_start",
       thread_id: thread.id,
-      message: thread.seed_question.slice(0, 80),
+      message: seed,
       timestamp: threadStartTs,
       thread_status: thread.status,
-      full_message: thread.seed_question + (thread.motivation ? `\n\n${thread.motivation}` : ""),
+      full_message: seed + (thread.motivation ? `\n\n${thread.motivation}` : ""),
     });
 
     for (const step of thread.steps) {
@@ -247,7 +248,7 @@ function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
             id: `ev:${thread.id}:${step.step_number}:${ei}`,
             event_type: "tool_call",
             thread_id: thread.id,
-            message: evt.duration_ms ? `${evt.duration_ms}ms` : "",
+            message: evt.duration_ms ? `${(evt.duration_ms / 1000).toFixed(1)}s` : "",
             timestamp: evt.timestamp,
             step_number: step.step_number,
             move: step.move,
@@ -280,7 +281,7 @@ function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
           id: `sc:${thread.id}:${step.step_number}`,
           event_type: "step_complete",
           thread_id: thread.id,
-          message: step.result.slice(0, 80),
+          message: step.result,
           timestamp:
             (step.events[step.events.length - 1]?.timestamp || 0) + 0.001,
           step_number: step.step_number,
@@ -311,7 +312,7 @@ function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
         id: `tw:${thread.id}`,
         event_type: "thread_waiting",
         thread_id: thread.id,
-        message: thread.error ? thread.error.slice(0, 80) : "",
+        message: thread.error || thread.running_summary || "",
         timestamp: new Date(thread.updated_at).getTime() / 1000,
         thread_status: "waiting",
         full_message: waitParts.join("\n\n") || undefined,
@@ -329,7 +330,7 @@ interface LatentInsightsContextValue {
   state: LatentInsightsState;
   loadSavedSession: (sessionId: string) => Promise<void>;
   loadLiveSession: (sessionId: string) => Promise<void>;
-  uploadDataset: (file: File) => Promise<void>;
+  uploadDataset: (file: File) => Promise<boolean>;
   replyToThread: (threadId: string, content: string) => Promise<void>;
   selectNode: (node: SelectedNode | null) => void;
   reset: () => void;
@@ -342,6 +343,7 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
   const eventSourceRef = useRef<EventSource | null>(null);
   const seenEventsRef = useRef<Set<string>>(new Set());
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sseEventCountRef = useRef<Map<string, number>>(new Map());
 
   const cleanup = useCallback(() => {
     if (eventSourceRef.current) {
@@ -353,6 +355,7 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
       reconnectTimerRef.current = null;
     }
     seenEventsRef.current.clear();
+    sseEventCountRef.current.clear();
   }, []);
 
   useEffect(() => cleanup, [cleanup]);
@@ -387,31 +390,57 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
               if (seenEventsRef.current.has(dedupeKey)) return;
               seenEventsRef.current.add(dedupeKey);
 
-              dispatch({ type: "SSE_EVENT", event: sseEvent });
-              dispatch({
-                type: "ADD_FEED_ENTRY",
-                entry: {
-                  id: `sse-${Date.now()}-${Math.random()}`,
-                  event_type: eventType,
-                  thread_id: data.thread_id,
-                  message: data.message || "",
-                  timestamp: data.timestamp,
-                  step_number: data.step_number,
-                  move: data.move,
-                  agent: data.agent || undefined,
-                  thread_status:
-                    eventType === "thread_complete" ? "complete"
-                    : eventType === "thread_waiting" ? "waiting"
-                    : "running",
-                  sql: data.sql || undefined,
-                  response: eventType === "llm_call" ? (data.message || undefined) : undefined,
-                  full_message:
-                    eventType === "step_complete" ? (data.result || undefined)
-                    : eventType === "tool_call" ? (data.sql || data.message || undefined)
-                    : eventType === "llm_call" ? (data.message || undefined)
-                    : eventType === "thread_start" ? (data.message || undefined)
-                    : undefined,
-                },
+              let feedId: string;
+              if (eventType === "thread_start") {
+                feedId = `ts:${data.thread_id}`;
+              } else if (eventType === "step_start") {
+                feedId = `ss:${data.thread_id}:${data.step_number}`;
+              } else if (eventType === "step_complete") {
+                feedId = `sc:${data.thread_id}:${data.step_number}`;
+              } else if (eventType === "thread_complete") {
+                feedId = `tc:${data.thread_id}`;
+              } else if (eventType === "thread_waiting") {
+                feedId = `tw:${data.thread_id}`;
+              } else {
+                const stepKey = `${data.thread_id}:${data.step_number ?? "?"}`;
+                const count = sseEventCountRef.current.get(stepKey) ?? 0;
+                sseEventCountRef.current.set(stepKey, count + 1);
+                feedId = `ev:${data.thread_id}:${data.step_number ?? 0}:${count}`;
+              }
+
+              const previewMessage =
+                eventType === "step_complete"
+                  ? String(data.result ?? data.message ?? "")
+                  : eventType === "thread_waiting"
+                    ? String(data.error ?? data.message ?? data.running_summary ?? "")
+                    : String(data.message ?? "");
+
+              const feedEntry: FeedEntry = {
+                id: feedId,
+                event_type: eventType,
+                thread_id: data.thread_id,
+                message: previewMessage,
+                timestamp: data.timestamp,
+                step_number: data.step_number,
+                move: data.move,
+                agent: data.agent || undefined,
+                thread_status:
+                  eventType === "thread_complete" ? "complete"
+                  : eventType === "thread_waiting" ? "waiting"
+                  : "running",
+                sql: data.sql || undefined,
+                response: eventType === "llm_call" ? (data.message || undefined) : undefined,
+                full_message:
+                  eventType === "step_complete" ? (data.result || undefined)
+                  : eventType === "tool_call" ? (data.sql || data.message || undefined)
+                  : eventType === "llm_call" ? (data.message || undefined)
+                  : eventType === "thread_start" ? (data.message || undefined)
+                  : undefined,
+              };
+
+              queueMicrotask(() => {
+                dispatch({ type: "SSE_EVENT", event: sseEvent });
+                dispatch({ type: "ADD_FEED_ENTRY", entry: feedEntry });
               });
 
               backoff = 1000;
@@ -482,9 +511,8 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
   }, [cleanup, connectSSE]);
 
   const uploadDataset = useCallback(
-    async (file: File) => {
+    async (file: File): Promise<boolean> => {
       cleanup();
-      dispatch({ type: "LOAD_START" });
       try {
         const form = new FormData();
         form.append("file", file);
@@ -493,18 +521,18 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
           body: form,
         });
         if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-        const session: SessionResponse = await res.json();
-        dispatch({ type: "LOAD_SESSION", session, mode: "live" });
-        dispatch({ type: "SET_FEED_ENTRIES", entries: [] });
-        connectSSE(session.id);
+        await res.json();
+        dispatch({ type: "RESET" });
+        return true;
       } catch (e) {
         dispatch({
           type: "LOAD_ERROR",
           error: e instanceof Error ? e.message : "Unknown error",
         });
+        return false;
       }
     },
-    [cleanup, connectSSE]
+    [cleanup]
   );
 
   const replyToThread = useCallback(async (threadId: string, content: string) => {

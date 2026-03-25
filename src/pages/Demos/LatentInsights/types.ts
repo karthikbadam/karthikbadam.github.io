@@ -48,7 +48,8 @@ export interface SessionUrls {
 
 export interface SessionResponse {
   id: string;
-  dataset_path: string;
+  /** May be absent on very fresh sessions right after upload */
+  dataset_path?: string | null;
   schema_summary: string | null;
   scout_questions: ScoutQuestion[] | null;
   threads: ThreadResponse[];
