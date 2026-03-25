@@ -4,7 +4,7 @@
       "title": "Latent Insights: Agentic Data Analysis",
       "abstract": "Monitor and interact with a parallel-agent system that explores datasets through coordinated sensemaking loops. Upload a CSV, watch threads investigate questions via SQL and LLM calls, and respond to stuck agents.",
       "link": "/latent-insights",
-      "type": "Interactive Demo",
+      "type": "Framework",
       "date": "March 2026"
     },
     {

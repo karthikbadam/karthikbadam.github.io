@@ -136,6 +136,7 @@ function LandingScreen() {
             gap={1}
             color="fg.muted"
             fontSize="xs"
+            variant="underline"
             fontFamily="mono"
             _hover={{ color: "fg", textDecoration: "none" }}
           >
@@ -289,7 +290,7 @@ function DashboardContent() {
       pb={2}
     >
       {/* Header */}
-      <Flex px={4} py={2} gap={4} maxW="100ch" mx="auto" align="flex-start">
+      <Flex px={4} py={2} gap={6} maxW="100ch" mx="auto" align="flex-start">
         <Box
           as="button"
           onClick={() => {
@@ -331,18 +332,11 @@ function DashboardContent() {
             step-level traces, and inline observation feeds.{" "}
             <Link
               href="https://github.com/karthikbadam/latent-insights-service"
+              variant="underline"
               target="_blank"
               rel="noopener noreferrer"
               display="inline-flex"
-              alignItems="center"
               gap={1}
-              border="1px solid"
-              borderColor="gray.focusRing"
-              borderRadius="sm"
-              px={2}
-              as="span"
-              ml={2}
-              whiteSpace="nowrap"
               color="fg.muted"
               fontSize="xs"
               fontFamily="mono"
@@ -376,10 +370,9 @@ function DashboardContent() {
           >
             <Text
               fontSize="xs"
-              fontWeight="semibold"
+              fontWeight="medium"
               color="accentSubtle"
-              mb={1}
-              px={1}
+              mb={2}
             >
               Dataset {`${datasetFileName} (${threadCountForTitle} threads)`}
               <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
@@ -402,13 +395,13 @@ function DashboardContent() {
           >
             <Text
               fontSize="xs"
-              fontWeight="semibold"
+              fontWeight="medium"
               color="accentSubtle"
-              mb={0}
-              px={3}
+              mb={2}
+              px={2}
               pt={2}
             >
-              Feed of Observations
+              Feed of agent actions across threads
               <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
                 {"• "}click a row to expand
               </Text>

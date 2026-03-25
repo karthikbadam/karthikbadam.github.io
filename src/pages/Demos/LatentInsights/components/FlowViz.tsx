@@ -4,14 +4,14 @@ import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { SelectedNode } from "../types";
 
-const STEP_H = 14;
+const STEP_H = 20;
 const STEP_GAP = 2;
 const EVENT_H = 8;
-const EVENT_GAP = 1;
-const EVENT_WIDTH_RATIO = 0.55;
-const THREAD_GAP = 8;
+const EVENT_GAP = 2;
+const EVENT_WIDTH_RATIO = 0.5;
+const THREAD_GAP = 10;
 const TOP_PAD = 4;
-const MARKER_H = 12;
+const MARKER_H = 20;
 
 const MOVE_ABBR: Record<string, string> = {
   SCOPE: "SC",
@@ -48,7 +48,7 @@ export const FlowViz: React.FC = () => {
   }, []);
 
   const isDark = useColorModeValue(false, true);
-  const textColor = useColorModeValue("#222", "#ddd");
+  const textColor = useColorModeValue("#000", "#fff");
   const selectedStroke = useColorModeValue("#000", "#fff");
 
   const stepFill = useCallback(
