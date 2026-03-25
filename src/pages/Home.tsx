@@ -52,16 +52,16 @@ export const Home = () => {
     <Page>
       <Container maxW="container.xl">
         <TwoPanelWithScroll
-          leftWidth="320px"
+          leftWidth="310px"
           rightWidth="1fr"
-          gap={{ base: 10, md: "120px" }}
+          gap={{ base: 10, md: "100px" }}
         >
           <TwoPanelWithScroll.LeftPanel gap={6}>
-            <Stack position="relative" mt={10} mb={6}>
+            <Stack position="relative" mt={{ base: 6, md: "60px" }} mb={4}>
               <Box
                 position="relative"
                 borderRadius="full"
-                width="170px"
+                width="140px"
                 overflow="hidden"
                 border="1px solid"
                 borderColor="gray.border"
@@ -99,7 +99,7 @@ export const Home = () => {
                   full-stack engineer
                 </Text>{" "}
                 building visualization tools for metrics reporting, LLM
-                evaluation, and ML training data augmentation at{" "}
+                evaluation, and ML training data curation at{" "}
                 <Text as="span" color="accent" fontWeight="semibold">
                   Apple.
                 </Text>{" "}
@@ -121,9 +121,9 @@ export const Home = () => {
             </Stack>
           </TwoPanelWithScroll.LeftPanel>
           <TwoPanelWithScroll.RightPanel py={2}>
-            <Stack gap={2} maxW={{ base: "100%", lg: "76ch" }}>
+            <Stack gap={2} maxW={{ base: "100%", lg: "80ch" }} pr={4}>
               <Heading color="accent" fontWeight="semibold">
-                Featured Explorations
+                Explorations
               </Heading>
               {/* Featured Posts as Large Cards - Side by Side */}
               {featuredPosts.length > 0 && (
@@ -132,7 +132,7 @@ export const Home = () => {
                     base: "1fr",
                     md: featuredPosts.length === 1 ? "1fr" : "1fr 1fr",
                   }}
-                  gap={6}
+                  gap={4}
                 >
                   {featuredPosts.map((post, index) => (
                     <FeaturedPostCard key={index} post={post} />
@@ -147,7 +147,8 @@ export const Home = () => {
                     base: "1fr",
                     md: "1fr 1fr",
                   }}
-                  gap={6}
+                  gap={4}
+                  mt={2}
                 >
                   {restPosts.map((post, index) => (
                     <Box key={index}>
@@ -239,7 +240,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       <Heading size="sm" fontWeight="medium">
         {post.title}
       </Heading>
-      <Text fontSize="sm" lineClamp={3} color="gray.focusRing">
+      <Text fontSize="sm" lineClamp={3} color="fg.muted">
         {post.abstract}
       </Text>
       <HStack gap={2} pt={2}>
@@ -281,7 +282,7 @@ const PostCard = ({ post }: PostCardProps) => (
       <Heading size="sm" fontWeight="medium">
         {post.title}
       </Heading>
-      <Text color="gray.focusRing" fontSize="sm" lineClamp={2}>
+      <Text color="fg.muted" fontSize="sm" lineClamp={2}>
         {post.abstract}
       </Text>
       <HStack gap={2} pt={2}>
