@@ -10,7 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
-import postsData from "../data/posts.json";
+import postsData from "../data/explorations.json";
 
 interface Post {
   title: string;
@@ -18,23 +18,47 @@ interface Post {
   abstract: string;
   link: string;
   video?: string;
+  linkLabel?: string;
+  github?: string;
 }
 
-export const Posts = () => {
-  const { posts } = postsData as { posts: Post[] };
+const outlineBtnProps = {
+  size: "sm" as const,
+  variant: "outline" as const,
+  color: "accent" as const,
+  borderColor: "accent",
+  _hover: { bg: "accentSubtle", color: "gray.contrast" },
+};
 
-  // Helper function to determine if a link is internal or external
-  const isInternalLink = (url: string): boolean => {
-    return (
-      Boolean(url) && !url.startsWith("http") && !url.startsWith("mailto:")
-    );
-  };
+function primaryButtonLabel(link: string, linkLabel?: string): string {
+  if (linkLabel) return linkLabel;
+  if (link.startsWith("mailto:")) return "Visit";
+  if (link.startsWith("http")) {
+    try {
+      const host = new URL(link).hostname;
+      if (host === "karthikbadam.github.io") return "Live Demo";
+    } catch {
+      /* ignore invalid URL */
+    }
+    return "Visit";
+  }
+  return "Live Demo";
+}
+
+function isInternalLink(url: string): boolean {
+  return (
+    Boolean(url) && !url.startsWith("http") && !url.startsWith("mailto:")
+  );
+}
+
+export const Explorations = () => {
+  const { posts } = postsData as { posts: Post[] };
 
   return (
     <Page>
       <Container maxW="100ch" pb={4}>
         <VStack gap={4} align="stretch">
-          <Heading color="accent">Posts</Heading>
+          <Heading color="accent">Explorations</Heading>
           {posts.map((post, index) => (
             <Box
               key={index}
@@ -50,17 +74,11 @@ export const Posts = () => {
                 {post.date}
               </Text>
               <Text mt={2}>{post.abstract}</Text>
-              <HStack mt={2} gap={4}>
+              <HStack mt={2} gap={4} flexWrap="wrap">
                 {isInternalLink(post.link) ? (
                   <RouterLink to={post.link}>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      color="accent"
-                      borderColor="accent"
-                      _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
-                    >
-                      Read More
+                    <Button {...outlineBtnProps}>
+                      {primaryButtonLabel(post.link, post.linkLabel)}
                     </Button>
                   </RouterLink>
                 ) : (
@@ -69,15 +87,18 @@ export const Posts = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      color="accent"
-                      borderColor="accent"
-                      _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
-                    >
-                      Read More
+                    <Button {...outlineBtnProps}>
+                      {primaryButtonLabel(post.link, post.linkLabel)}
                     </Button>
+                  </ChakraLink>
+                )}
+                {post.github && (
+                  <ChakraLink
+                    href={post.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button {...outlineBtnProps}>GitHub Source</Button>
                   </ChakraLink>
                 )}
                 {post.video && (
@@ -86,15 +107,7 @@ export const Posts = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      color="accent"
-                      borderColor="accent"
-                      _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
-                    >
-                      Watch Video
-                    </Button>
+                    <Button {...outlineBtnProps}>Watch Video</Button>
                   </ChakraLink>
                 )}
               </HStack>
