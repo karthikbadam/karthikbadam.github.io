@@ -286,7 +286,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
           </Text>
         )}
       </Heading>
-      <Text fontSize="xs" lineClamp={4} color="fg.muted">
+      <Text fontSize="xs" lineClamp={3} color="fg.muted">
         {post.abstract}
       </Text>
     </Stack>
