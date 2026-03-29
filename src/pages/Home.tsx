@@ -128,7 +128,7 @@ export const Home = () => {
               </Box>
             </Stack>
             <Stack gap={4}>
-              <Heading fontWeight="semibold" size="2xl">
+              <Heading fontWeight="medium" size="2xl">
                 Karthik Badam
               </Heading>
               <Text fontSize="sm" color="gray.fg" lineHeight="tall">
@@ -174,7 +174,7 @@ export const Home = () => {
               </HStack>
             </Stack>
           </TwoPanelWithScroll.LeftPanel>
-          <TwoPanelWithScroll.RightPanel py={2}>
+          <TwoPanelWithScroll.RightPanel py={4}>
             <Stack
               gap={2}
               maxW={{ base: "100%", lg: "80ch" }}

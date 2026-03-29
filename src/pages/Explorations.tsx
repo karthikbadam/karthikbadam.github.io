@@ -46,9 +46,7 @@ function primaryButtonLabel(link: string, linkLabel?: string): string {
 }
 
 function isInternalLink(url: string): boolean {
-  return (
-    Boolean(url) && !url.startsWith("http") && !url.startsWith("mailto:")
-  );
+  return Boolean(url) && !url.startsWith("http") && !url.startsWith("mailto:");
 }
 
 export const Explorations = () => {
@@ -56,7 +54,7 @@ export const Explorations = () => {
 
   return (
     <Page>
-      <Container maxW="100ch" pb={4}>
+      <Container maxW="100ch" py={4}>
         <VStack gap={4} align="stretch">
           <Heading color="accent">Explorations</Heading>
           {posts.map((post, index) => (
