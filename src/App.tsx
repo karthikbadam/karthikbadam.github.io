@@ -1,10 +1,16 @@
 import { useEffect } from "react";
-import { HashRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import {
+  HashRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import { BlogPost } from "./pages/BlogPost";
 import { Provider } from "./components/ui/provider";
 import { Home } from "./pages/Home";
 import { About } from "./pages/About";
-import { Posts } from "./pages/Posts";
+import { Explorations } from "./pages/Explorations";
 import { Publications } from "./pages/Publications";
 import { PackedRadialTreeDemo } from "./pages/Demos/PRT";
 import { SWEBenchDashboard } from "./pages/Demos/SWEBenchDashboard";
@@ -36,7 +42,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/publications" element={<Publications />} />
-          <Route path="/posts" element={<Posts />} />
+          <Route path="/explorations" element={<Explorations />} />
+          <Route path="/posts" element={<Navigate to="/explorations" replace />} />
           <Route path="/about" element={<About />} />
           <Route path="/packed-radial-tree" element={<PackedRadialTreeDemo />} />
           <Route path="/swe-bench" element={<SWEBenchDashboard />} />

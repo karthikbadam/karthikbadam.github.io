@@ -44,7 +44,7 @@ export const About = () => {
             </Text>
             <Text fontSize="md" mb={4}>
               Get in touch:{" "}
-              <Link href="mailto:karthikbadam7@gmail.com" color="accent">
+              <Link href="mailto:karthikbadam7@gmail.com" color="accent" variant='underline'>
                 karthikbadam7@gmail.com
               </Link>
             </Text>

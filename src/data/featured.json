@@ -15,6 +15,21 @@
     "featured": true
   },
   {
+    "title": "AnyTable",
+    "abstract": "A headless, virtualized React table for large datasets. DuckDB-WASM powers in-browser querying with Mosaic coordination, so tables stay visualization-friendly and composable without a monolithic config surface.",
+    "link": "https://karthikbadam.github.io/any_table/",
+    "image": {
+      "dark": "anytable-dark.png",
+      "light": "anytable-light.png"
+    },
+    "type": "Framework",
+    "date": {
+      "month": "February",
+      "year": 2026
+    },
+    "featured": true
+  },
+  {
     "title": "Interpret Language Model Activations",
     "abstract": "Interpretability of activations in SmolLM3-3B. Explore attention, contribution, hidden state, MLP metrics, and layer norms through heatmaps. Select prompts, switch metrics, and inspect token- and layer-level details to understand how the model processes text.",
     "link": "/transformer",
@@ -87,8 +102,7 @@
     "date": {
       "month": "April",
       "year": 2025
-    },
-    "featured": true
+    }
   },
 
   {

@@ -34,12 +34,12 @@ export const Navbar = () => {
           Home
         </Link>
         <Flex gap={{ base: 4, md: 8 }} alignItems="center">
-          <Link to="/publications" style={getLinkStyle("/publications")}>
-            Publications
+          <Link to="/explorations" style={getLinkStyle("/explorations")}>
+            Explorations
           </Link>
 
-          <Link to="/posts" style={getLinkStyle("/posts")}>
-            Posts
+          <Link to="/publications" style={getLinkStyle("/publications")}>
+            Publications
           </Link>
 
           <Link to="/about" style={getLinkStyle("/about")}>

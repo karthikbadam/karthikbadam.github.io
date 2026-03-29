@@ -1,17 +1,23 @@
 import { Box, Text } from "@chakra-ui/react";
-import React, { useMemo, useCallback, useRef, useEffect, useState } from "react";
+import React, {
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+  useState,
+} from "react";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { SelectedNode } from "../types";
 
-const STEP_H = 20;
+const STEP_H = 16;
 const STEP_GAP = 2;
 const EVENT_H = 8;
 const EVENT_GAP = 2;
-const EVENT_WIDTH_RATIO = 0.5;
-const THREAD_GAP = 10;
+const EVENT_WIDTH_RATIO = 0.55;
+const THREAD_GAP = 16;
 const TOP_PAD = 4;
-const MARKER_H = 20;
+const MARKER_H = 16;
 
 const MOVE_ABBR: Record<string, string> = {
   SCOPE: "SC",
@@ -58,31 +64,60 @@ export const FlowViz: React.FC = () => {
       if (status === "running") return isDark ? "#4a4a4a" : "#ccc";
       return isDark ? "#505050" : "#bbb";
     },
-    [isDark]
+    [isDark],
   );
 
   const markerFill = useCallback(
     (status: string, isEnd: boolean) => {
-      if (status === "waiting") return isDark ? (isEnd ? "#3a4a5a" : "#344858") : (isEnd ? "#d0dae8" : "#dce4f0");
-      if (status === "error") return isDark ? (isEnd ? "#6a3a3a" : "#583434") : (isEnd ? "#e0c0c0" : "#ecd4d4");
-      if (status === "complete") return isDark ? (isEnd ? "#4a6a4a" : "#3e5a3e") : (isEnd ? "#b0d0b0" : "#c4dcc4");
-      return isDark ? (isEnd ? "#4a4a4a" : "#444") : (isEnd ? "#ccc" : "#d4d4d4");
+      if (status === "waiting")
+        return isDark
+          ? isEnd
+            ? "#3a4a5a"
+            : "#344858"
+          : isEnd
+            ? "#d0dae8"
+            : "#dce4f0";
+      if (status === "error")
+        return isDark
+          ? isEnd
+            ? "#6a3a3a"
+            : "#583434"
+          : isEnd
+            ? "#e0c0c0"
+            : "#ecd4d4";
+      if (status === "complete")
+        return isDark
+          ? isEnd
+            ? "#4a6a4a"
+            : "#3e5a3e"
+          : isEnd
+            ? "#b0d0b0"
+            : "#c4dcc4";
+      return isDark ? (isEnd ? "#4a4a4a" : "#444") : isEnd ? "#ccc" : "#d4d4d4";
     },
-    [isDark]
+    [isDark],
   );
 
   const eventFill = useCallback(
     (evtType: string, threadStatus: string) => {
       if (threadStatus === "waiting") {
         return evtType === "tool_call"
-          ? isDark ? "#4a5a6a" : "#c0d0e0"
-          : isDark ? "#3a4a58" : "#d0d8e8";
+          ? isDark
+            ? "#4a5a6a"
+            : "#c0d0e0"
+          : isDark
+            ? "#3a4a58"
+            : "#d0d8e8";
       }
       return evtType === "tool_call"
-        ? isDark ? "#666" : "#a8a8a8"
-        : isDark ? "#5a5a5a" : "#b8b8b8";
+        ? isDark
+          ? "#666"
+          : "#a8a8a8"
+        : isDark
+          ? "#5a5a5a"
+          : "#b8b8b8";
     },
-    [isDark]
+    [isDark],
   );
 
   const layout = useMemo(() => {
@@ -164,11 +199,16 @@ export const FlowViz: React.FC = () => {
     (node: SelectedNode) => {
       selectNode(node);
     },
-    [selectNode]
+    [selectNode],
   );
 
   const isSelected = useCallback(
-    (type: string, threadId?: string, stepNumber?: number, eventIndex?: number): boolean => {
+    (
+      type: string,
+      threadId?: string,
+      stepNumber?: number,
+      eventIndex?: number,
+    ): boolean => {
       if (!selectedNode) return false;
       if (selectedNode.type !== type) return false;
       if (type === "session") return true;
@@ -178,7 +218,7 @@ export const FlowViz: React.FC = () => {
       if (type === "step") return true;
       return selectedNode.eventIndex === eventIndex;
     },
-    [selectedNode]
+    [selectedNode],
   );
 
   if (!session || !layout) return null;
@@ -186,7 +226,14 @@ export const FlowViz: React.FC = () => {
   const { columns, svgW, svgH } = layout;
 
   return (
-    <Box ref={containerRef} position="relative" w="100%" h="100%" overflow="auto">
+    <Box
+      ref={containerRef}
+      position="relative"
+      w="100%"
+      h="100%"
+      overflow="auto"
+      px={2}
+    >
       <style>{`
         @keyframes flow-pulse {
           0%, 100% { opacity: 1; }
@@ -198,7 +245,11 @@ export const FlowViz: React.FC = () => {
         width={svgW}
         height={svgH}
         viewBox={`0 0 ${svgW} ${svgH}`}
-        style={{ display: "block", background: "transparent", userSelect: "none" }}
+        style={{
+          display: "block",
+          background: "transparent",
+          userSelect: "none",
+        }}
       >
         {/* Thread columns */}
         {columns.map((col) => (
@@ -218,18 +269,22 @@ export const FlowViz: React.FC = () => {
                     stroke={startSel ? selectedStroke : "none"}
                     strokeWidth={startSel ? 1.5 : 0}
                     style={{ cursor: "pointer" }}
-                    onClick={() => handleClick({ type: "thread", threadId: col.threadId })}
+                    onClick={() =>
+                      handleClick({ type: "thread", threadId: col.threadId })
+                    }
                   />
                   {col.w > 14 && (
                     <text
                       x={col.x + col.w / 2}
                       y={col.startY + MARKER_H / 2}
                       fill={textColor}
-                      fontSize={5}
                       fontFamily="monospace"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      style={{ pointerEvents: "none", opacity: 0.7 }}
+                      style={{
+                        pointerEvents: "none",
+                        fontSize: 12,
+                      }}
                     >
                       ST
                     </text>
@@ -252,7 +307,9 @@ export const FlowViz: React.FC = () => {
                     rx={1}
                     stroke={sel ? selectedStroke : "none"}
                     strokeWidth={sel ? 1.5 : 0}
-                    className={step.status === "running" ? "flow-pulse" : undefined}
+                    className={
+                      step.status === "running" ? "flow-pulse" : undefined
+                    }
                     style={{ cursor: "pointer" }}
                     onClick={() =>
                       handleClick({
@@ -267,11 +324,13 @@ export const FlowViz: React.FC = () => {
                       x={step.x + step.w / 2}
                       y={step.y + step.h / 2}
                       fill={textColor}
-                      fontSize={5}
                       fontFamily="monospace"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      style={{ pointerEvents: "none", opacity: 0.7 }}
+                      style={{
+                        pointerEvents: "none",
+                        fontSize: 12,
+                      }}
                     >
                       {abbr}
                     </text>
@@ -283,7 +342,7 @@ export const FlowViz: React.FC = () => {
                       "event",
                       col.threadId,
                       step.stepNumber,
-                      evt.eventIndex
+                      evt.eventIndex,
                     );
                     return (
                       <rect
@@ -313,43 +372,54 @@ export const FlowViz: React.FC = () => {
             })}
 
             {/* Thread end marker (hidden for running threads) */}
-            {col.showEnd && (() => {
-              const endSel = isSelected("thread_end", col.threadId);
-              const endLabel = col.status === "complete" ? "OK"
-                : col.status === "waiting" ? "WT"
-                : col.status === "error" ? "ER"
-                : col.status.slice(0, 2).toUpperCase();
-              return (
-                <>
-                  <rect
-                    x={col.x}
-                    y={col.endY}
-                    width={col.w}
-                    height={MARKER_H}
-                    fill={markerFill(col.status, true)}
-                    rx={1}
-                    stroke={endSel ? selectedStroke : "none"}
-                    strokeWidth={endSel ? 1.5 : 0}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleClick({ type: "thread_end", threadId: col.threadId, threadStatus: col.status })}
-                  />
-                  {col.w > 14 && (
-                    <text
-                      x={col.x + col.w / 2}
-                      y={col.endY + MARKER_H / 2}
-                      fill={textColor}
-                      fontSize={5}
-                      fontFamily="monospace"
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      style={{ pointerEvents: "none", opacity: 0.7 }}
-                    >
-                      {endLabel}
-                    </text>
-                  )}
-                </>
-              );
-            })()}
+            {col.showEnd &&
+              (() => {
+                const endSel = isSelected("thread_end", col.threadId);
+                const endLabel =
+                  col.status === "complete"
+                    ? "OK"
+                    : col.status === "waiting"
+                      ? "WT"
+                      : col.status === "error"
+                        ? "ER"
+                        : col.status.slice(0, 2).toUpperCase();
+                return (
+                  <>
+                    <rect
+                      x={col.x}
+                      y={col.endY}
+                      width={col.w}
+                      height={MARKER_H}
+                      fill={markerFill(col.status, true)}
+                      rx={1}
+                      stroke={endSel ? selectedStroke : "none"}
+                      strokeWidth={endSel ? 1.5 : 0}
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        handleClick({
+                          type: "thread_end",
+                          threadId: col.threadId,
+                          threadStatus: col.status,
+                        })
+                      }
+                    />
+                    {col.w > 14 && (
+                      <text
+                        x={col.x + col.w / 2}
+                        y={col.endY + MARKER_H / 2}
+                        fill={textColor}
+                        fontSize={5}
+                        fontFamily="monospace"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        style={{ pointerEvents: "none", fontSize: 12 }}
+                      >
+                        {endLabel}
+                      </text>
+                    )}
+                  </>
+                );
+              })()}
           </g>
         ))}
       </svg>
@@ -367,7 +437,9 @@ export const FlowViz: React.FC = () => {
         borderTop="1px solid"
         borderColor="gray.subtle"
       >
-        ST Start &nbsp; SC Scope &nbsp; FO Forage &nbsp; FR Frame &nbsp; IN Interrogate &nbsp; SY Synthesize &nbsp; OK Complete &nbsp; WT Waiting &nbsp; ER Error
+        ST Start &nbsp; SC Scope &nbsp; FO Forage &nbsp; FR Frame &nbsp; IN
+        Interrogate &nbsp; SY Synthesize &nbsp; OK Complete &nbsp; WT Waiting
+        &nbsp; ER Error
       </Text>
     </Box>
   );

@@ -4,8 +4,17 @@
       "title": "Latent Insights: Agentic Data Analysis",
       "abstract": "Monitor and interact with a parallel-agent system that explores datasets through coordinated sensemaking loops. Upload a CSV, watch threads investigate questions via SQL and LLM calls, and respond to stuck agents.",
       "link": "/latent-insights",
+      "github": "https://github.com/karthikbadam/latent-insights-service",
       "type": "Framework",
       "date": "March 2026"
+    },
+    {
+      "title": "AnyTable",
+      "abstract": "A headless, virtualized React table for large datasets. DuckDB-WASM powers in-browser querying with Mosaic coordination, so tables stay visualization-friendly and composable without a monolithic config surface.",
+      "link": "https://karthikbadam.github.io/any_table/",
+      "github": "https://github.com/karthikbadam/any_table",
+      "type": "Framework",
+      "date": "February 2026"
     },
     {
       "title": "Interpret Language Model Activations",
