@@ -9,6 +9,7 @@ import {
   Image,
   Link,
   Stack,
+  Tag,
   Text,
 } from "@chakra-ui/react";
 import type { ComponentProps, ReactNode } from "react";
@@ -39,6 +40,7 @@ interface Post {
     year: number;
   };
   featured?: boolean;
+  tags?: string[];
 }
 
 const SOCIAL_ICON_SIZE = 14;
@@ -132,7 +134,7 @@ export const Home = () => {
                 Karthik Badam
               </Heading>
               <Text fontSize="sm" color="gray.fg" lineHeight="tall">
-                I am a{" "}
+                I am a staff-level{" "}
                 <Text as="span" color="accent" fontWeight="semibold">
                   full-stack engineer
                 </Text>{" "}
@@ -142,8 +144,8 @@ export const Home = () => {
                   Apple.
                 </Text>{" "}
                 I received a Ph.D. in Computer Science from the University of
-                Maryland, College Park, where I published novel research in HCI
-                and ML.
+                Maryland, College Park, where I published novel research in HCI,
+                Data Visualization, and ML.
               </Text>
               <HStack gap={2} pt={1} align="center">
                 <SocialExpandLink
@@ -289,6 +291,15 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       <Text fontSize="xs" lineClamp={3} color="fg.muted">
         {post.abstract}
       </Text>
+      {post.tags && post.tags.length > 0 && (
+        <HStack gap={1.5} flexWrap="wrap" pt={1}>
+          {post.tags.map((tag, i) => (
+            <Tag.Root key={`${tag}-${i}`} size="sm" variant="subtle">
+              <Tag.Label>{tag}</Tag.Label>
+            </Tag.Root>
+          ))}
+        </HStack>
+      )}
     </Stack>
   </Stack>
 );
