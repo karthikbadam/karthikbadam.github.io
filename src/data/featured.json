@@ -12,7 +12,8 @@
       "month": "March",
       "year": 2026
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Python Framework", "Agents", "Human-in-the-Loop"]
   },
   {
     "title": "AnyTable",
@@ -27,7 +28,8 @@
       "month": "February",
       "year": 2026
     },
-    "featured": true
+    "featured": true,
+    "tags": ["TypeScript Framework", "React", "DuckDB", "Mosaic"]
   },
   {
     "title": "Interpret Language Model Activations",
@@ -42,7 +44,8 @@
       "month": "January",
       "year": 2026
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Interactive Demo", "ML", "Interpretability", "Transformer"]
   },
   {
     "title": "Navigate the Gaia Star Catalog",
@@ -57,7 +60,8 @@
       "month": "December",
       "year": 2025
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Interactive Demo", "Astronomy", "Gaia", "Visualization"]
   },
   {
     "title": "Visualize ML Traces from SWE-Bench",
@@ -73,7 +77,8 @@
       "month": "November",
       "year": 2025
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Interactive Demo", "OpenTelemetry", "Agents", "Traces"]
   },
   {
     "title": "Explore Astronomy Concepts",
@@ -88,7 +93,8 @@
       "month": "May",
       "year": 2025
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Interactive Demo", "Hierarchy", "Radial Visualization"]
   },
   {
     "title": "Understand Embeddings Through Epic Fantasy",
