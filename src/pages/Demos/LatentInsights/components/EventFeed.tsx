@@ -31,8 +31,8 @@ const TYPE_LABELS: Record<string, string> = {
   llm_call: "llm",
   tool_call: "sql",
   step_complete: "done",
-  thread_complete: "fin",
-  thread_waiting: "wait",
+  thread_complete: "finished",
+  thread_waiting: "waiting for input",
 };
 
 function hasExpandableContent(entry: FeedEntry): boolean {
@@ -255,11 +255,11 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
       >
         <Flex gap="6px" align="center" minW={0} w="100%">
           <Text as="span" color={threadColor} flexShrink={0}>
-            {entry.thread_id.slice(0, 6)}
+            thread {entry.thread_id.slice(0, 6)}
           </Text>
           {entry.step_number !== undefined && (
             <Text as="span" color={dimColor} flexShrink={0}>
-              s{entry.step_number}
+              step {entry.step_number}
             </Text>
           )}
           {entry.move && (
@@ -277,7 +277,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
               {typeLabel}
             </Text>
           )}
-          {entry.message && (
+          {!isExpanded && entry.message && (
             <Box
               flex="1 1 0%"
               minW={0}
