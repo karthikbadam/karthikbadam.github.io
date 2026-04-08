@@ -3,43 +3,11 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { LuChevronDown, LuSend } from "react-icons/lu";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { CommandMode, ExplorationPattern } from "../types";
-
-const MODE_CONFIG: Record<
-  CommandMode,
-  { label: string; placeholder: string; description: string }
-> = {
-  ask: {
-    label: "Ask",
-    placeholder: "Ask a new question to start a thread…",
-    description: "Creates a new analysis thread",
-  },
-  broadcast: {
-    label: "Broadcast",
-    placeholder: "Send a message to all active threads…",
-    description: "Message all threads at once",
-  },
-  direct: {
-    label: "Direct",
-    placeholder: "Send direction to selected thread…",
-    description: "Message a specific thread",
-  },
-  pattern: {
-    label: "Pattern",
-    placeholder: "Select a pattern below…",
-    description: "Switch exploration pattern",
-  },
-  continue: {
-    label: "Continue",
-    placeholder: "Press Enter to resume stuck threads…",
-    description: "Resume waiting/stuck threads",
-  },
-};
-
-const PATTERNS: { value: ExplorationPattern; label: string; description: string }[] = [
-  { value: "coordinator_worker", label: "Coordinator-Worker", description: "Standard sequential analysis" },
-  { value: "fan_out", label: "Fan Out", description: "Parallel exploration branches" },
-  { value: "human_in_the_loop", label: "Human in the Loop", description: "Interactive guided analysis" },
-];
+import {
+  MODE_CONFIG,
+  PATTERN_OPTIONS,
+  THREAD_ID_PREVIEW_LENGTH,
+} from "../config";
 
 interface CommandBarProps {
   sessionId: string;
@@ -190,7 +158,7 @@ export const CommandBar: React.FC<CommandBarProps> = ({
               {cfg.label}
               {mode === "direct" && selectedThreadId && (
                 <Text as="span" fontWeight="normal" color="fg.muted">
-                  {selectedThreadId.slice(0, 6)}
+                  {selectedThreadId.slice(0, THREAD_ID_PREVIEW_LENGTH)}
                 </Text>
               )}
               <LuChevronDown size={10} />
@@ -223,7 +191,6 @@ export const CommandBar: React.FC<CommandBarProps> = ({
                     fontSize="xs"
                     fontFamily="mono"
                     cursor="pointer"
-                    bg={m === mode ? (undefined) : undefined}
                     fontWeight={m === mode ? "bold" : "normal"}
                     color={m === mode ? "fg" : "fg.muted"}
                     _hover={{ bg: "whiteAlpha.100" }}
@@ -251,7 +218,7 @@ export const CommandBar: React.FC<CommandBarProps> = ({
               px={3}
               placeholder={
                 mode === "direct" && selectedThreadId
-                  ? `Direct thread ${selectedThreadId.slice(0, 8)}…`
+                  ? `Direct thread ${selectedThreadId.slice(0, 8)}\u2026`
                   : cfg.placeholder
               }
               value={value}
@@ -268,7 +235,7 @@ export const CommandBar: React.FC<CommandBarProps> = ({
           {/* Pattern selector (shown only in pattern mode) */}
           {mode === "pattern" && (
             <Flex flex={1} align="center" gap={2} px={3}>
-              {PATTERNS.map((p) => (
+              {PATTERN_OPTIONS.map((p) => (
                 <Box
                   key={p.value}
                   as="button"

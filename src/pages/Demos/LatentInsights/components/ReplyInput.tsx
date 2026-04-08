@@ -1,19 +1,20 @@
 import { Box, Input, Text } from "@chakra-ui/react";
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
+import { THREAD_ID_PREVIEW_LENGTH } from "../config";
 
 interface ReplyInputProps {
   threadId: string;
-  onClose: () => void;
   label?: string;
   placeholder?: string;
+  onClose: () => void;
 }
 
 export const ReplyInput: React.FC<ReplyInputProps> = ({
   threadId,
-  onClose,
   label,
   placeholder,
+  onClose,
 }) => {
   const { replyToThread } = useLatentInsights();
   const [value, setValue] = useState("");
@@ -61,7 +62,7 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({
       borderColor="gray.subtle"
     >
       <Text fontSize="xs" color="fg.muted" mb={1} fontFamily="mono">
-        {label || `Reply to thread ${threadId.slice(0, 8)}…`}
+        {label || `Reply to thread ${threadId.slice(0, THREAD_ID_PREVIEW_LENGTH)}\u2026`}
       </Text>
       <Input
         ref={inputRef}
@@ -69,7 +70,7 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({
         variant="outline"
         fontFamily="mono"
         fontSize="xs"
-        placeholder={placeholder || "Type a message and press Enter…"}
+        placeholder={placeholder || "Type a message and press Enter\u2026"}
         value={value}
         onClick={(e) => {
           e.stopPropagation();

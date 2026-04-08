@@ -4,99 +4,18 @@ import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { MarkdownContent } from "./MarkdownContent";
 import { ReplyInput } from "./ReplyInput";
-import { FeedEntry, SelectedNode, SSEEventType } from "../types";
-
-const THREAD_SHADES_DARK = [
-  "#888", "#999", "#777", "#aaa", "#666",
-  "#8a8a8a", "#7a7a7a", "#9a9a9a", "#6a6a6a", "#b0b0b0",
-];
-const THREAD_SHADES_LIGHT = [
-  "#666", "#555", "#777", "#444", "#888",
-  "#5a5a5a", "#6a6a6a", "#4a4a4a", "#7a7a7a", "#3a3a3a",
-];
-
-function getThreadColor(
-  threadId: string,
-  threadIds: string[],
-  isDark: boolean
-): string {
-  const palette = isDark ? THREAD_SHADES_DARK : THREAD_SHADES_LIGHT;
-  const idx = threadIds.indexOf(threadId);
-  return palette[idx % palette.length];
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  thread_start: "start",
-  step_start: "step",
-  llm_call: "llm",
-  tool_call: "sql",
-  step_complete: "done",
-  thread_complete: "finished",
-  thread_waiting: "waiting for input",
-};
-
-function hasExpandableContent(entry: FeedEntry): boolean {
-  return !!(
-    entry.full_message ||
-    entry.sql ||
-    entry.tool_result ||
-    entry.response ||
-    entry.tables ||
-    entry.event_type === "thread_waiting" ||
-    (entry.event_type === "thread_start" && entry.thread_status === "running")
-  );
-}
-
-function feedEntryToSelectedNode(entry: FeedEntry): SelectedNode | null {
-  const id = entry.id;
-  if (id.startsWith("ts:")) {
-    return { type: "thread", threadId: id.slice(3) };
-  }
-  if (id.startsWith("tc:")) {
-    return { type: "thread_end", threadId: id.slice(3), threadStatus: "complete" };
-  }
-  if (id.startsWith("tw:")) {
-    return { type: "thread_end", threadId: id.slice(3), threadStatus: "waiting" };
-  }
-  if (id.startsWith("ss:")) {
-    const parts = id.slice(3).split(":");
-    return { type: "step", threadId: parts[0], stepNumber: Number(parts[1]) };
-  }
-  if (id.startsWith("sc:")) {
-    const parts = id.slice(3).split(":");
-    return { type: "step", threadId: parts[0], stepNumber: Number(parts[1]) };
-  }
-  if (id.startsWith("ev:")) {
-    const parts = id.slice(3).split(":");
-    return {
-      type: "event",
-      threadId: parts[0],
-      stepNumber: Number(parts[1]),
-      eventIndex: Number(parts[2]),
-    };
-  }
-  return null;
-}
-
-function selectedNodeToFeedId(node: SelectedNode | null): string | null {
-  if (!node) return null;
-  switch (node.type) {
-    case "thread":
-      return node.threadId ? `ts:${node.threadId}` : null;
-    case "thread_end":
-      if (!node.threadId) return null;
-      if (node.threadStatus === "waiting") return `tw:${node.threadId}`;
-      return `tc:${node.threadId}`;
-    case "step":
-      return node.threadId && node.stepNumber !== undefined
-        ? `ss:${node.threadId}:${node.stepNumber}` : null;
-    case "event":
-      return node.threadId && node.stepNumber !== undefined && node.eventIndex !== undefined
-        ? `ev:${node.threadId}:${node.stepNumber}:${node.eventIndex}` : null;
-    default:
-      return null;
-  }
-}
+import { FeedEntry, SSEEventType } from "../types";
+import {
+  TYPE_LABELS,
+  THREAD_ID_PREVIEW_LENGTH,
+  SCROLL_BOTTOM_THRESHOLD,
+} from "../config";
+import {
+  getThreadColor,
+  hasExpandableContent,
+  feedEntryToSelectedNode,
+  selectedNodeToFeedId,
+} from "../utils";
 
 export const EventFeed: React.FC = () => {
   const { state, selectNode } = useLatentInsights();
@@ -165,7 +84,8 @@ export const EventFeed: React.FC = () => {
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    const atBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_BOTTOM_THRESHOLD;
     autoScrollRef.current = atBottom;
   }, []);
 
@@ -204,7 +124,7 @@ export const EventFeed: React.FC = () => {
         {feedEntries.length === 0 && (
           <Text color="fg.muted" fontSize="xs" p={2} textAlign="center">
             {state.mode === "live"
-              ? "Waiting for events…"
+              ? "Waiting for events\u2026"
               : "No events to display"}
           </Text>
         )}
@@ -256,7 +176,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
       >
         <Flex gap="6px" align="center" minW={0} w="100%">
           <Text as="span" color={threadColor} flexShrink={0}>
-            thread {entry.thread_id.slice(0, 6)}
+            thread {entry.thread_id.slice(0, THREAD_ID_PREVIEW_LENGTH)}
           </Text>
           {entry.step_number !== undefined && (
             <Text as="span" color={dimColor} flexShrink={0}>
@@ -346,7 +266,7 @@ const JsonTable: React.FC<{ data: unknown[]; label?: string }> = ({ data, label 
         </tbody>
       </Box>
       {data.length > 50 && (
-        <Text fontSize="2xs" color="fg.muted">… {data.length - 50} more rows</Text>
+        <Text fontSize="2xs" color="fg.muted">{"\u2026"} {data.length - 50} more rows</Text>
       )}
     </Box>
   );
@@ -363,9 +283,9 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
         )}
         <ReplyInput
           threadId={entry.thread_id}
+          label="Reply to waiting thread"
+          placeholder="Type a reply and press Enter\u2026"
           onClose={() => {}}
-          label={`Reply to waiting thread ${entry.thread_id.slice(0, 8)}…`}
-          placeholder="Guide this thread…"
         />
       </Box>
     );
@@ -381,9 +301,9 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
         )}
         <ReplyInput
           threadId={entry.thread_id}
+          label="Send direction to running thread"
+          placeholder="Guide this thread\u2026"
           onClose={() => {}}
-          label={`Interrupt thread ${entry.thread_id.slice(0, 8)}…`}
-          placeholder="Send direction to this running thread…"
         />
       </Box>
     );

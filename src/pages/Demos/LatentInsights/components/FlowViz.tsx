@@ -9,31 +9,17 @@ import React, {
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { SelectedNode } from "../types";
-
-const STEP_H = 16;
-const STEP_GAP = 2;
-const EVENT_H = 8;
-const EVENT_GAP = 2;
-const EVENT_WIDTH_RATIO = 0.55;
-const THREAD_GAP = 16;
-const TOP_PAD = 4;
-const MARKER_H = 16;
-
-const MOVE_ABBR: Record<string, string> = {
-  SCOPE: "SC",
-  FORAGE: "FO",
-  FRAME: "FR",
-  INTERROGATE: "IN",
-  SYNTHESIZE: "SY",
-  ERROR: "ER",
-  UNKNOWN: "??",
-};
-
-function moveAbbr(move: string | undefined): string {
-  if (!move) return "";
-  const upper = move.toUpperCase();
-  return MOVE_ABBR[upper] || upper.slice(0, 2);
-}
+import {
+  STEP_H,
+  STEP_GAP,
+  EVENT_H,
+  EVENT_GAP,
+  EVENT_WIDTH_RATIO,
+  THREAD_GAP,
+  TOP_PAD,
+  MARKER_H,
+} from "../config";
+import { moveAbbr } from "../utils";
 
 export const FlowViz: React.FC = () => {
   const { state, selectNode } = useLatentInsights();
@@ -251,13 +237,10 @@ export const FlowViz: React.FC = () => {
           userSelect: "none",
         }}
       >
-        {/* Thread columns */}
         {columns.map((col) => (
           <g key={col.threadId}>
-            {/* Thread start marker */}
             {(() => {
               const startSel = isSelected("thread", col.threadId);
-              const isRunning = col.status === "running";
               return (
                 <>
                   <rect
@@ -269,7 +252,6 @@ export const FlowViz: React.FC = () => {
                     rx={1}
                     stroke={startSel ? selectedStroke : "none"}
                     strokeWidth={startSel ? 1.5 : 0}
-                    className={isRunning ? "flow-pulse" : undefined}
                     style={{ cursor: "pointer" }}
                     onClick={() =>
                       handleClick({ type: "thread", threadId: col.threadId })
@@ -290,17 +272,6 @@ export const FlowViz: React.FC = () => {
                     >
                       ST
                     </text>
-                  )}
-                  {/* Interruptible indicator for running threads */}
-                  {isRunning && col.w > 20 && (
-                    <circle
-                      cx={col.x + col.w - 4}
-                      cy={col.startY + 4}
-                      r={2}
-                      fill={isDark ? "#8f8" : "#4a4"}
-                      className="flow-pulse"
-                      style={{ pointerEvents: "none" }}
-                    />
                   )}
                 </>
               );
@@ -349,7 +320,6 @@ export const FlowViz: React.FC = () => {
                     </text>
                   )}
 
-                  {/* Event rectangles */}
                   {step.events.map((evt) => {
                     const eSel = isSelected(
                       "event",
@@ -384,7 +354,6 @@ export const FlowViz: React.FC = () => {
               );
             })}
 
-            {/* Thread end marker (hidden for running threads) */}
             {col.showEnd &&
               (() => {
                 const endSel = isSelected("thread_end", col.threadId);
