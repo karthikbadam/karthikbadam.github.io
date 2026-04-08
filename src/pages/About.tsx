@@ -32,7 +32,7 @@ export const About = () => {
 
   return (
     <Page>
-      <Container maxW="72ch" pb={4}>
+      <Container maxW="72ch" py={4}>
         <VStack gap={4} align="stretch">
           <Heading color="accent">About Me</Heading>
           <Box>
@@ -44,7 +44,11 @@ export const About = () => {
             </Text>
             <Text fontSize="md" mb={4}>
               Get in touch:{" "}
-              <Link href="mailto:karthikbadam7@gmail.com" color="accent">
+              <Link
+                href="mailto:karthikbadam7@gmail.com"
+                color="accent"
+                variant="underline"
+              >
                 karthikbadam7@gmail.com
               </Link>
             </Text>

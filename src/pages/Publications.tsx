@@ -73,7 +73,7 @@ export const Publications = () => {
 
   return (
     <Page>
-      <Container maxW="100ch" pb={4}>
+      <Container maxW="100ch" py={4}>
         <VStack gap={4} align="stretch">
           <Heading color="accent">Publications</Heading>
 

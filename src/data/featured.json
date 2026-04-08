@@ -1,6 +1,6 @@
 [
   {
-    "title": "Latent Insights: Agentic Data Analysis",
+    "title": "Analyze Data with Agents",
     "abstract": "Monitor and interact with a parallel-agent system that explores datasets through coordinated sensemaking loops. Upload a CSV, watch threads investigate questions via SQL and LLM calls, and respond to stuck agents.",
     "link": "/latent-insights",
     "image": {
@@ -12,7 +12,24 @@
       "month": "March",
       "year": 2026
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Python Framework", "Agents", "Human-in-the-Loop"]
+  },
+  {
+    "title": "AnyTable",
+    "abstract": "A headless, virtualized React table for large datasets. DuckDB-WASM powers in-browser querying with Mosaic coordination, so tables stay visualization-friendly and composable without a monolithic config surface.",
+    "link": "https://karthikbadam.github.io/any_table/",
+    "image": {
+      "dark": "anytable-dark.png",
+      "light": "anytable-light.png"
+    },
+    "type": "Framework",
+    "date": {
+      "month": "February",
+      "year": 2026
+    },
+    "featured": true,
+    "tags": ["TypeScript Framework", "React", "DuckDB", "Mosaic"]
   },
   {
     "title": "Interpret Language Model Activations",
@@ -27,7 +44,8 @@
       "month": "January",
       "year": 2026
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Interactive Demo", "ML", "Interpretability", "Transformer"]
   },
   {
     "title": "Navigate the Gaia Star Catalog",
@@ -42,7 +60,8 @@
       "month": "December",
       "year": 2025
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Interactive Demo", "Astronomy", "Gaia", "Visualization"]
   },
   {
     "title": "Visualize ML Traces from SWE-Bench",
@@ -58,7 +77,8 @@
       "month": "November",
       "year": 2025
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Interactive Demo", "OpenTelemetry", "Agents", "Traces"]
   },
   {
     "title": "Explore Astronomy Concepts",
@@ -73,7 +93,8 @@
       "month": "May",
       "year": 2025
     },
-    "featured": true
+    "featured": true,
+    "tags": ["Interactive Demo", "Hierarchy", "Radial Visualization"]
   },
   {
     "title": "Understand Embeddings Through Epic Fantasy",
@@ -87,8 +108,7 @@
     "date": {
       "month": "April",
       "year": 2025
-    },
-    "featured": true
+    }
   },
 
   {

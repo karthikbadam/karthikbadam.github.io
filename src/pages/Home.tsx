@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Link as ChakraLink,
   Container,
   Grid,
@@ -11,12 +12,13 @@ import {
   Tag,
   Text,
 } from "@chakra-ui/react";
+import type { ComponentProps, ReactNode } from "react";
+import { LuGithub, LuLinkedin, LuMail } from "react-icons/lu";
 import { Link as RouterLink } from "react-router-dom";
 import { Page } from "../components/Page";
 import { TwoPanelWithScroll } from "../components/TwoPanelWithScroll";
 import { useColorModeValue } from "../components/ui/color-mode";
 import featuredData from "../data/featured.json";
-import { accent } from "../theme";
 
 // Define types for the post data
 interface Post {
@@ -38,15 +40,61 @@ interface Post {
     year: number;
   };
   featured?: boolean;
+  tags?: string[];
+}
+
+const SOCIAL_ICON_SIZE = 14;
+
+function SocialExpandLink({
+  href,
+  label,
+  children,
+  ...rest
+}: {
+  href: string;
+  label: string;
+  children: ReactNode;
+} & Omit<ComponentProps<typeof Link>, "href" | "children">) {
+  return (
+    <Link
+      href={href}
+      display="inline-flex"
+      alignItems="center"
+      flexShrink={0}
+      borderRadius="full"
+      bg="accentBackground"
+      color="accent"
+      maxW={6}
+      h={6}
+      overflow="hidden"
+      whiteSpace="nowrap"
+      transition="max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease"
+      _hover={{
+        maxW: "9rem",
+      }}
+      {...rest}
+    >
+      <Box
+        w={6}
+        h={6}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        flexShrink={0}
+      >
+        {children}
+      </Box>
+      <Text as="span" fontSize="xs" fontWeight="medium" pr={2} lineHeight={1}>
+        {label}
+      </Text>
+    </Link>
+  );
 }
 
 export const Home = () => {
-  const highlightColor = useColorModeValue(accent.light, accent.dark);
-
   const featuredPosts = (featuredData as Post[]).filter(
-    (post) => post.featured,
+    (post) => post.featured === true,
   );
-  const restPosts = (featuredData as Post[]).filter((post) => !post.featured);
 
   return (
     <Page>
@@ -82,19 +130,11 @@ export const Home = () => {
               </Box>
             </Stack>
             <Stack gap={4}>
-              <Heading
-                fontWeight="semibold"
-                size="2xl"
-                css={{
-                  background: highlightColor,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
+              <Heading fontWeight="medium" size="2xl">
                 Karthik Badam
               </Heading>
               <Text fontSize="sm" color="gray.fg" lineHeight="tall">
-                I am a{" "}
+                I am a staff-level{" "}
                 <Text as="span" color="accent" fontWeight="semibold">
                   full-stack engineer
                 </Text>{" "}
@@ -104,28 +144,48 @@ export const Home = () => {
                   Apple.
                 </Text>{" "}
                 I received a Ph.D. in Computer Science from the University of
-                Maryland, College Park, where I published novel research in HCI
-                and ML.
+                Maryland, College Park, where I published novel research in HCI,
+                Data Visualization, and ML.
               </Text>
-              <Text fontSize="sm">
-                Get in touch:{" "}
-                <Link
-                  fontWeight="medium"
+              <HStack gap={2} pt={1} align="center">
+                <SocialExpandLink
                   href="mailto:karthikbadam7@gmail.com"
-                  color="accent"
-                  variant="underline"
+                  label="Email"
+                  aria-label="Email"
                 >
-                  karthikbadam7@gmail.com
-                </Link>
-              </Text>
+                  <LuMail size={SOCIAL_ICON_SIZE} strokeWidth={2} />
+                </SocialExpandLink>
+                <SocialExpandLink
+                  href="https://linkedin.com/in/karthikbadam"
+                  label="LinkedIn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                >
+                  <LuLinkedin size={SOCIAL_ICON_SIZE} strokeWidth={2} />
+                </SocialExpandLink>
+                <SocialExpandLink
+                  href="https://github.com/karthikbadam"
+                  label="GitHub"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub"
+                >
+                  <LuGithub size={SOCIAL_ICON_SIZE} strokeWidth={2} />
+                </SocialExpandLink>
+              </HStack>
             </Stack>
           </TwoPanelWithScroll.LeftPanel>
-          <TwoPanelWithScroll.RightPanel py={2}>
-            <Stack gap={2} maxW={{ base: "100%", lg: "80ch" }} pr={4}>
+          <TwoPanelWithScroll.RightPanel py={4}>
+            <Stack
+              gap={2}
+              maxW={{ base: "100%", lg: "80ch" }}
+              pr={4}
+              mb={{ base: 10, md: 12 }}
+            >
               <Heading color="accent" fontWeight="semibold">
-                Explorations
+                Featured Works
               </Heading>
-              {/* Featured Posts as Large Cards - Side by Side */}
               {featuredPosts.length > 0 && (
                 <Grid
                   templateColumns={{
@@ -139,39 +199,21 @@ export const Home = () => {
                   ))}
                 </Grid>
               )}
-
-              {/* Grid for Smaller Cards */}
-              {restPosts.length > 0 && (
-                <Grid
-                  templateColumns={{
-                    base: "1fr",
-                    md: "1fr 1fr",
-                  }}
-                  gap={4}
+              <RouterLink
+                to="/explorations"
+                style={{ alignSelf: "flex-start" }}
+              >
+                <Button
                   mt={2}
+                  size="sm"
+                  variant="outline"
+                  color="accent"
+                  borderColor="accent"
+                  _hover={{ bg: "accentSubtle", color: "gray.contrast" }}
                 >
-                  {restPosts.map((post, index) => (
-                    <Box key={index}>
-                      {post.link.startsWith("http") ? (
-                        <ChakraLink
-                          href={post.link}
-                          _hover={{ textDecoration: "none" }}
-                          h="100%"
-                        >
-                          <PostCard post={post} />
-                        </ChakraLink>
-                      ) : (
-                        <RouterLink
-                          to={post.link}
-                          style={{ textDecoration: "none" }}
-                        >
-                          <PostCard post={post} />
-                        </RouterLink>
-                      )}
-                    </Box>
-                  ))}
-                </Grid>
-              )}
+                  See more
+                </Button>
+              </RouterLink>
             </Stack>
           </TwoPanelWithScroll.RightPanel>
         </TwoPanelWithScroll>
@@ -237,71 +279,27 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       height="200px"
     />
     <Stack gap={2} flex="1">
-      <Heading size="sm" fontWeight="medium">
+      <Heading size="sm" fontWeight="medium" css={{ wordBreak: "break-word" }}>
         {post.title}
+        {post.date && (
+          <Text as="span" fontWeight="normal" color="fg.muted" fontSize="xs">
+            {" "}
+            • {post.date.month} {post.date.year}
+          </Text>
+        )}
       </Heading>
-      <Text fontSize="sm" lineClamp={3} color="fg.muted">
+      <Text fontSize="xs" lineClamp={3} color="fg.muted">
         {post.abstract}
       </Text>
-      <HStack gap={2} pt={2}>
-        <Tag.Root>
-          <Tag.Label>{post.type}</Tag.Label>
-        </Tag.Root>
-        {post.video && (
-          <Tag.Root>
-            <Tag.Label>Video</Tag.Label>
-          </Tag.Root>
-        )}
-        {post.date && (
-          <Tag.Root>
-            <Tag.Label>
-              {post.date.month} {post.date.year}
-            </Tag.Label>
-          </Tag.Root>
-        )}
-      </HStack>
-    </Stack>
-  </Stack>
-);
-
-interface PostCardProps {
-  post: Post;
-}
-
-const PostCard = ({ post }: PostCardProps) => (
-  <Stack
-    p={4}
-    borderWidth="1px"
-    borderRadius="xl"
-    _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
-    transition="all 0.3s"
-    gap={6}
-    h="100%"
-  >
-    <Stack gap={2}>
-      <Heading size="sm" fontWeight="medium">
-        {post.title}
-      </Heading>
-      <Text color="fg.muted" fontSize="sm" lineClamp={2}>
-        {post.abstract}
-      </Text>
-      <HStack gap={2} pt={2}>
-        <Tag.Root>
-          <Tag.Label>{post.type}</Tag.Label>
-        </Tag.Root>
-        {post.video && (
-          <Tag.Root>
-            <Tag.Label>Video</Tag.Label>
-          </Tag.Root>
-        )}
-        {post.date && (
-          <Tag.Root>
-            <Tag.Label>
-              {post.date.month} {post.date.year}
-            </Tag.Label>
-          </Tag.Root>
-        )}
-      </HStack>
+      {post.tags && post.tags.length > 0 && (
+        <HStack gap={1.5} flexWrap="wrap" pt={1}>
+          {post.tags.map((tag, i) => (
+            <Tag.Root key={`${tag}-${i}`} size="sm" variant="subtle">
+              <Tag.Label>{tag}</Tag.Label>
+            </Tag.Root>
+          ))}
+        </HStack>
+      )}
     </Stack>
   </Stack>
 );

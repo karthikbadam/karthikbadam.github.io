@@ -7,7 +7,10 @@ interface ReplyInputProps {
   onClose: () => void;
 }
 
-export const ReplyInput: React.FC<ReplyInputProps> = ({ threadId, onClose }) => {
+export const ReplyInput: React.FC<ReplyInputProps> = ({
+  threadId,
+  onClose,
+}) => {
   const { replyToThread } = useLatentInsights();
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
@@ -21,6 +24,7 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({ threadId, onClose }) => 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       if (!value.trim() || sending) return;
       setSending(true);
       setError(null);
@@ -34,14 +38,14 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({ threadId, onClose }) => 
         setSending(false);
       }
     },
-    [value, sending, replyToThread, threadId, onClose]
+    [value, sending, replyToThread, threadId, onClose],
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   return (
@@ -63,7 +67,13 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({ threadId, onClose }) => 
         fontSize="xs"
         placeholder="Type a message and press Enter…"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+        onChange={(e) => {
+          e.stopPropagation();
+          setValue(e.target.value);
+        }}
         onKeyDown={handleKeyDown}
         disabled={sending}
       />

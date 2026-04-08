@@ -1,14 +1,6 @@
-import {
-  Box,
-  Flex,
-  Heading,
-  Link,
-  Spinner,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { Box, Flex, Heading, Link, Text, VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuArrowLeft, LuGithub, LuRefreshCw } from "react-icons/lu";
+import { LuArrowLeft, LuGithub } from "react-icons/lu";
 import { useNavigate, useParams } from "react-router-dom";
 import { Page } from "../../../components/Page";
 import { PanelContainer } from "../../../components/PanelContainer";
@@ -73,12 +65,12 @@ function useLocalSessions() {
 function LandingScreen() {
   const { loadSavedSession, loadLiveSession, state } = useLatentInsights();
   const navigate = useNavigate();
-  const isLoading = state.status === "loading";
   const {
     sessions: localSessions,
     loading: localLoading,
     refresh,
   } = useLocalSessions();
+  const isLoading = state.status === "loading" || localLoading;
 
   const openLive = useCallback(
     (id: string) => {
@@ -145,62 +137,37 @@ function LandingScreen() {
           </Link>
         </Flex>
 
-        {localSessions.length > 0 && (
-          <VStack gap={2} w="100%" alignItems="flex-start">
-            <Flex align="center" gap={2}>
-              <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-                History
-              </Text>
-              <Box
-                as="button"
-                onClick={refresh}
-                color="fg.muted"
-                _hover={{ color: "fg" }}
-                cursor="pointer"
-                display="flex"
-                alignItems="center"
-              >
-                {localLoading ? (
-                  <Spinner size="xs" />
-                ) : (
-                  <LuRefreshCw size={10} />
-                )}
-              </Box>
-            </Flex>
-            {localSessions.map((s) => (
-              <Box
-                key={s.id}
-                as="button"
-                w="100%"
-                p={3}
-                border="1px solid"
-                borderColor="gray.600"
-                borderRadius="md"
-                textAlign="left"
-                cursor={isLoading ? "wait" : "pointer"}
-                _hover={{ borderColor: "fg.muted" }}
-                transition="border-color 0.15s"
-                onClick={() => openLive(s.id)}
-                opacity={isLoading ? 0.5 : 1}
-              >
-                <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
-                  {s.dataset_path?.split("/").pop() ?? s.id.slice(0, 12)}
-                </Text>
-                <Text fontSize="xs" fontFamily="mono" color="fg.muted">
-                  {s.id.slice(0, 12)}
-                  {s.thread_count > 0
-                    ? ` · ${s.thread_count} threads`
-                    : ""} · {s.status}
-                </Text>
-              </Box>
-            ))}
-          </VStack>
-        )}
-
         <VStack gap={2} w="100%" alignItems="flex-start">
           <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-            Saved sessions
+            Past sessions
           </Text>
+          {localSessions.map((s) => (
+            <Box
+              key={s.id}
+              as="button"
+              w="100%"
+              p={3}
+              border="1px solid"
+              borderColor="gray.600"
+              borderRadius="md"
+              textAlign="left"
+              cursor={isLoading ? "wait" : "pointer"}
+              _hover={{ borderColor: "fg.muted" }}
+              transition="border-color 0.15s"
+              onClick={() => openLive(s.id)}
+              opacity={isLoading ? 0.5 : 1}
+            >
+              <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
+                {s.dataset_path?.split("/").pop() ?? s.id.slice(0, 12)}
+              </Text>
+              <Text fontSize="xs" fontFamily="mono" color="fg.muted">
+                {s.id.slice(0, 12)}
+                {s.thread_count > 0
+                  ? ` · ${s.thread_count} threads`
+                  : ""} · {s.status}
+              </Text>
+            </Box>
+          ))}
           {FEATURED_SESSIONS.map((s) => (
             <Box
               key={s.id}
@@ -368,12 +335,7 @@ function DashboardContent() {
             display="flex"
             flexDirection="column"
           >
-            <Text
-              fontSize="xs"
-              fontWeight="medium"
-              color="accentSubtle"
-              mb={2}
-            >
+            <Text fontSize="xs" fontWeight="medium" color="accentSubtle" mb={2}>
               Dataset {`${datasetFileName} (${threadCountForTitle} threads)`}
               <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
                 {"• "}click a node to inspect
