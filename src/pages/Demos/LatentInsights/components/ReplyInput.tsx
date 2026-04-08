@@ -5,11 +5,15 @@ import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 interface ReplyInputProps {
   threadId: string;
   onClose: () => void;
+  label?: string;
+  placeholder?: string;
 }
 
 export const ReplyInput: React.FC<ReplyInputProps> = ({
   threadId,
   onClose,
+  label,
+  placeholder,
 }) => {
   const { replyToThread } = useLatentInsights();
   const [value, setValue] = useState("");
@@ -57,7 +61,7 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({
       borderColor="gray.subtle"
     >
       <Text fontSize="xs" color="fg.muted" mb={1} fontFamily="mono">
-        Reply to thread {threadId.slice(0, 8)}…
+        {label || `Reply to thread ${threadId.slice(0, 8)}…`}
       </Text>
       <Input
         ref={inputRef}
@@ -65,7 +69,7 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({
         variant="outline"
         fontFamily="mono"
         fontSize="xs"
-        placeholder="Type a message and press Enter…"
+        placeholder={placeholder || "Type a message and press Enter…"}
         value={value}
         onClick={(e) => {
           e.stopPropagation();

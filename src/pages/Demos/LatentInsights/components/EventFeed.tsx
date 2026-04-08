@@ -42,7 +42,8 @@ function hasExpandableContent(entry: FeedEntry): boolean {
     entry.tool_result ||
     entry.response ||
     entry.tables ||
-    entry.event_type === "thread_waiting"
+    entry.event_type === "thread_waiting" ||
+    (entry.event_type === "thread_start" && entry.thread_status === "running")
   );
 }
 
@@ -363,6 +364,26 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
         <ReplyInput
           threadId={entry.thread_id}
           onClose={() => {}}
+          label={`Reply to waiting thread ${entry.thread_id.slice(0, 8)}…`}
+          placeholder="Guide this thread…"
+        />
+      </Box>
+    );
+  }
+
+  if (entry.event_type === "thread_start" && entry.thread_status === "running") {
+    return (
+      <Box>
+        {entry.full_message && (
+          <Box mb={2}>
+            <MarkdownContent content={entry.full_message} />
+          </Box>
+        )}
+        <ReplyInput
+          threadId={entry.thread_id}
+          onClose={() => {}}
+          label={`Interrupt thread ${entry.thread_id.slice(0, 8)}…`}
+          placeholder="Send direction to this running thread…"
         />
       </Box>
     );

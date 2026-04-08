@@ -257,6 +257,7 @@ export const FlowViz: React.FC = () => {
             {/* Thread start marker */}
             {(() => {
               const startSel = isSelected("thread", col.threadId);
+              const isRunning = col.status === "running";
               return (
                 <>
                   <rect
@@ -268,6 +269,7 @@ export const FlowViz: React.FC = () => {
                     rx={1}
                     stroke={startSel ? selectedStroke : "none"}
                     strokeWidth={startSel ? 1.5 : 0}
+                    className={isRunning ? "flow-pulse" : undefined}
                     style={{ cursor: "pointer" }}
                     onClick={() =>
                       handleClick({ type: "thread", threadId: col.threadId })
@@ -288,6 +290,17 @@ export const FlowViz: React.FC = () => {
                     >
                       ST
                     </text>
+                  )}
+                  {/* Interruptible indicator for running threads */}
+                  {isRunning && col.w > 20 && (
+                    <circle
+                      cx={col.x + col.w - 4}
+                      cy={col.startY + 4}
+                      r={2}
+                      fill={isDark ? "#8f8" : "#4a4"}
+                      className="flow-pulse"
+                      style={{ pointerEvents: "none" }}
+                    />
                   )}
                 </>
               );

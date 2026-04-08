@@ -14,6 +14,8 @@ import {
   FeedEntry,
   SessionMode,
   SelectedNode,
+  SessionConfig,
+  ExplorationPattern,
 } from "../pages/Demos/LatentInsights/types";
 
 const API_BASE = import.meta.env.DEV
@@ -330,8 +332,12 @@ interface LatentInsightsContextValue {
   state: LatentInsightsState;
   loadSavedSession: (sessionId: string) => Promise<void>;
   loadLiveSession: (sessionId: string) => Promise<void>;
-  uploadDataset: (file: File) => Promise<boolean>;
+  uploadDataset: (file: File, config?: SessionConfig) => Promise<string | null>;
   replyToThread: (threadId: string, content: string) => Promise<void>;
+  createThread: (sessionId: string, question: string, motivation?: string) => Promise<void>;
+  broadcastMessage: (sessionId: string, content: string) => Promise<void>;
+  switchPattern: (sessionId: string, pattern: ExplorationPattern) => Promise<void>;
+  continueSession: (sessionId: string) => Promise<void>;
   selectNode: (node: SelectedNode | null) => void;
   reset: () => void;
 }
@@ -511,25 +517,30 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
   }, [cleanup, connectSSE]);
 
   const uploadDataset = useCallback(
-    async (file: File): Promise<boolean> => {
+    async (file: File, config?: SessionConfig): Promise<string | null> => {
       cleanup();
       try {
         const form = new FormData();
         form.append("file", file);
+        if (config) {
+          if (config.question_source) form.append("question_source", config.question_source);
+          if (config.scout_context) form.append("scout_context", config.scout_context);
+          if (config.seed_threads) form.append("seed_threads", String(config.seed_threads));
+        }
         const res = await fetch(`${API_BASE}/sessions`, {
           method: "POST",
           body: form,
         });
         if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-        await res.json();
+        const data = await res.json();
         dispatch({ type: "RESET" });
-        return true;
+        return data.id || data.session_id || null;
       } catch (e) {
         dispatch({
           type: "LOAD_ERROR",
           error: e instanceof Error ? e.message : "Unknown error",
         });
-        return false;
+        return null;
       }
     },
     [cleanup]
@@ -542,6 +553,38 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
       body: JSON.stringify({ content }),
     });
     if (!res.ok) throw new Error(`Reply failed: ${res.status}`);
+  }, []);
+
+  const createThread = useCallback(async (sessionId: string, question: string, motivation?: string) => {
+    const res = await fetch(`${API_BASE}/sessions/${sessionId}/threads`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, motivation }),
+    });
+    if (!res.ok) throw new Error(`Create thread failed: ${res.status}`);
+  }, []);
+
+  const broadcastMessage = useCallback(async (sessionId: string, content: string) => {
+    const res = await fetch(`${API_BASE}/sessions/${sessionId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) throw new Error(`Broadcast failed: ${res.status}`);
+  }, []);
+
+  const switchPattern = useCallback(async (sessionId: string, pattern: ExplorationPattern) => {
+    const res = await fetch(`${API_BASE}/sessions/${sessionId}/patterns/${pattern}`, {
+      method: "POST",
+    });
+    if (!res.ok) throw new Error(`Switch pattern failed: ${res.status}`);
+  }, []);
+
+  const continueSession = useCallback(async (sessionId: string) => {
+    const res = await fetch(`${API_BASE}/sessions/${sessionId}/continue`, {
+      method: "POST",
+    });
+    if (!res.ok) throw new Error(`Continue failed: ${res.status}`);
   }, []);
 
   const selectNode = useCallback((node: SelectedNode | null) => {
@@ -561,6 +604,10 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
         loadLiveSession,
         uploadDataset,
         replyToThread,
+        createThread,
+        broadcastMessage,
+        switchPattern,
+        continueSession,
         selectNode,
         reset,
       }}

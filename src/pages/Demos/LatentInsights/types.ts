@@ -86,6 +86,24 @@ export interface SSEEvent {
 
 export type SessionMode = "saved" | "live";
 
+export type ExplorationPattern = "coordinator_worker" | "fan_out" | "human_in_the_loop";
+export type QuestionSource = "scout" | "human" | "both";
+
+export type CommandMode = "ask" | "broadcast" | "direct" | "pattern" | "continue";
+
+export interface PatternConfig {
+  pattern: ExplorationPattern;
+  fan_out_size?: number;
+  seed_threads?: number;
+}
+
+export interface SessionConfig {
+  question_source?: QuestionSource;
+  scout_context?: string;
+  seed_threads?: number;
+  pattern?: PatternConfig;
+}
+
 export interface FeedEntry {
   id: string;
   event_type: SSEEventType | StepEvent["type"];

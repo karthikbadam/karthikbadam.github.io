@@ -21,8 +21,8 @@ export const UploadButton: React.FC<UploadButtonProps> = ({ onUploaded }) => {
       if (!file) return;
       setBusy(true);
       try {
-        const ok = await uploadDataset(file);
-        if (ok) onUploaded?.();
+        const sessionId = await uploadDataset(file);
+        if (sessionId) onUploaded?.();
       } finally {
         setBusy(false);
       }
