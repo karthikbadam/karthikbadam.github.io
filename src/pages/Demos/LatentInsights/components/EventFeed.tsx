@@ -217,27 +217,40 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             </Text>
           )}
 
-          {/* Message / duration — fill remaining space */}
-          {!isExpanded && entry.message && (
-            <Box
-              flex="1 1 0%"
-              minW={0}
-              maxW="100%"
-              overflow="hidden"
-              title={entry.message}
-            >
+          {/* Message / duration + text preview — fill remaining space */}
+          {!isExpanded && (() => {
+            // Build preview: duration + text content
+            const duration = entry.message && /^\d/.test(entry.message) ? entry.message : "";
+            const textContent = entry.response || entry.sql || entry.full_message || "";
+            const preview = duration && textContent
+              ? `${duration} ${textContent}`
+              : textContent || entry.message || "";
+            if (!preview) return null;
+            return (
               <Box
-                as="div"
-                color={dimColor}
+                flex="1 1 0%"
+                minW={0}
+                maxW="100%"
                 overflow="hidden"
-                textOverflow="ellipsis"
-                whiteSpace="nowrap"
-                w="100%"
+                title={textContent || entry.message}
               >
-                {entry.message}
+                <Box
+                  as="div"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  whiteSpace="nowrap"
+                  w="100%"
+                >
+                  {duration && (
+                    <Text as="span" color={mutedColor}>{duration} </Text>
+                  )}
+                  <Text as="span" color={dimColor}>
+                    {textContent || (duration ? "" : entry.message)}
+                  </Text>
+                </Box>
               </Box>
-            </Box>
-          )}
+            );
+          })()}
         </Flex>
 
         {isExpanded && (

@@ -19,9 +19,30 @@ import {
   TOP_PAD,
   MARKER_H,
 } from "../config";
-import { moveAbbr } from "../utils";
 
 const RX = 3;
+const MAX_THREAD_W = 100;
+
+const MOVE_FULL: Record<string, string> = {
+  SCOPE: "Scope",
+  FORAGE: "Forage",
+  FRAME: "Frame",
+  INTERROGATE: "Interrogate",
+  SYNTHESIZE: "Synthesize",
+  ERROR: "Error",
+  UNKNOWN: "",
+};
+
+function moveLabel(move: string | undefined, wide: boolean): string {
+  if (!move) return "";
+  const upper = move.toUpperCase();
+  if (wide) return MOVE_FULL[upper] || upper;
+  const ABBR: Record<string, string> = {
+    SCOPE: "SC", FORAGE: "FO", FRAME: "FR",
+    INTERROGATE: "IN", SYNTHESIZE: "SY", ERROR: "ER", UNKNOWN: "??",
+  };
+  return ABBR[upper] || upper.slice(0, 2);
+}
 
 export const FlowViz: React.FC = () => {
   const { state, selectNode } = useLatentInsights();
@@ -95,12 +116,15 @@ export const FlowViz: React.FC = () => {
     if (threadCount === 0) return null;
 
     const totalGaps = (threadCount - 1) * THREAD_GAP;
-    const threadW = Math.max(12, (containerWidth - totalGaps) / threadCount);
+    const naturalW = (containerWidth - totalGaps) / threadCount;
+    const threadW = Math.max(12, Math.min(naturalW, MAX_THREAD_W));
+    const usedW = threadCount * threadW + totalGaps;
+    const xOffset = Math.max(0, (containerWidth - usedW) / 2);
 
     let maxColH = 0;
 
     const columns = threads.map((thread, ti) => {
-      const x = ti * (threadW + THREAD_GAP);
+      const x = xOffset + ti * (threadW + THREAD_GAP);
       let y = TOP_PAD;
 
       const startY = y;
@@ -191,7 +215,8 @@ export const FlowViz: React.FC = () => {
 
   if (!session || !layout) return null;
 
-  const { columns, svgW, svgH } = layout;
+  const { columns, svgW, svgH, threadW } = layout;
+  const useFullNames = threadW >= 60;
 
   return (
     <Flex
@@ -251,7 +276,7 @@ export const FlowViz: React.FC = () => {
                         dominantBaseline="central"
                         style={{ pointerEvents: "none", fontSize: 10 }}
                       >
-                        ST
+                        {useFullNames ? "Start" : "ST"}
                       </text>
                     )}
                   </>
@@ -260,7 +285,7 @@ export const FlowViz: React.FC = () => {
 
               {col.steps.map((step) => {
                 const sel = isSelected("step", col.threadId, step.stepNumber);
-                const abbr = moveAbbr(step.move);
+                const label = moveLabel(step.move, useFullNames);
                 return (
                   <g key={`s-${step.stepNumber}`}>
                     <rect
@@ -284,7 +309,7 @@ export const FlowViz: React.FC = () => {
                         })
                       }
                     />
-                    {step.w > 18 && abbr && (
+                    {step.w > 18 && label && (
                       <text
                         x={step.x + step.w / 2}
                         y={step.y + step.h / 2}
@@ -294,7 +319,7 @@ export const FlowViz: React.FC = () => {
                         dominantBaseline="central"
                         style={{ pointerEvents: "none", fontSize: 10 }}
                       >
-                        {abbr}
+                        {label}
                       </text>
                     )}
 
@@ -335,14 +360,15 @@ export const FlowViz: React.FC = () => {
               {col.showEnd &&
                 (() => {
                   const endSel = isSelected("thread_end", col.threadId);
-                  const endLabel =
-                    col.status === "complete"
-                      ? "OK"
-                      : col.status === "waiting"
-                        ? "WT"
-                        : col.status === "error"
-                          ? "ER"
-                          : col.status.slice(0, 2).toUpperCase();
+                  const endLabel = useFullNames
+                    ? col.status === "complete" ? "Complete"
+                      : col.status === "waiting" ? "Waiting"
+                      : col.status === "error" ? "Error"
+                      : col.status
+                    : col.status === "complete" ? "OK"
+                      : col.status === "waiting" ? "WT"
+                      : col.status === "error" ? "ER"
+                      : col.status.slice(0, 2).toUpperCase();
                   return (
                     <>
                       <rect
