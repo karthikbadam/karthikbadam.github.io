@@ -160,19 +160,24 @@ export function LandingScreen() {
   return (
     <Box
       h="100%"
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent={pendingFile ? "flex-start" : "center"}
       bg="bg.muted"
       p={4}
       overflowY="auto"
     >
       <Flex
-        maxW="900px"
-        mx="auto"
+        maxW={pendingFile ? "820px" : "480px"}
+        w="100%"
         gap={8}
-        direction={{ base: "column", md: "row" }}
+        direction={{ base: "column", md: pendingFile ? "row" : "column" }}
         align="flex-start"
+        transition="max-width 0.2s"
       >
         {/* Left column: title, upload, sessions */}
-        <VStack gap={6} flex={1} minW={0} alignItems="flex-start">
+        <VStack gap={6} flex={pendingFile ? 1 : undefined} w={pendingFile ? undefined : "100%"} minW={0} alignItems="flex-start">
           <VStack gap={1} alignItems="flex-start">
             <Heading
               as="h1"
