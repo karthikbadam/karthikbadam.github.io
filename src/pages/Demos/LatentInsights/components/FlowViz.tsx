@@ -1,4 +1,4 @@
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import React, {
   useMemo,
   useCallback,
@@ -20,6 +20,8 @@ import {
   MARKER_H,
 } from "../config";
 import { moveAbbr } from "../utils";
+
+const RX = 3;
 
 export const FlowViz: React.FC = () => {
   const { state, selectNode } = useLatentInsights();
@@ -57,28 +59,16 @@ export const FlowViz: React.FC = () => {
     (status: string, isEnd: boolean) => {
       if (status === "waiting")
         return isDark
-          ? isEnd
-            ? "#3a4a5a"
-            : "#344858"
-          : isEnd
-            ? "#d0dae8"
-            : "#dce4f0";
+          ? isEnd ? "#3a4a5a" : "#344858"
+          : isEnd ? "#d0dae8" : "#dce4f0";
       if (status === "error")
         return isDark
-          ? isEnd
-            ? "#6a3a3a"
-            : "#583434"
-          : isEnd
-            ? "#e0c0c0"
-            : "#ecd4d4";
+          ? isEnd ? "#6a3a3a" : "#583434"
+          : isEnd ? "#e0c0c0" : "#ecd4d4";
       if (status === "complete")
         return isDark
-          ? isEnd
-            ? "#4a6a4a"
-            : "#3e5a3e"
-          : isEnd
-            ? "#b0d0b0"
-            : "#c4dcc4";
+          ? isEnd ? "#4a6a4a" : "#3e5a3e"
+          : isEnd ? "#b0d0b0" : "#c4dcc4";
       return isDark ? (isEnd ? "#4a4a4a" : "#444") : isEnd ? "#ccc" : "#d4d4d4";
     },
     [isDark],
@@ -88,20 +78,12 @@ export const FlowViz: React.FC = () => {
     (evtType: string, threadStatus: string) => {
       if (threadStatus === "waiting") {
         return evtType === "tool_call"
-          ? isDark
-            ? "#4a5a6a"
-            : "#c0d0e0"
-          : isDark
-            ? "#3a4a58"
-            : "#d0d8e8";
+          ? isDark ? "#4a5a6a" : "#c0d0e0"
+          : isDark ? "#3a4a58" : "#d0d8e8";
       }
       return evtType === "tool_call"
-        ? isDark
-          ? "#666"
-          : "#a8a8a8"
-        : isDark
-          ? "#5a5a5a"
-          : "#b8b8b8";
+        ? isDark ? "#666" : "#a8a8a8"
+        : isDark ? "#5a5a5a" : "#b8b8b8";
     },
     [isDark],
   );
@@ -113,7 +95,7 @@ export const FlowViz: React.FC = () => {
     if (threadCount === 0) return null;
 
     const totalGaps = (threadCount - 1) * THREAD_GAP;
-    const threadW = Math.max(8, (containerWidth - totalGaps) / threadCount);
+    const threadW = Math.max(12, (containerWidth - totalGaps) / threadCount);
 
     let maxColH = 0;
 
@@ -144,7 +126,7 @@ export const FlowViz: React.FC = () => {
           };
         });
 
-        y += 1;
+        y += STEP_GAP;
 
         return {
           x,
@@ -177,7 +159,7 @@ export const FlowViz: React.FC = () => {
       };
     });
 
-    const svgH = maxColH + 8;
+    const svgH = maxColH + TOP_PAD;
     return { columns, svgW: containerWidth, svgH, threadW };
   }, [session, containerWidth]);
 
@@ -212,13 +194,12 @@ export const FlowViz: React.FC = () => {
   const { columns, svgW, svgH } = layout;
 
   return (
-    <Box
+    <Flex
       ref={containerRef}
-      position="relative"
+      direction="column"
       w="100%"
-      minH="100%"
-      overflow="auto"
-      px={2}
+      h="100%"
+      minH={0}
     >
       <style>{`
         @keyframes flow-pulse {
@@ -227,202 +208,218 @@ export const FlowViz: React.FC = () => {
         }
         .flow-pulse { animation: flow-pulse 2s ease-in-out infinite; }
       `}</style>
-      <svg
-        width={svgW}
-        height={svgH}
-        viewBox={`0 0 ${svgW} ${svgH}`}
-        style={{
-          display: "block",
-          background: "transparent",
-          userSelect: "none",
-        }}
-      >
-        {columns.map((col) => (
-          <g key={col.threadId}>
-            {(() => {
-              const startSel = isSelected("thread", col.threadId);
-              return (
-                <>
-                  <rect
-                    x={col.x}
-                    y={col.startY}
-                    width={col.w}
-                    height={MARKER_H}
-                    fill={markerFill(col.status, false)}
-                    rx={1}
-                    stroke={startSel ? selectedStroke : "none"}
-                    strokeWidth={startSel ? 1.5 : 0}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      handleClick({ type: "thread", threadId: col.threadId })
-                    }
-                  />
-                  {col.w > 14 && (
-                    <text
-                      x={col.x + col.w / 2}
-                      y={col.startY + MARKER_H / 2}
-                      fill={textColor}
-                      fontFamily="monospace"
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      style={{
-                        pointerEvents: "none",
-                        fontSize: 12,
-                      }}
-                    >
-                      ST
-                    </text>
-                  )}
-                </>
-              );
-            })()}
 
-            {col.steps.map((step) => {
-              const sel = isSelected("step", col.threadId, step.stepNumber);
-              const abbr = moveAbbr(step.move);
-              return (
-                <g key={`s-${step.stepNumber}`}>
-                  <rect
-                    x={step.x}
-                    y={step.y}
-                    width={step.w}
-                    height={step.h}
-                    fill={stepFill(step.status)}
-                    rx={1}
-                    stroke={sel ? selectedStroke : "none"}
-                    strokeWidth={sel ? 1.5 : 0}
-                    className={
-                      step.status === "running" ? "flow-pulse" : undefined
-                    }
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      handleClick({
-                        type: "step",
-                        threadId: col.threadId,
-                        stepNumber: step.stepNumber,
-                      })
-                    }
-                  />
-                  {step.w > 14 && (
-                    <text
-                      x={step.x + step.w / 2}
-                      y={step.y + step.h / 2}
-                      fill={textColor}
-                      fontFamily="monospace"
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      style={{
-                        pointerEvents: "none",
-                        fontSize: 12,
-                      }}
-                    >
-                      {abbr}
-                    </text>
-                  )}
-
-                  {step.events.map((evt) => {
-                    const eSel = isSelected(
-                      "event",
-                      col.threadId,
-                      step.stepNumber,
-                      evt.eventIndex,
-                    );
-                    return (
-                      <rect
-                        key={`e-${evt.eventIndex}`}
-                        x={evt.x}
-                        y={evt.y}
-                        width={evt.w}
-                        height={evt.h}
-                        fill={eventFill(evt.type, evt.threadStatus)}
-                        rx={1}
-                        stroke={eSel ? selectedStroke : "none"}
-                        strokeWidth={eSel ? 1 : 0}
-                        style={{ cursor: "pointer" }}
-                        onClick={() =>
-                          handleClick({
-                            type: "event",
-                            threadId: col.threadId,
-                            stepNumber: step.stepNumber,
-                            eventIndex: evt.eventIndex,
-                          })
-                        }
-                      />
-                    );
-                  })}
-                </g>
-              );
-            })}
-
-            {col.showEnd &&
-              (() => {
-                const endSel = isSelected("thread_end", col.threadId);
-                const endLabel =
-                  col.status === "complete"
-                    ? "OK"
-                    : col.status === "waiting"
-                      ? "WT"
-                      : col.status === "error"
-                        ? "ER"
-                        : col.status.slice(0, 2).toUpperCase();
+      {/* Scrollable SVG area */}
+      <Box flex={1} overflow="auto" px={2} minH={0}>
+        <svg
+          width={svgW}
+          height={svgH}
+          viewBox={`0 0 ${svgW} ${svgH}`}
+          style={{
+            display: "block",
+            background: "transparent",
+            userSelect: "none",
+          }}
+        >
+          {columns.map((col) => (
+            <g key={col.threadId}>
+              {(() => {
+                const startSel = isSelected("thread", col.threadId);
                 return (
                   <>
                     <rect
                       x={col.x}
-                      y={col.endY}
+                      y={col.startY}
                       width={col.w}
                       height={MARKER_H}
-                      fill={markerFill(col.status, true)}
-                      rx={1}
-                      stroke={endSel ? selectedStroke : "none"}
-                      strokeWidth={endSel ? 1.5 : 0}
+                      fill={markerFill(col.status, false)}
+                      rx={RX}
+                      stroke={startSel ? selectedStroke : "none"}
+                      strokeWidth={startSel ? 1.5 : 0}
                       style={{ cursor: "pointer" }}
                       onClick={() =>
-                        handleClick({
-                          type: "thread_end",
-                          threadId: col.threadId,
-                          threadStatus: col.status,
-                        })
+                        handleClick({ type: "thread", threadId: col.threadId })
                       }
                     />
-                    {col.w > 14 && (
+                    {col.w > 18 && (
                       <text
                         x={col.x + col.w / 2}
-                        y={col.endY + MARKER_H / 2}
+                        y={col.startY + MARKER_H / 2}
                         fill={textColor}
-                        fontSize={5}
                         fontFamily="monospace"
                         textAnchor="middle"
                         dominantBaseline="central"
-                        style={{ pointerEvents: "none", fontSize: 12 }}
+                        style={{ pointerEvents: "none", fontSize: 10 }}
                       >
-                        {endLabel}
+                        ST
                       </text>
                     )}
                   </>
                 );
               })()}
-          </g>
-        ))}
-      </svg>
-      <Text
-        fontSize="xs"
-        color="fg.muted"
-        fontFamily="mono"
-        px={1}
+
+              {col.steps.map((step) => {
+                const sel = isSelected("step", col.threadId, step.stepNumber);
+                const abbr = moveAbbr(step.move);
+                return (
+                  <g key={`s-${step.stepNumber}`}>
+                    <rect
+                      x={step.x}
+                      y={step.y}
+                      width={step.w}
+                      height={step.h}
+                      fill={stepFill(step.status)}
+                      rx={RX}
+                      stroke={sel ? selectedStroke : "none"}
+                      strokeWidth={sel ? 1.5 : 0}
+                      className={
+                        step.status === "running" ? "flow-pulse" : undefined
+                      }
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        handleClick({
+                          type: "step",
+                          threadId: col.threadId,
+                          stepNumber: step.stepNumber,
+                        })
+                      }
+                    />
+                    {step.w > 18 && abbr && (
+                      <text
+                        x={step.x + step.w / 2}
+                        y={step.y + step.h / 2}
+                        fill={textColor}
+                        fontFamily="monospace"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        style={{ pointerEvents: "none", fontSize: 10 }}
+                      >
+                        {abbr}
+                      </text>
+                    )}
+
+                    {step.events.map((evt) => {
+                      const eSel = isSelected(
+                        "event",
+                        col.threadId,
+                        step.stepNumber,
+                        evt.eventIndex,
+                      );
+                      return (
+                        <rect
+                          key={`e-${evt.eventIndex}`}
+                          x={evt.x}
+                          y={evt.y}
+                          width={evt.w}
+                          height={evt.h}
+                          fill={eventFill(evt.type, evt.threadStatus)}
+                          rx={2}
+                          stroke={eSel ? selectedStroke : "none"}
+                          strokeWidth={eSel ? 1 : 0}
+                          style={{ cursor: "pointer" }}
+                          onClick={() =>
+                            handleClick({
+                              type: "event",
+                              threadId: col.threadId,
+                              stepNumber: step.stepNumber,
+                              eventIndex: evt.eventIndex,
+                            })
+                          }
+                        />
+                      );
+                    })}
+                  </g>
+                );
+              })}
+
+              {col.showEnd &&
+                (() => {
+                  const endSel = isSelected("thread_end", col.threadId);
+                  const endLabel =
+                    col.status === "complete"
+                      ? "OK"
+                      : col.status === "waiting"
+                        ? "WT"
+                        : col.status === "error"
+                          ? "ER"
+                          : col.status.slice(0, 2).toUpperCase();
+                  return (
+                    <>
+                      <rect
+                        x={col.x}
+                        y={col.endY}
+                        width={col.w}
+                        height={MARKER_H}
+                        fill={markerFill(col.status, true)}
+                        rx={RX}
+                        stroke={endSel ? selectedStroke : "none"}
+                        strokeWidth={endSel ? 1.5 : 0}
+                        style={{ cursor: "pointer" }}
+                        onClick={() =>
+                          handleClick({
+                            type: "thread_end",
+                            threadId: col.threadId,
+                            threadStatus: col.status,
+                          })
+                        }
+                      />
+                      {col.w > 18 && (
+                        <text
+                          x={col.x + col.w / 2}
+                          y={col.endY + MARKER_H / 2}
+                          fill={textColor}
+                          fontFamily="monospace"
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          style={{ pointerEvents: "none", fontSize: 10 }}
+                        >
+                          {endLabel}
+                        </text>
+                      )}
+                    </>
+                  );
+                })()}
+            </g>
+          ))}
+        </svg>
+      </Box>
+
+      {/* Legend — fixed at bottom, outside scroll */}
+      <Flex
+        px={2}
         py={1}
-        lineHeight="1.4"
-        position="sticky"
-        bottom={0}
-        zIndex={1}
-        bg="bg.panel"
+        gap={3}
+        flexWrap="wrap"
         borderTop="1px solid"
         borderColor="gray.subtle"
+        bg="bg.panel"
+        flexShrink={0}
       >
-        ST Start &nbsp; SC Scope &nbsp; FO Forage &nbsp; FR Frame &nbsp; IN
-        Interrogate &nbsp; SY Synthesize &nbsp; OK Complete &nbsp; WT Waiting
-        &nbsp; ER Error
-      </Text>
-    </Box>
+        {[
+          ["ST", "Start"],
+          ["SC", "Scope"],
+          ["FO", "Forage"],
+          ["FR", "Frame"],
+          ["IN", "Interrogate"],
+          ["SY", "Synthesize"],
+          ["OK", "Complete"],
+          ["WT", "Waiting"],
+          ["ER", "Error"],
+        ].map(([abbr, label]) => (
+          <Text
+            key={abbr}
+            fontSize="2xs"
+            fontFamily="mono"
+            color="fg.muted"
+            lineHeight="1.2"
+          >
+            <Text as="span" fontWeight="bold" color="fg.subtle">
+              {abbr}
+            </Text>{" "}
+            {label}
+          </Text>
+        ))}
+      </Flex>
+    </Flex>
   );
 };

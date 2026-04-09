@@ -14,14 +14,14 @@ export const SESSION_ID_PREVIEW_LENGTH = 12;
 
 // --- FlowViz layout constants ---
 
-export const STEP_H = 16;
-export const STEP_GAP = 2;
-export const EVENT_H = 8;
-export const EVENT_GAP = 2;
-export const EVENT_WIDTH_RATIO = 0.55;
-export const THREAD_GAP = 16;
-export const TOP_PAD = 4;
-export const MARKER_H = 16;
+export const STEP_H = 20;
+export const STEP_GAP = 4;
+export const EVENT_H = 10;
+export const EVENT_GAP = 3;
+export const EVENT_WIDTH_RATIO = 0.6;
+export const THREAD_GAP = 12;
+export const TOP_PAD = 8;
+export const MARKER_H = 20;
 
 export const MOVE_ABBR: Record<string, string> = {
   SCOPE: "SC",

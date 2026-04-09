@@ -177,7 +177,7 @@ export function Dashboard() {
       >
         {/* Left: Flow graph + command bar */}
         <Flex
-          flex={2}
+          flex={3}
           minW={0}
           minH={{ base: "50vh", md: "100%" }}
           h={{ md: "100%" }}
