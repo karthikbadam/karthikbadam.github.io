@@ -1,4 +1,4 @@
-import { Box, Flex, Link, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Link, Text, VStack } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { LuArrowLeft, LuChevronDown, LuChevronRight, LuGithub } from "react-icons/lu";
 import { useParams } from "react-router-dom";
@@ -105,7 +105,7 @@ export function Dashboard() {
       pb={2}
     >
       {/* Header */}
-      <Flex px={4} py={2} gap={4} align="center">
+      <Flex px={4} py={2} gap={6} maxW="100ch" mx="auto" align="flex-start">
         <Box
           as="button"
           onClick={() => {
@@ -123,34 +123,45 @@ export function Dashboard() {
           flexShrink={0}
         >
           <LuArrowLeft size={11} />
+          back
         </Box>
-        <Text
-          fontSize="xs"
-          color="accent"
-          fontFamily="mono"
-          fontWeight="600"
-        >
-          {datasetFileName}
-        </Text>
-        <Text fontSize="2xs" color="fg.muted" fontFamily="mono">
-          {threadCountForTitle} threads
-        </Text>
-        <Box flex={1} />
-        <Link
-          href={GITHUB_REPO_URL}
-          variant="underline"
-          target="_blank"
-          rel="noopener noreferrer"
-          display="inline-flex"
-          gap={1}
-          color="fg.muted"
-          fontSize="2xs"
-          fontFamily="mono"
-          _hover={{ color: "fg", textDecoration: "none" }}
-        >
-          <LuGithub size={11} />
-          source
-        </Link>
+        <VStack gap={0} align="flex-start" flex={1} minW={0}>
+          <Heading
+            as="h1"
+            size="md"
+            color="accent"
+            fontFamily="mono"
+            fontWeight="600"
+            lineHeight="1.1"
+          >
+            Latent Insights
+          </Heading>
+          <Text
+            fontSize="xs"
+            color="fg.muted"
+            fontFamily="mono"
+            minW={0}
+            mt={2}
+          >
+            Parallel-agent data analysis with live thread orchestration,
+            step-level traces, and inline observation feeds.{" "}
+            <Link
+              href={GITHUB_REPO_URL}
+              variant="underline"
+              target="_blank"
+              rel="noopener noreferrer"
+              display="inline-flex"
+              gap={1}
+              color="fg.muted"
+              fontSize="xs"
+              fontFamily="mono"
+              _hover={{ color: "fg", textDecoration: "none" }}
+            >
+              <LuGithub size={12} />
+              source
+            </Link>
+          </Text>
+        </VStack>
       </Flex>
 
       {/* Two-column layout */}
@@ -180,8 +191,11 @@ export function Dashboard() {
             flexDirection="column"
             flex={1}
           >
-            <Text fontSize="2xs" color="fg.muted" fontFamily="mono" mb={1}>
-              Flow · click to inspect
+            <Text fontSize="xs" fontWeight="medium" color="accentSubtle" mb={2}>
+              Dataset {`${datasetFileName} (${threadCountForTitle} threads)`}
+              <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
+                {"• "}click a node to inspect
+              </Text>
             </Text>
             <Box flex={1} overflow="auto">
               <FlowViz />
@@ -211,14 +225,17 @@ export function Dashboard() {
             )}
 
             <Text
-              fontSize="2xs"
-              color="fg.muted"
-              fontFamily="mono"
-              mb={1}
+              fontSize="xs"
+              fontWeight="medium"
+              color="accentSubtle"
+              mb={2}
               px={2}
               pt={session.schema_summary ? 1 : 2}
             >
-              Feed · click to expand
+              Feed of agent actions across threads
+              <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
+                {"• "}click a row to expand
+              </Text>
             </Text>
             <Box flex={1} minW={0} maxW="100%" overflow="hidden">
               <EventFeed />

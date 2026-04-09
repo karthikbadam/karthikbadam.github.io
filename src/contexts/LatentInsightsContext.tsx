@@ -155,6 +155,22 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
       }
 
       session.threads = threads;
+
+      // Handle session-level SSE events
+      if (evt.event_type === "scout_done" && evt.message) {
+        try {
+          const questions = JSON.parse(evt.message);
+          if (Array.isArray(questions)) {
+            session.scout_questions = questions;
+          }
+        } catch {
+          // scout_done message may not be JSON
+        }
+      }
+      if ((evt.event_type as string) === "schema_summary_ready" && evt.message) {
+        session.schema_summary = evt.message;
+      }
+
       return { ...state, session };
     }
 
@@ -232,7 +248,7 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
         const es = new EventSource(`${API_BASE}/sessions/${sessionId}/events`);
         eventSourceRef.current = es;
 
-        const SSE_TYPES: SSEEventType[] = [
+        const SSE_TYPES: string[] = [
           "scout_done",
           "thread_start",
           "step_start",
@@ -241,13 +257,14 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
           "step_complete",
           "thread_complete",
           "thread_waiting",
+          "schema_summary_ready",
         ];
 
         for (const eventType of SSE_TYPES) {
           es.addEventListener(eventType, (e: MessageEvent) => {
             try {
               const data = JSON.parse(e.data);
-              const sseEvent: SSEEvent = { event_type: eventType, ...data };
+              const sseEvent: SSEEvent = { event_type: eventType as SSEEventType, ...data };
 
               const dedupeKey = `${data.thread_id}:${data.step_number ?? ""}:${eventType}:${data.timestamp}`;
               if (seenEventsRef.current.has(dedupeKey)) return;
@@ -285,7 +302,7 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
 
               const feedEntry: FeedEntry = {
                 id: feedId,
-                event_type: eventType,
+                event_type: eventType as SSEEventType,
                 thread_id: data.thread_id,
                 message: previewMessage,
                 timestamp: data.timestamp,
