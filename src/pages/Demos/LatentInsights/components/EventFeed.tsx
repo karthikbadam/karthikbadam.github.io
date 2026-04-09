@@ -158,14 +158,19 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
     const typeLabel = TYPE_LABELS[entry.event_type as SSEEventType] || entry.event_type;
     const activeColor = isDark ? "#eee" : "#111";
     const dimColor = isExpanded ? activeColor : isDark ? "#888" : "#666";
-    const mutedColor = isExpanded ? activeColor : isDark ? "#666" : "#999";
+    const mutedColor = isExpanded ? activeColor : isDark ? "#555" : "#aaa";
     const threadColor = isExpanded ? activeColor : color;
+
+    // Compact: "797ae7" "5" "FO" "worker" "0.3s" or "797ae7" "start" "question text…"
+    const tid = entry.thread_id.slice(0, THREAD_ID_PREVIEW_LENGTH);
+    const isEvent = entry.event_type === "llm_call" || entry.event_type === "tool_call";
+    const isStepBoundary = entry.event_type === "step_start" || entry.event_type === "step_complete";
 
     return (
       <Box
         data-entry-id={entry.id}
         px={1}
-        py="2px"
+        py="1px"
         minW={0}
         maxW="100%"
         w="100%"
@@ -174,30 +179,45 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         borderRadius="sm"
         onClick={() => expandable && onToggle(entry.id, entry)}
       >
-        <Flex gap="6px" align="center" minW={0} w="100%">
+        <Flex gap="5px" align="center" minW={0} w="100%">
+          {/* Thread ID — always shown */}
           <Text as="span" color={threadColor} flexShrink={0}>
-            thread {entry.thread_id.slice(0, THREAD_ID_PREVIEW_LENGTH)}
+            {tid}
           </Text>
+
+          {/* Step number (compact) */}
           {entry.step_number !== undefined && (
-            <Text as="span" color={dimColor} flexShrink={0}>
-              step {entry.step_number}
+            <Text as="span" color={mutedColor} flexShrink={0}>
+              {entry.step_number}
             </Text>
           )}
-          {entry.move && (
+
+          {/* Move or event type label */}
+          {entry.move ? (
             <Text as="span" color={dimColor} fontWeight="bold" flexShrink={0}>
               {entry.move}
             </Text>
-          )}
-          {entry.agent && (
+          ) : !isEvent && !isStepBoundary ? (
+            <Text as="span" color={mutedColor} flexShrink={0}>
+              {typeLabel}
+            </Text>
+          ) : null}
+
+          {/* Agent role for events */}
+          {isEvent && entry.agent && (
             <Text as="span" color={mutedColor} flexShrink={0}>
               {entry.agent}
             </Text>
           )}
-          {!entry.agent && !entry.move && (
+
+          {/* Event type indicator for tool calls */}
+          {isEvent && !entry.agent && (
             <Text as="span" color={mutedColor} flexShrink={0}>
               {typeLabel}
             </Text>
           )}
+
+          {/* Message / duration — fill remaining space */}
           {!isExpanded && entry.message && (
             <Box
               flex="1 1 0%"

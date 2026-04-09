@@ -177,7 +177,7 @@ export const FlowViz: React.FC = () => {
       };
     });
 
-    const svgH = Math.max(maxColH + 8, 40);
+    const svgH = maxColH + 8;
     return { columns, svgW: containerWidth, svgH, threadW };
   }, [session, containerWidth]);
 
@@ -216,7 +216,7 @@ export const FlowViz: React.FC = () => {
       ref={containerRef}
       position="relative"
       w="100%"
-      h="100%"
+      minH="100%"
       overflow="auto"
       px={2}
     >
