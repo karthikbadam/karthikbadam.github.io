@@ -175,8 +175,9 @@ export const CommandBar: React.FC<CommandBarProps> = ({
           cursor="pointer"
           _hover={{ color: "fg" }}
           onClick={handleContinue}
+          title="Resumes stuck threads and scouts for new questions (may spawn new threads)"
         >
-          continue stuck
+          continue + rescan
         </Box>
       </Flex>
 
