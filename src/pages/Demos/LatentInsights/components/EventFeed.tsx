@@ -124,7 +124,7 @@ export const EventFeed: React.FC = () => {
         {feedEntries.length === 0 && (
           <Text color="fg.muted" fontSize="xs" p={2} textAlign="center">
             {state.mode === "live"
-              ? "Waiting for events\u2026"
+              ? "Waiting for events…"
               : "No events to display"}
           </Text>
         )}
@@ -266,7 +266,7 @@ const JsonTable: React.FC<{ data: unknown[]; label?: string }> = ({ data, label 
         </tbody>
       </Box>
       {data.length > 50 && (
-        <Text fontSize="2xs" color="fg.muted">{"\u2026"} {data.length - 50} more rows</Text>
+        <Text fontSize="2xs" color="fg.muted">{"…"} {data.length - 50} more rows</Text>
       )}
     </Box>
   );
@@ -284,7 +284,7 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
         <ReplyInput
           threadId={entry.thread_id}
           label="Reply to waiting thread"
-          placeholder="Type a reply and press Enter\u2026"
+          placeholder="Type a reply and press Enter…"
           onClose={() => {}}
         />
       </Box>
@@ -302,7 +302,7 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
         <ReplyInput
           threadId={entry.thread_id}
           label="Send direction to running thread"
-          placeholder="Guide this thread\u2026"
+          placeholder="Guide this thread…"
           onClose={() => {}}
         />
       </Box>

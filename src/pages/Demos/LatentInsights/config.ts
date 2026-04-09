@@ -67,27 +67,27 @@ export const MODE_CONFIG: Record<
 > = {
   ask: {
     label: "Ask",
-    placeholder: "Ask a new question to start a thread\u2026",
+    placeholder: "Ask a new question to start a thread…",
     description: "Creates a new analysis thread",
   },
   broadcast: {
     label: "Broadcast",
-    placeholder: "Send a message to all active threads\u2026",
+    placeholder: "Send a message to all active threads…",
     description: "Message all threads at once",
   },
   direct: {
     label: "Direct",
-    placeholder: "Send direction to selected thread\u2026",
+    placeholder: "Send direction to selected thread…",
     description: "Message a specific thread",
   },
   pattern: {
     label: "Pattern",
-    placeholder: "Select a pattern below\u2026",
+    placeholder: "Select a pattern below…",
     description: "Switch exploration pattern",
   },
   continue: {
     label: "Continue",
-    placeholder: "Press Enter to resume stuck threads\u2026",
+    placeholder: "Press Enter to resume stuck threads…",
     description: "Resume waiting/stuck threads",
   },
 };
@@ -110,16 +110,16 @@ export const FEATURED_SESSIONS = [
   {
     id: "846f0bbfefc0",
     dataset: "cars.csv",
-    description: "10 threads \u00b7 60 steps",
+    description: "10 threads · 60 steps",
   },
   {
     id: "a59dfbbd0fee",
     dataset: "exoplanets-nasa.csv",
-    description: "8 threads \u00b7 4 waiting",
+    description: "8 threads · 4 waiting",
   },
   {
     id: "746fa2380425",
     dataset: "star_classification.csv",
-    description: "8 threads \u00b7 3 waiting",
+    description: "8 threads · 3 waiting",
   },
 ] as const;

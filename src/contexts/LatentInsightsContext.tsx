@@ -90,7 +90,7 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
               ...thread.steps,
               {
                 step_number: evt.step_number,
-                move: evt.move || "UNKNOWN",
+                move: "",
                 instruction: "",
                 result: "",
                 view_created: null,
@@ -271,12 +271,17 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
                 feedId = `ev:${data.thread_id}:${data.step_number ?? 0}:${count}`;
               }
 
+              const durationStr = data.duration_ms
+                ? `${(data.duration_ms / 1000).toFixed(1)}s`
+                : "";
               const previewMessage =
                 eventType === "step_complete"
                   ? String(data.result ?? data.message ?? "")
                   : eventType === "thread_waiting"
                     ? String(data.error ?? data.message ?? data.running_summary ?? "")
-                    : String(data.message ?? "");
+                    : (eventType === "llm_call" || eventType === "tool_call")
+                      ? durationStr
+                      : String(data.message ?? "");
 
               const feedEntry: FeedEntry = {
                 id: feedId,
@@ -285,7 +290,7 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
                 message: previewMessage,
                 timestamp: data.timestamp,
                 step_number: data.step_number,
-                move: data.move,
+                move: eventType === "step_start" ? undefined : data.move,
                 agent: data.agent || undefined,
                 thread_status:
                   eventType === "thread_complete" ? "complete"

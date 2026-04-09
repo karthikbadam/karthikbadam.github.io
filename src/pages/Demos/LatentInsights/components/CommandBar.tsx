@@ -1,13 +1,8 @@
 import { Box, Flex, Input, Text } from "@chakra-ui/react";
-import React, { useState, useCallback, useRef, useEffect } from "react";
-import { LuChevronDown, LuSend } from "react-icons/lu";
+import React, { useState, useCallback, useRef } from "react";
+import { LuSend } from "react-icons/lu";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
-import { CommandMode, ExplorationPattern } from "../types";
-import {
-  MODE_CONFIG,
-  PATTERN_OPTIONS,
-  THREAD_ID_PREVIEW_LENGTH,
-} from "../config";
+import { THREAD_ID_PREVIEW_LENGTH } from "../config";
 
 interface CommandBarProps {
   sessionId: string;
@@ -22,277 +17,174 @@ export const CommandBar: React.FC<CommandBarProps> = ({
     createThread,
     broadcastMessage,
     replyToThread,
-    switchPattern,
     continueSession,
   } = useLatentInsights();
 
-  const [mode, setMode] = useState<CommandMode>("ask");
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedPattern, setSelectedPattern] = useState<ExplorationPattern>("coordinator_worker");
   const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Auto-switch to "direct" mode when a thread is selected
-  useEffect(() => {
-    if (selectedThreadId && mode !== "direct") {
-      setMode("direct");
-    }
-  }, [selectedThreadId]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [dropdownOpen]);
+  const isDirectMode = !!selectedThreadId;
 
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
       e?.preventDefault();
       if (sending) return;
+      const text = value.trim();
+      if (!text) return;
       setError(null);
       setSending(true);
       try {
-        switch (mode) {
-          case "ask":
-            if (!value.trim()) break;
-            await createThread(sessionId, value.trim());
-            setValue("");
-            break;
-          case "broadcast":
-            if (!value.trim()) break;
-            await broadcastMessage(sessionId, value.trim());
-            setValue("");
-            break;
-          case "direct":
-            if (!value.trim() || !selectedThreadId) {
-              setError("Select a thread in the flow visualization first");
-              break;
-            }
-            await replyToThread(selectedThreadId, value.trim());
-            setValue("");
-            break;
-          case "pattern":
-            await switchPattern(sessionId, selectedPattern);
-            break;
-          case "continue":
-            await continueSession(sessionId);
-            break;
+        if (isDirectMode) {
+          await replyToThread(selectedThreadId!, text);
+        } else {
+          await createThread(sessionId, text);
         }
+        setValue("");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed");
       } finally {
         setSending(false);
       }
     },
-    [
-      mode,
-      value,
-      sending,
-      sessionId,
-      selectedThreadId,
-      selectedPattern,
-      createThread,
-      broadcastMessage,
-      replyToThread,
-      switchPattern,
-      continueSession,
-    ],
+    [value, sending, sessionId, selectedThreadId, isDirectMode, createThread, replyToThread],
   );
 
-  const selectMode = useCallback((m: CommandMode) => {
-    setMode(m);
-    setDropdownOpen(false);
+  const handleBroadcast = useCallback(async () => {
+    const text = value.trim();
+    if (!text || sending) return;
     setError(null);
-    setValue("");
-    inputRef.current?.focus();
-  }, []);
+    setSending(true);
+    try {
+      await broadcastMessage(sessionId, text);
+      setValue("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setSending(false);
+    }
+  }, [value, sending, sessionId, broadcastMessage]);
 
-  const cfg = MODE_CONFIG[mode];
-  const showInput = mode !== "pattern" && mode !== "continue";
+  const handleContinue = useCallback(async () => {
+    if (sending) return;
+    setError(null);
+    setSending(true);
+    try {
+      await continueSession(sessionId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setSending(false);
+    }
+  }, [sending, sessionId, continueSession]);
+
+  const placeholder = isDirectMode
+    ? `Direct thread ${selectedThreadId!.slice(0, THREAD_ID_PREVIEW_LENGTH)}…`
+    : "Ask a new question to start a thread…";
 
   return (
-    <Box px={4} pb={2}>
-      <Box
+    <Box>
+      <Flex
+        as="form"
+        onSubmit={handleSubmit}
+        align="center"
+        gap={0}
         border="1px solid"
         borderColor="gray.600"
         borderRadius="md"
         bg="bg.panel"
         overflow="hidden"
       >
-        <Flex
-          as="form"
-          onSubmit={handleSubmit}
-          align="center"
-          gap={0}
-          minH="36px"
+        {/* Mode indicator */}
+        <Text
+          px={2}
+          fontSize="2xs"
+          fontFamily="mono"
+          color="fg.muted"
+          flexShrink={0}
+          borderRight="1px solid"
+          borderColor="gray.600"
+          h="32px"
+          lineHeight="32px"
+          whiteSpace="nowrap"
         >
-          {/* Mode selector */}
-          <Box position="relative" ref={dropdownRef} flexShrink={0}>
-            <Box
-              as="button"
-              type="button"
-              display="flex"
-              alignItems="center"
-              gap={1}
-              px={3}
-              h="36px"
-              fontSize="xs"
-              fontFamily="mono"
-              fontWeight="bold"
-              color="fg.muted"
-              borderRight="1px solid"
-              borderColor="gray.600"
-              cursor="pointer"
-              _hover={{ bg: "whiteAlpha.50" }}
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-            >
-              {cfg.label}
-              {mode === "direct" && selectedThreadId && (
-                <Text as="span" fontWeight="normal" color="fg.muted">
-                  {selectedThreadId.slice(0, THREAD_ID_PREVIEW_LENGTH)}
-                </Text>
-              )}
-              <LuChevronDown size={10} />
-            </Box>
+          {isDirectMode ? "direct" : "ask"}
+        </Text>
 
-            {dropdownOpen && (
-              <Box
-                position="absolute"
-                bottom="100%"
-                left={0}
-                mb={1}
-                bg="bg.panel"
-                border="1px solid"
-                borderColor="gray.600"
-                borderRadius="md"
-                zIndex={10}
-                minW="200px"
-                py={1}
-              >
-                {(Object.keys(MODE_CONFIG) as CommandMode[]).map((m) => (
-                  <Box
-                    key={m}
-                    as="button"
-                    type="button"
-                    display="block"
-                    w="100%"
-                    textAlign="left"
-                    px={3}
-                    py={1.5}
-                    fontSize="xs"
-                    fontFamily="mono"
-                    cursor="pointer"
-                    fontWeight={m === mode ? "bold" : "normal"}
-                    color={m === mode ? "fg" : "fg.muted"}
-                    _hover={{ bg: "whiteAlpha.100" }}
-                    onClick={() => selectMode(m)}
-                  >
-                    <Text fontWeight="bold">{MODE_CONFIG[m].label}</Text>
-                    <Text color="fg.muted" fontSize="2xs">
-                      {MODE_CONFIG[m].description}
-                    </Text>
-                  </Box>
-                ))}
-              </Box>
-            )}
-          </Box>
+        <Input
+          ref={inputRef}
+          flex={1}
+          variant="unstyled"
+          size="xs"
+          fontFamily="mono"
+          fontSize="xs"
+          px={2}
+          h="32px"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          disabled={sending}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setValue("");
+          }}
+        />
 
-          {/* Input area */}
-          {showInput && (
-            <Input
-              ref={inputRef}
-              flex={1}
-              variant="unstyled"
-              size="xs"
-              fontFamily="mono"
-              fontSize="xs"
-              px={3}
-              placeholder={
-                mode === "direct" && selectedThreadId
-                  ? `Direct thread ${selectedThreadId.slice(0, 8)}\u2026`
-                  : cfg.placeholder
-              }
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              disabled={sending}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setValue("");
-                }
-              }}
-            />
-          )}
+        {/* Send */}
+        <Box
+          as="button"
+          type="submit"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          px={2}
+          h="32px"
+          color="fg.muted"
+          cursor={sending ? "wait" : "pointer"}
+          _hover={{ color: "fg" }}
+          opacity={sending ? 0.5 : 1}
+          borderLeft="1px solid"
+          borderColor="gray.600"
+          flexShrink={0}
+        >
+          <LuSend size={11} />
+        </Box>
+      </Flex>
 
-          {/* Pattern selector (shown only in pattern mode) */}
-          {mode === "pattern" && (
-            <Flex flex={1} align="center" gap={2} px={3}>
-              {PATTERN_OPTIONS.map((p) => (
-                <Box
-                  key={p.value}
-                  as="button"
-                  type="button"
-                  px={2}
-                  py={1}
-                  fontSize="xs"
-                  fontFamily="mono"
-                  border="1px solid"
-                  borderColor={selectedPattern === p.value ? "fg.muted" : "gray.600"}
-                  borderRadius="sm"
-                  color={selectedPattern === p.value ? "fg" : "fg.muted"}
-                  cursor="pointer"
-                  _hover={{ borderColor: "fg.muted" }}
-                  onClick={() => setSelectedPattern(p.value)}
-                >
-                  {p.label}
-                </Box>
-              ))}
-            </Flex>
-          )}
+      {/* Secondary actions row */}
+      <Flex gap={3} mt={1} px={1}>
+        <Box
+          as="button"
+          type="button"
+          fontSize="2xs"
+          fontFamily="mono"
+          color="fg.muted"
+          cursor="pointer"
+          _hover={{ color: "fg" }}
+          onClick={handleBroadcast}
+          opacity={value.trim() ? 1 : 0.4}
+        >
+          broadcast to all
+        </Box>
+        <Box
+          as="button"
+          type="button"
+          fontSize="2xs"
+          fontFamily="mono"
+          color="fg.muted"
+          cursor="pointer"
+          _hover={{ color: "fg" }}
+          onClick={handleContinue}
+        >
+          continue stuck
+        </Box>
+      </Flex>
 
-          {/* Continue placeholder */}
-          {mode === "continue" && (
-            <Text flex={1} px={3} fontSize="xs" fontFamily="mono" color="fg.muted">
-              Resume all stuck/waiting threads
-            </Text>
-          )}
-
-          {/* Send button */}
-          <Box
-            as="button"
-            type="submit"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            px={3}
-            h="36px"
-            fontSize="xs"
-            fontFamily="mono"
-            color="fg.muted"
-            cursor={sending ? "wait" : "pointer"}
-            _hover={{ color: "fg" }}
-            opacity={sending ? 0.5 : 1}
-            borderLeft="1px solid"
-            borderColor="gray.600"
-          >
-            <LuSend size={12} />
-          </Box>
-        </Flex>
-
-        {error && (
-          <Text fontSize="xs" color="red.400" px={3} pb={1} fontFamily="mono">
-            {error}
-          </Text>
-        )}
-      </Box>
+      {error && (
+        <Text fontSize="2xs" color="red.400" mt={1} px={1} fontFamily="mono">
+          {error}
+        </Text>
+      )}
     </Box>
   );
 };

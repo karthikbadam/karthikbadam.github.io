@@ -160,89 +160,178 @@ export function LandingScreen() {
   return (
     <Box
       h="100%"
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
       bg="bg.muted"
       p={4}
       overflowY="auto"
     >
-      <VStack gap={6} maxW="520px" w="100%" alignItems="flex-start">
-        <VStack gap={1} alignItems="flex-start">
-          <Heading
-            as="h1"
-            size="lg"
-            color="accent"
-            fontFamily="mono"
-            fontWeight="600"
-          >
-            Latent Insights
-          </Heading>
-          <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-            Parallel-agent data analysis modeling a sensemaking process. Upload
-            a dataset or explore a saved session.
-          </Text>
+      <Flex
+        maxW="900px"
+        mx="auto"
+        gap={8}
+        direction={{ base: "column", md: "row" }}
+        align="flex-start"
+      >
+        {/* Left column: title, upload, sessions */}
+        <VStack gap={6} flex={1} minW={0} alignItems="flex-start">
+          <VStack gap={1} alignItems="flex-start">
+            <Heading
+              as="h1"
+              size="lg"
+              color="accent"
+              fontFamily="mono"
+              fontWeight="600"
+            >
+              Latent Insights
+            </Heading>
+            <Text fontSize="xs" color="fg.muted" fontFamily="mono">
+              Parallel-agent data analysis modeling a sensemaking process. Upload
+              a dataset or explore a saved session.
+            </Text>
+          </VStack>
+
+          {/* Upload + source link */}
+          <Flex align="center" gap={3}>
+            <Box
+              as="label"
+              display="inline-flex"
+              alignItems="center"
+              gap={1}
+              px={3}
+              py={1}
+              border="1px solid"
+              borderColor={pendingFile ? "fg.muted" : "gray.600"}
+              borderRadius="md"
+              cursor="pointer"
+              fontSize="xs"
+              fontFamily="mono"
+              color={pendingFile ? "fg" : "fg.muted"}
+              _hover={{ borderColor: "fg.muted" }}
+              transition="border-color 0.15s"
+            >
+              {pendingFile ? pendingFile.name : "Select CSV"}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={handleFileSelect}
+                style={{ display: "none" }}
+              />
+            </Box>
+            <Link
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              display="flex"
+              alignItems="center"
+              gap={1}
+              color="fg.muted"
+              fontSize="xs"
+              variant="underline"
+              fontFamily="mono"
+              _hover={{ color: "fg", textDecoration: "none" }}
+            >
+              <LuGithub size={13} />
+              source
+            </Link>
+          </Flex>
+
+          {/* Past sessions + featured */}
+          <VStack gap={2} w="100%" alignItems="flex-start">
+            <Text fontSize="xs" color="fg.muted" fontFamily="mono">
+              Past sessions
+            </Text>
+            {localSessions.map((s) => (
+              <Box
+                key={s.id}
+                as="button"
+                w="100%"
+                p={3}
+                border="1px solid"
+                borderColor="gray.600"
+                borderRadius="md"
+                textAlign="left"
+                cursor={isLoading ? "wait" : "pointer"}
+                _hover={{ borderColor: "fg.muted" }}
+                transition="border-color 0.15s"
+                onClick={() => openLive(s.id)}
+                opacity={isLoading ? 0.5 : 1}
+              >
+                <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
+                  {s.dataset_path?.split("/").pop() ?? s.id.slice(0, SESSION_ID_PREVIEW_LENGTH)}
+                </Text>
+                <Text fontSize="xs" fontFamily="mono" color="fg.muted">
+                  {s.id.slice(0, SESSION_ID_PREVIEW_LENGTH)}
+                  {s.thread_count > 0
+                    ? ` · ${s.thread_count} threads`
+                    : ""}{" "}
+                  · {s.status}
+                </Text>
+              </Box>
+            ))}
+            {FEATURED_SESSIONS.map((s) => (
+              <Box
+                key={s.id}
+                as="button"
+                w="100%"
+                p={3}
+                border="1px solid"
+                borderColor="gray.600"
+                borderRadius="md"
+                textAlign="left"
+                cursor={isLoading ? "wait" : "pointer"}
+                _hover={{ borderColor: "fg.muted" }}
+                transition="border-color 0.15s"
+                onClick={() => openSaved(s.id)}
+                opacity={isLoading ? 0.5 : 1}
+              >
+                <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
+                  {s.dataset}
+                </Text>
+                <Text fontSize="xs" fontFamily="mono" color="fg.muted">
+                  {s.description}
+                </Text>
+              </Box>
+            ))}
+          </VStack>
+
+          {state.status === "error" && (
+            <Text fontSize="xs" color="red.500" fontFamily="mono">
+              {state.error}
+            </Text>
+          )}
         </VStack>
 
-        {/* Upload + source link */}
-        <Flex align="center" gap={3}>
-          <Box
-            as="label"
-            display="inline-flex"
-            alignItems="center"
-            gap={1}
-            px={3}
-            py={1}
-            border="1px solid"
-            borderColor="gray.600"
-            borderRadius="md"
-            cursor="pointer"
-            fontSize="xs"
-            fontFamily="mono"
-            color="fg.muted"
-            _hover={{ borderColor: "fg.muted" }}
-            transition="border-color 0.15s"
-          >
-            {pendingFile ? pendingFile.name : "Select CSV"}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={handleFileSelect}
-              style={{ display: "none" }}
-            />
-          </Box>
-          <Link
-            href={GITHUB_REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            display="flex"
-            alignItems="center"
-            gap={1}
-            color="fg.muted"
-            fontSize="xs"
-            variant="underline"
-            fontFamily="mono"
-            _hover={{ color: "fg", textDecoration: "none" }}
-          >
-            <LuGithub size={13} />
-            source
-          </Link>
-        </Flex>
-
-        {/* Configuration panel -- visible when file is selected */}
+        {/* Right column: config panel (only when file selected) */}
         {pendingFile && (
           <Box
-            w="100%"
+            flex={1}
+            minW={0}
             border="1px solid"
             borderColor="gray.600"
             borderRadius="md"
             p={4}
+            position={{ base: "static", md: "sticky" }}
+            top={{ md: 4 }}
           >
             <VStack gap={4} alignItems="flex-start" w="100%">
-              <Text fontSize="xs" fontFamily="mono" fontWeight="bold" color="fg">
-                Configure analysis for {pendingFile.name}
+              <Flex justify="space-between" align="center" w="100%">
+                <Text fontSize="xs" fontFamily="mono" fontWeight="bold" color="fg">
+                  Configure analysis
+                </Text>
+                <Box
+                  as="button"
+                  type="button"
+                  onClick={() => setPendingFile(null)}
+                  color="fg.muted"
+                  _hover={{ color: "fg" }}
+                  cursor="pointer"
+                >
+                  <LuX size={12} />
+                </Box>
+              </Flex>
+
+              <Text fontSize="2xs" fontFamily="mono" color="fg.muted">
+                {pendingFile.name}
               </Text>
 
               {/* Question source */}
@@ -268,7 +357,7 @@ export function LandingScreen() {
                     variant="outline"
                     fontFamily="mono"
                     fontSize="xs"
-                    placeholder="e.g., Focus on correlations between price and fuel efficiency\u2026"
+                    placeholder="e.g., Focus on correlations between price and fuel efficiency…"
                     value={scoutContext}
                     onChange={(e) => setScoutContext(e.target.value)}
                     rows={2}
@@ -308,7 +397,7 @@ export function LandingScreen() {
                       variant="outline"
                       fontFamily="mono"
                       fontSize="xs"
-                      placeholder="Type a question\u2026"
+                      placeholder="Type a question…"
                       value={questionInput}
                       onChange={(e) => setQuestionInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -398,6 +487,7 @@ export function LandingScreen() {
               <Box
                 as="button"
                 type="button"
+                w="100%"
                 px={4}
                 py={2}
                 fontSize="xs"
@@ -412,77 +502,12 @@ export function LandingScreen() {
                 opacity={starting ? 0.5 : 1}
                 onClick={handleStart}
               >
-                {starting ? "Starting\u2026" : "Start Analysis"}
+                {starting ? "Starting…" : "Start Analysis"}
               </Box>
             </VStack>
           </Box>
         )}
-
-        {/* Past sessions + featured */}
-        <VStack gap={2} w="100%" alignItems="flex-start">
-          <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-            Past sessions
-          </Text>
-          {localSessions.map((s) => (
-            <Box
-              key={s.id}
-              as="button"
-              w="100%"
-              p={3}
-              border="1px solid"
-              borderColor="gray.600"
-              borderRadius="md"
-              textAlign="left"
-              cursor={isLoading ? "wait" : "pointer"}
-              _hover={{ borderColor: "fg.muted" }}
-              transition="border-color 0.15s"
-              onClick={() => openLive(s.id)}
-              opacity={isLoading ? 0.5 : 1}
-            >
-              <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
-                {s.dataset_path?.split("/").pop() ?? s.id.slice(0, SESSION_ID_PREVIEW_LENGTH)}
-              </Text>
-              <Text fontSize="xs" fontFamily="mono" color="fg.muted">
-                {s.id.slice(0, SESSION_ID_PREVIEW_LENGTH)}
-                {s.thread_count > 0
-                  ? ` \u00b7 ${s.thread_count} threads`
-                  : ""}{" "}
-                \u00b7 {s.status}
-              </Text>
-            </Box>
-          ))}
-          {FEATURED_SESSIONS.map((s) => (
-            <Box
-              key={s.id}
-              as="button"
-              w="100%"
-              p={3}
-              border="1px solid"
-              borderColor="gray.600"
-              borderRadius="md"
-              textAlign="left"
-              cursor={isLoading ? "wait" : "pointer"}
-              _hover={{ borderColor: "fg.muted" }}
-              transition="border-color 0.15s"
-              onClick={() => openSaved(s.id)}
-              opacity={isLoading ? 0.5 : 1}
-            >
-              <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
-                {s.dataset}
-              </Text>
-              <Text fontSize="xs" fontFamily="mono" color="fg.muted">
-                {s.description}
-              </Text>
-            </Box>
-          ))}
-        </VStack>
-
-        {state.status === "error" && (
-          <Text fontSize="xs" color="red.500" fontFamily="mono">
-            {state.error}
-          </Text>
-        )}
-      </VStack>
+      </Flex>
     </Box>
   );
 }

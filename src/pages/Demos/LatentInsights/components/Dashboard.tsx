@@ -1,14 +1,55 @@
 import { Box, Flex, Heading, Link, Text, VStack } from "@chakra-ui/react";
-import { useEffect, useRef } from "react";
-import { LuArrowLeft, LuGithub } from "react-icons/lu";
+import { useEffect, useRef, useState } from "react";
+import { LuArrowLeft, LuChevronDown, LuChevronRight, LuGithub } from "react-icons/lu";
 import { useParams } from "react-router-dom";
 import { PanelContainer } from "../../../../components/PanelContainer";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { FEATURED_SESSIONS, GITHUB_REPO_URL } from "../config";
+import { MarkdownContent } from "./MarkdownContent";
 import { CommandBar } from "./CommandBar";
 import { EventFeed } from "./EventFeed";
 import { FlowViz } from "./FlowViz";
 import { LandingScreen } from "./LandingScreen";
+
+function SchemaSummary({ summary }: { summary: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Box px={2} pt={2} pb={1}>
+      <Box
+        as="button"
+        type="button"
+        display="flex"
+        alignItems="center"
+        gap={1}
+        fontSize="xs"
+        fontFamily="mono"
+        fontWeight="medium"
+        color="accentSubtle"
+        cursor="pointer"
+        _hover={{ color: "fg" }}
+        onClick={() => setOpen((v) => !v)}
+        w="100%"
+        textAlign="left"
+      >
+        {open ? <LuChevronDown size={11} /> : <LuChevronRight size={11} />}
+        Dataset summary
+      </Box>
+      {open && (
+        <Box
+          mt={1}
+          px={2}
+          py={1}
+          borderLeft="2px solid"
+          borderColor="gray.600"
+          maxH="200px"
+          overflowY="auto"
+        >
+          <MarkdownContent content={summary} />
+        </Box>
+      )}
+    </Box>
+  );
+}
 
 export function Dashboard() {
   const { state, loadLiveSession, loadSavedSession } = useLatentInsights();
@@ -39,7 +80,7 @@ export function Dashboard() {
         bg="bg.muted"
       >
         <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-          Loading session\u2026
+          Loading session…
         </Text>
       </Box>
     );
@@ -52,6 +93,7 @@ export function Dashboard() {
   const datasetFileName =
     session.dataset_path?.split("/").pop()?.trim() || "Dataset";
   const threadCountForTitle = session.threads?.length ?? 0;
+  const isLive = state.mode === "live";
 
   return (
     <Box
@@ -133,27 +175,42 @@ export function Dashboard() {
         gap={4}
         minH={0}
       >
-        {/* Left: Flow graph (compact) */}
-        <Box flex={2} minW={0} minH={{ base: "50vh", md: 0 }}>
+        {/* Left: Flow graph + command bar */}
+        <Flex
+          flex={2}
+          minW={0}
+          minH={{ base: "50vh", md: 0 }}
+          direction="column"
+          gap={2}
+        >
           <PanelContainer
             p={2}
             overflow="auto"
             display="flex"
             flexDirection="column"
+            flex={1}
           >
             <Text fontSize="xs" fontWeight="medium" color="accentSubtle" mb={2}>
               Dataset {`${datasetFileName} (${threadCountForTitle} threads)`}
               <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
-                {"\u2022 "}click a node to inspect
+                {"• "}click a node to inspect
               </Text>
             </Text>
             <Box flex={1} overflow="auto">
               <FlowViz />
             </Box>
           </PanelContainer>
-        </Box>
 
-        {/* Right: Feed + Detail */}
+          {/* Command bar below graph -- live sessions only */}
+          {isLive && (
+            <CommandBar
+              sessionId={session.id}
+              selectedThreadId={state.selectedNode?.threadId}
+            />
+          )}
+        </Flex>
+
+        {/* Right: Schema summary + Feed */}
         <Box flex={3} minW={0} minH={{ base: "50vh", md: 0 }} data-feed-panel>
           <PanelContainer
             p={0}
@@ -161,17 +218,22 @@ export function Dashboard() {
             display="flex"
             flexDirection="column"
           >
+            {/* Dataset summary (collapsible, only when available) */}
+            {session.schema_summary && (
+              <SchemaSummary summary={session.schema_summary} />
+            )}
+
             <Text
               fontSize="xs"
               fontWeight="medium"
               color="accentSubtle"
               mb={2}
               px={2}
-              pt={2}
+              pt={session.schema_summary ? 1 : 2}
             >
               Feed of agent actions across threads
               <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
-                {"\u2022 "}click a row to expand
+                {"• "}click a row to expand
               </Text>
             </Text>
             <Box flex={1} minW={0} maxW="100%" overflow="hidden">
@@ -180,14 +242,6 @@ export function Dashboard() {
           </PanelContainer>
         </Box>
       </Box>
-
-      {/* Command bar -- live sessions only */}
-      {state.mode === "live" && session && (
-        <CommandBar
-          sessionId={session.id}
-          selectedThreadId={state.selectedNode?.threadId}
-        />
-      )}
     </Box>
   );
 }
