@@ -402,11 +402,21 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
         const form = new FormData();
         form.append("file", file);
         if (config) {
+          // Send as nested config JSON (backend preferred format)
+          form.append("config", JSON.stringify(config));
+          // Also send as top-level fields for backends that expect that shape
           if (config.question_source) form.append("question_source", config.question_source);
           if (config.scout_context) form.append("scout_context", config.scout_context);
           if (config.seed_threads) form.append("seed_threads", String(config.seed_threads));
         }
-        const res = await fetch(`${API_BASE}/sessions`, {
+        // Build query string fallback (some backends read from query params)
+        const params = new URLSearchParams();
+        if (config?.seed_threads) params.set("seed_threads", String(config.seed_threads));
+        if (config?.question_source) params.set("question_source", config.question_source);
+        const url = params.toString()
+          ? `${API_BASE}/sessions?${params.toString()}`
+          : `${API_BASE}/sessions`;
+        const res = await fetch(url, {
           method: "POST",
           body: form,
         });

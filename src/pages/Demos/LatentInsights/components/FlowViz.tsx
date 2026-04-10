@@ -9,6 +9,7 @@ import React, {
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { SelectedNode } from "../types";
+import { getThreadColor } from "../utils";
 import {
   STEP_H,
   STEP_GAP,
@@ -18,10 +19,13 @@ import {
   THREAD_GAP,
   TOP_PAD,
   MARKER_H,
+  MOVE_COLORS_DARK,
+  MOVE_COLORS_LIGHT,
 } from "../config";
 
 const RX = 3;
 const MAX_THREAD_W = 100;
+const MIN_THREAD_W = 32;
 
 const MOVE_FULL: Record<string, string> = {
   SCOPE: "Scope",
@@ -66,14 +70,31 @@ export const FlowViz: React.FC = () => {
   const textColor = useColorModeValue("#000", "#fff");
   const selectedStroke = useColorModeValue("#000", "#fff");
 
+  const moveColors = isDark ? MOVE_COLORS_DARK : MOVE_COLORS_LIGHT;
+
   const stepFill = useCallback(
-    (status: string) => {
-      if (status === "waiting") return isDark ? "#3a4a5a" : "#d0dae8";
+    (move: string | undefined, status: string) => {
+      // Error overrides move color
       if (status === "error") return isDark ? "#4a3a3a" : "#e0d0d0";
+      // Use move color if available
+      const upper = move?.toUpperCase();
+      if (upper && moveColors[upper]) {
+        return moveColors[upper].bg.replace(/[\d.]+\)$/, "0.35)");
+      }
+      // Fallback: subdued gray by status
       if (status === "running") return isDark ? "#4a4a4a" : "#ccc";
       return isDark ? "#505050" : "#bbb";
     },
-    [isDark],
+    [isDark, moveColors],
+  );
+
+  const stepStroke = useCallback(
+    (move: string | undefined) => {
+      const upper = move?.toUpperCase();
+      if (upper && moveColors[upper]) return moveColors[upper].fg;
+      return "none";
+    },
+    [moveColors],
   );
 
   const markerFill = useCallback(
@@ -117,9 +138,12 @@ export const FlowViz: React.FC = () => {
 
     const totalGaps = (threadCount - 1) * THREAD_GAP;
     const naturalW = (containerWidth - totalGaps) / threadCount;
-    const threadW = Math.max(12, Math.min(naturalW, MAX_THREAD_W));
+    const threadW = Math.max(MIN_THREAD_W, Math.min(naturalW, MAX_THREAD_W));
     const usedW = threadCount * threadW + totalGaps;
-    const xOffset = Math.max(0, (containerWidth - usedW) / 2);
+    // If columns are wider than container (small screen), svg extends to full
+    // usedW so the parent can horizontally scroll. Otherwise center.
+    const svgWFinal = Math.max(containerWidth, usedW);
+    const xOffset = usedW >= containerWidth ? 0 : (containerWidth - usedW) / 2;
 
     let maxColH = 0;
 
@@ -184,7 +208,7 @@ export const FlowViz: React.FC = () => {
     });
 
     const svgH = maxColH + TOP_PAD;
-    return { columns, svgW: containerWidth, svgH, threadW };
+    return { columns, svgW: svgWFinal, svgH, threadW };
   }, [session, containerWidth]);
 
   const handleClick = useCallback(
@@ -246,10 +270,16 @@ export const FlowViz: React.FC = () => {
             userSelect: "none",
           }}
         >
-          {columns.map((col) => (
+          {columns.map((col, ci) => (
             <g key={col.threadId}>
               {(() => {
                 const startSel = isSelected("thread", col.threadId);
+                const threadIdColor = getThreadColor(
+                  col.threadId,
+                  columns.map((c) => c.threadId),
+                  isDark,
+                );
+                const showTid = col.w >= 60;
                 return (
                   <>
                     <rect
@@ -259,8 +289,8 @@ export const FlowViz: React.FC = () => {
                       height={MARKER_H}
                       fill={markerFill(col.status, false)}
                       rx={RX}
-                      stroke={startSel ? selectedStroke : "none"}
-                      strokeWidth={startSel ? 1.5 : 0}
+                      stroke={startSel ? selectedStroke : threadIdColor}
+                      strokeWidth={startSel ? 1.5 : 1}
                       style={{ cursor: "pointer" }}
                       onClick={() =>
                         handleClick({ type: "thread", threadId: col.threadId })
@@ -276,7 +306,7 @@ export const FlowViz: React.FC = () => {
                         dominantBaseline="central"
                         style={{ pointerEvents: "none", fontSize: 10 }}
                       >
-                        {useFullNames ? "Start" : "ST"}
+                        {showTid ? col.threadId.slice(0, 6) : useFullNames ? "Start" : "ST"}
                       </text>
                     )}
                   </>
@@ -286,6 +316,9 @@ export const FlowViz: React.FC = () => {
               {col.steps.map((step) => {
                 const sel = isSelected("step", col.threadId, step.stepNumber);
                 const label = moveLabel(step.move, useFullNames);
+                const moveUpper = step.move?.toUpperCase();
+                const moveColor = moveUpper ? moveColors[moveUpper] : undefined;
+                const stepTextColor = moveColor?.fg || textColor;
                 return (
                   <g key={`s-${step.stepNumber}`}>
                     <rect
@@ -293,10 +326,10 @@ export const FlowViz: React.FC = () => {
                       y={step.y}
                       width={step.w}
                       height={step.h}
-                      fill={stepFill(step.status)}
+                      fill={stepFill(step.move, step.status)}
                       rx={RX}
-                      stroke={sel ? selectedStroke : "none"}
-                      strokeWidth={sel ? 1.5 : 0}
+                      stroke={sel ? selectedStroke : stepStroke(step.move)}
+                      strokeWidth={sel ? 1.5 : moveColor ? 0.5 : 0}
                       className={
                         step.status === "running" ? "flow-pulse" : undefined
                       }
@@ -313,8 +346,9 @@ export const FlowViz: React.FC = () => {
                       <text
                         x={step.x + step.w / 2}
                         y={step.y + step.h / 2}
-                        fill={textColor}
+                        fill={stepTextColor}
                         fontFamily="monospace"
+                        fontWeight="600"
                         textAnchor="middle"
                         dominantBaseline="central"
                         style={{ pointerEvents: "none", fontSize: 10 }}
@@ -410,7 +444,8 @@ export const FlowViz: React.FC = () => {
         </svg>
       </Box>
 
-      {/* Legend — fixed at bottom, outside scroll */}
+      {/* Legend — fixed at bottom, hidden when full move names are visible */}
+      {!useFullNames && (
       <Flex
         px={2}
         py={1}
@@ -446,6 +481,7 @@ export const FlowViz: React.FC = () => {
           </Text>
         ))}
       </Flex>
+      )}
     </Flex>
   );
 };

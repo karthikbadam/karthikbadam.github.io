@@ -35,31 +35,33 @@ export const MOVE_ABBR: Record<string, string> = {
 
 // --- EventFeed colors and labels ---
 
-// Muted, distinct thread colors (subtle but identifiable)
+// Muted, neutral thread colors — clearly distinct from the vivid move color palette.
+// Each is a desaturated mid-tone that identifies threads without competing
+// visually with move type badges.
 export const THREAD_SHADES_DARK = [
-  "#7aa2f7", // blue
-  "#9ece6a", // green
-  "#e0af68", // amber
-  "#bb9af7", // purple
-  "#f7768e", // pink
-  "#7dcfff", // cyan
-  "#e0875f", // orange
-  "#9cd6a4", // mint
-  "#c4a7e7", // lavender
-  "#f0c674", // yellow
-  "#6ec3c9", // teal
-  "#d6a0d1", // mauve
-  "#a1c181", // olive
-  "#eab0a0", // salmon
-  "#8abeb7", // sea
-  "#b5bd68", // lime
+  "#8b9bb0", // slate-blue
+  "#a5b894", // sage
+  "#b8a682", // tan
+  "#a692b0", // mauve
+  "#b09285", // rose
+  "#82a8b0", // sky
+  "#b8a28a", // sand
+  "#95a58b", // moss
+  "#a8959e", // dusty rose
+  "#9faa85", // olive
+  "#8ba5a8", // teal
+  "#b097a8", // lilac
+  "#9da890", // mint
+  "#b0957a", // cedar
+  "#8a95a5", // stone-blue
+  "#a895a8", // plum
 ];
 
 export const THREAD_SHADES_LIGHT = [
-  "#3d5a99", "#548048", "#a47630", "#6b3e9e",
-  "#c84a60", "#2d89a5", "#a85832", "#4a8055",
-  "#7b4f9e", "#a87b2e", "#367b80", "#8d5a8a",
-  "#628044", "#a8624d", "#4a7c78", "#6f7a3a",
+  "#55687d", "#6b8056", "#846e4a", "#6f5a75",
+  "#7a5e52", "#4e7580", "#826e54", "#5c6e52",
+  "#755d63", "#6f794e", "#567073", "#7a6478",
+  "#66755a", "#7a6045", "#5a6573", "#735e72",
 ];
 
 // Move type colors — matched between dark/light

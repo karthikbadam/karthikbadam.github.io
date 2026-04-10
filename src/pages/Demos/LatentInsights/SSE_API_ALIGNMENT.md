@@ -8,6 +8,25 @@ on page refresh.
 
 ---
 
+## 0. `seed_threads` session config is ignored on upload
+
+**Problem:** When the user sets `seed_threads: 1` in the session config during
+upload, the backend still spawns one thread per scout-generated question (7–10
+threads). The `seed_threads` parameter has no visible effect.
+
+**Current UI workaround:** Send `seed_threads` as a form field, a `config`
+JSON string, and a query parameter — in case the backend expects any of those
+shapes.
+
+**Proposed fix (backend):**
+- Accept `seed_threads` via `POST /sessions` form data or JSON body
+- Cap the number of spawned threads at `min(seed_threads, len(scout_questions))`
+- Document clearly whether `seed_threads` controls initial thread count or
+  maximum concurrent threads
+- Consider renaming to `max_threads` or `initial_threads` for clarity
+
+---
+
 ## 1. `step_start` should not include a `move` field (or mark it provisional)
 
 **Problem:** `step_start` SSE events send a `move` (often `"forage"`) before

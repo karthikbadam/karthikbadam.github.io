@@ -11,10 +11,10 @@ import { EventFeed } from "./EventFeed";
 import { FlowViz } from "./FlowViz";
 import { LandingScreen } from "./LandingScreen";
 
-function SchemaSummary({ summary }: { summary: string }) {
-  const [open, setOpen] = useState(false);
+function SchemaSummaryPanel({ summary }: { summary: string }) {
+  const [open, setOpen] = useState(true);
   return (
-    <Box px={2} pt={2} pb={1}>
+    <PanelContainer p={0} overflow="hidden" display="flex" flexDirection="column">
       <Box
         as="button"
         type="button"
@@ -30,24 +30,26 @@ function SchemaSummary({ summary }: { summary: string }) {
         onClick={() => setOpen((v) => !v)}
         w="100%"
         textAlign="left"
+        px={3}
+        py={2}
       >
         {open ? <LuChevronDown size={11} /> : <LuChevronRight size={11} />}
         Dataset summary
       </Box>
       {open && (
         <Box
-          mt={1}
-          px={2}
-          py={1}
-          borderLeft="2px solid"
-          borderColor="gray.600"
-          maxH="200px"
+          px={3}
+          pb={3}
+          pt={1}
+          maxH="220px"
           overflowY="auto"
+          borderTop="1px solid"
+          borderColor="gray.subtle"
         >
           <MarkdownContent content={summary} />
         </Box>
       )}
-    </Box>
+    </PanelContainer>
   );
 }
 
@@ -211,26 +213,39 @@ export function Dashboard() {
           )}
         </Flex>
 
-        {/* Right: Schema summary + Feed */}
-        <Box flex={3} minW={0} minH={{ base: "50vh", md: "100%" }} h={{ md: "100%" }} data-feed-panel>
+        {/* Right: Schema summary (separate panel) + Feed */}
+        <Flex
+          flex={3}
+          minW={0}
+          minH={{ base: "50vh", md: "100%" }}
+          h={{ md: "100%" }}
+          direction="column"
+          gap={2}
+          data-feed-panel
+        >
+          {/* Dataset summary as its own panel (only when available) */}
+          {session.schema_summary && (
+            <Box flexShrink={0}>
+              <SchemaSummaryPanel summary={session.schema_summary} />
+            </Box>
+          )}
+
+          {/* Feed panel */}
           <PanelContainer
             p={0}
             overflow="hidden"
             display="flex"
             flexDirection="column"
+            flex={1}
+            minH={0}
           >
-            {/* Dataset summary (collapsible, only when available) */}
-            {session.schema_summary && (
-              <SchemaSummary summary={session.schema_summary} />
-            )}
-
             <Text
               fontSize="xs"
               fontWeight="medium"
               color="accentSubtle"
               mb={2}
               px={2}
-              pt={session.schema_summary ? 1 : 2}
+              pt={2}
             >
               Feed of agent actions across threads
               <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
@@ -241,7 +256,7 @@ export function Dashboard() {
               <EventFeed />
             </Box>
           </PanelContainer>
-        </Box>
+        </Flex>
       </Box>
     </Box>
   );

@@ -216,9 +216,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
     return (
       <Box
         data-entry-id={entry.id}
-        position="relative"
-        pl="10px"
-        pr={2}
+        px={2}
         py="3px"
         minW={0}
         maxW="100%"
@@ -227,17 +225,6 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         _hover={expandable ? { bg: isDark ? "whiteAlpha.50" : "blackAlpha.50" } : undefined}
         borderRadius="sm"
         onClick={() => expandable && onToggle(entry.id, entry)}
-        _before={{
-          content: '""',
-          position: "absolute",
-          left: "2px",
-          top: "3px",
-          bottom: "3px",
-          width: "2px",
-          borderRadius: "1px",
-          bg: threadColor,
-          opacity: isExpanded ? 1 : 0.7,
-        }}
       >
         <Flex gap="6px" align="center" minW={0} w="100%">
           {/* Event type icon */}
