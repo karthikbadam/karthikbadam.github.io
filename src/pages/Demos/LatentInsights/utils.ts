@@ -114,16 +114,12 @@ function formatColumnProfiles(text: string): string {
 
 export function formatSchemaSummary(raw: string): string {
   if (!raw) return raw;
-  // Strip leading "Dataset summary" heading (the panel already has this title)
-  let text = raw.replace(/^\s*#*\s*Dataset\s+summary\s*:?\s*\n*/i, "");
-
-  // Find "Column profiles" heading then format the rest as a table
-  const match = text.match(/(Column profiles)[:\s]*/i);
-  if (!match) return text;
-  const headerEnd = match.index! + match[0].length;
-  const before = text.slice(0, headerEnd).replace(/Column profiles/i, "**Column profiles**\n\n");
-  const after = text.slice(headerEnd);
-  return before + formatColumnProfiles(after);
+  // Show only the column profiles section — the preceding dataset info
+  // (Table/Rows/Columns) is already visible elsewhere in the header.
+  const match = raw.match(/Column profiles[:\s]*/i);
+  if (!match) return raw;
+  const after = raw.slice(match.index! + match[0].length);
+  return formatColumnProfiles(after);
 }
 
 // --- Selection mapping ---
