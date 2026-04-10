@@ -46,7 +46,7 @@ function PanelHeader({ title, hint, onClick }: PanelHeaderProps) {
 }
 
 function SchemaSummaryPanel({ summary }: { summary: string }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const formatted = useMemo(() => formatSchemaSummary(summary), [summary]);
   return (
     <PanelContainer p={0} overflow="hidden" display="flex" flexDirection="column">
