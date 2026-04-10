@@ -1,15 +1,8 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
-import React, {
-  useMemo,
-  useCallback,
-  useRef,
-  useEffect,
-  useState,
-} from "react";
+import React, { useMemo, useCallback, useRef, useEffect, useState } from "react";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { SelectedNode } from "../types";
-import { getThreadColor } from "../utils";
 import {
   STEP_H,
   STEP_GAP,
@@ -19,33 +12,37 @@ import {
   THREAD_GAP,
   TOP_PAD,
   MARKER_H,
-  MOVE_COLORS_DARK,
-  MOVE_COLORS_LIGHT,
+  START_MARKER_H,
 } from "../config";
+import { getMoveColor, getThreadColor } from "../utils";
 
 const RX = 3;
-const MAX_THREAD_W = 100;
-const MIN_THREAD_W = 32;
+const MIN_THREAD_W = 40;
+const MAX_THREAD_W = 110;
+const FULL_NAME_THRESHOLD = 72;
 
-const MOVE_FULL: Record<string, string> = {
-  SCOPE: "Scope",
-  FORAGE: "Forage",
-  FRAME: "Frame",
-  INTERROGATE: "Interrogate",
-  SYNTHESIZE: "Synthesize",
-  ERROR: "Error",
-  UNKNOWN: "",
-};
-
-function moveLabel(move: string | undefined, wide: boolean): string {
-  if (!move) return "";
-  const upper = move.toUpperCase();
-  if (wide) return MOVE_FULL[upper] || upper;
-  const ABBR: Record<string, string> = {
-    SCOPE: "SC", FORAGE: "FO", FRAME: "FR",
-    INTERROGATE: "IN", SYNTHESIZE: "SY", ERROR: "ER", UNKNOWN: "??",
-  };
-  return ABBR[upper] || upper.slice(0, 2);
+// Status-based fill for markers when thread is in a terminal/waiting state.
+// Returns { bg, fg } for the rect + label.
+function getStatusFill(
+  status: string,
+  isDark: boolean,
+): { bg: string; fg: string } | null {
+  if (status === "complete") {
+    return isDark
+      ? { bg: "#1f3520", fg: "#b6de8a" }
+      : { bg: "#d8ecce", fg: "#254820" };
+  }
+  if (status === "waiting") {
+    return isDark
+      ? { bg: "#3a3a3a", fg: "#d0d0d0" }
+      : { bg: "#e0e0e0", fg: "#444444" };
+  }
+  if (status === "error") {
+    return isDark
+      ? { bg: "#3d1e26", fg: "#f6909c" }
+      : { bg: "#f5d2d8", fg: "#74212f" };
+  }
+  return null;
 }
 
 export const FlowViz: React.FC = () => {
@@ -58,8 +55,7 @@ export const FlowViz: React.FC = () => {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
+    const ro = new ResizeObserver(([entry]) => {
       if (entry) setContainerWidth(Math.floor(entry.contentRect.width));
     });
     ro.observe(el);
@@ -67,123 +63,43 @@ export const FlowViz: React.FC = () => {
   }, []);
 
   const isDark = useColorModeValue(false, true);
-  const textColor = useColorModeValue("#000", "#fff");
   const selectedStroke = useColorModeValue("#000", "#fff");
 
-  const moveColors = isDark ? MOVE_COLORS_DARK : MOVE_COLORS_LIGHT;
-
-  const stepFill = useCallback(
-    (move: string | undefined, status: string) => {
-      // Error overrides move color
-      if (status === "error") return isDark ? "#4a3a3a" : "#e0d0d0";
-      // Use move color if available
-      const upper = move?.toUpperCase();
-      if (upper && moveColors[upper]) {
-        return moveColors[upper].bg.replace(/[\d.]+\)$/, "0.35)");
-      }
-      // Fallback: subdued gray by status
-      if (status === "running") return isDark ? "#4a4a4a" : "#ccc";
-      return isDark ? "#505050" : "#bbb";
-    },
-    [isDark, moveColors],
-  );
-
-  const stepStroke = useCallback(
-    (move: string | undefined) => {
-      const upper = move?.toUpperCase();
-      if (upper && moveColors[upper]) return moveColors[upper].fg;
-      return "none";
-    },
-    [moveColors],
-  );
-
-  const markerFill = useCallback(
-    (status: string, isEnd: boolean) => {
-      if (status === "waiting")
-        return isDark
-          ? isEnd ? "#3a4a5a" : "#344858"
-          : isEnd ? "#d0dae8" : "#dce4f0";
-      if (status === "error")
-        return isDark
-          ? isEnd ? "#6a3a3a" : "#583434"
-          : isEnd ? "#e0c0c0" : "#ecd4d4";
-      if (status === "complete")
-        return isDark
-          ? isEnd ? "#4a6a4a" : "#3e5a3e"
-          : isEnd ? "#b0d0b0" : "#c4dcc4";
-      return isDark ? (isEnd ? "#4a4a4a" : "#444") : isEnd ? "#ccc" : "#d4d4d4";
-    },
-    [isDark],
-  );
-
-  const eventFill = useCallback(
-    (evtType: string, threadStatus: string) => {
-      if (threadStatus === "waiting") {
-        return evtType === "tool_call"
-          ? isDark ? "#4a5a6a" : "#c0d0e0"
-          : isDark ? "#3a4a58" : "#d0d8e8";
-      }
-      return evtType === "tool_call"
-        ? isDark ? "#666" : "#a8a8a8"
-        : isDark ? "#5a5a5a" : "#b8b8b8";
-    },
-    [isDark],
-  );
-
   const layout = useMemo(() => {
-    if (!session || !session.threads) return null;
+    if (!session?.threads?.length) return null;
     const threads = session.threads;
-    const threadCount = threads.length;
-    if (threadCount === 0) return null;
+    const n = threads.length;
 
-    const totalGaps = (threadCount - 1) * THREAD_GAP;
-    const naturalW = (containerWidth - totalGaps) / threadCount;
-    const threadW = Math.max(MIN_THREAD_W, Math.min(naturalW, MAX_THREAD_W));
-    const usedW = threadCount * threadW + totalGaps;
-    // If columns are wider than container (small screen), svg extends to full
-    // usedW so the parent can horizontally scroll. Otherwise center.
-    const svgWFinal = Math.max(containerWidth, usedW);
+    const totalGaps = (n - 1) * THREAD_GAP;
+    const natural = (containerWidth - totalGaps) / n;
+    const threadW = Math.max(MIN_THREAD_W, Math.min(natural, MAX_THREAD_W));
+    const usedW = n * threadW + totalGaps;
+    const svgW = Math.max(containerWidth, usedW);
     const xOffset = usedW >= containerWidth ? 0 : (containerWidth - usedW) / 2;
 
-    let maxColH = 0;
-
+    let maxH = 0;
     const columns = threads.map((thread, ti) => {
       const x = xOffset + ti * (threadW + THREAD_GAP);
       let y = TOP_PAD;
 
       const startY = y;
-      y += MARKER_H + STEP_GAP;
+      y += START_MARKER_H + STEP_GAP;
 
       const steps = thread.steps.map((step) => {
         const stepY = y;
         y += STEP_H + STEP_GAP;
-
         const evtW = threadW * EVENT_WIDTH_RATIO;
         const evtX = x + (threadW - evtW) / 2;
         const events = step.events.map((evt, ei) => {
           const eY = y;
           y += EVENT_H + EVENT_GAP;
-          return {
-            x: evtX,
-            y: eY,
-            w: evtW,
-            h: EVENT_H,
-            type: evt.type,
-            eventIndex: ei,
-            threadStatus: thread.status,
-          };
+          return { x: evtX, y: eY, w: evtW, h: EVENT_H, type: evt.type, eventIndex: ei };
         });
-
         y += STEP_GAP;
-
         return {
-          x,
-          y: stepY,
-          w: threadW,
-          h: STEP_H,
+          x, y: stepY, w: threadW, h: STEP_H,
           stepNumber: step.step_number,
           move: step.move,
-          status: thread.status,
           events,
         };
       });
@@ -192,41 +108,16 @@ export const FlowViz: React.FC = () => {
       const endY = y;
       if (showEnd) y += MARKER_H + STEP_GAP;
 
-      if (y > maxColH) maxColH = y;
-
-      return {
-        threadId: thread.id,
-        x,
-        w: threadW,
-        status: thread.status,
-        question: thread.seed_question,
-        startY,
-        endY,
-        showEnd,
-        steps,
-      };
+      if (y > maxH) maxH = y;
+      return { threadId: thread.id, x, w: threadW, status: thread.status, startY, endY, showEnd, steps };
     });
 
-    const svgH = maxColH + TOP_PAD;
-    return { columns, svgW: svgWFinal, svgH, threadW };
+    return { columns, svgW, svgH: maxH + TOP_PAD, threadW };
   }, [session, containerWidth]);
 
-  const handleClick = useCallback(
-    (node: SelectedNode) => {
-      selectNode(node);
-    },
-    [selectNode],
-  );
-
   const isSelected = useCallback(
-    (
-      type: string,
-      threadId?: string,
-      stepNumber?: number,
-      eventIndex?: number,
-    ): boolean => {
-      if (!selectedNode) return false;
-      if (selectedNode.type !== type) return false;
+    (type: string, threadId?: string, stepNumber?: number, eventIndex?: number): boolean => {
+      if (!selectedNode || selectedNode.type !== type) return false;
       if (type === "session") return true;
       if (selectedNode.threadId !== threadId) return false;
       if (type === "thread" || type === "thread_end") return true;
@@ -240,165 +131,150 @@ export const FlowViz: React.FC = () => {
   if (!session || !layout) return null;
 
   const { columns, svgW, svgH, threadW } = layout;
-  const useFullNames = threadW >= 60;
+  const useFullNames = threadW >= FULL_NAME_THRESHOLD;
+  const threadIds = columns.map((c) => c.threadId);
 
   return (
-    <Flex
-      ref={containerRef}
-      direction="column"
-      w="100%"
-      h="100%"
-      minH={0}
-    >
+    <Flex ref={containerRef} direction="column" w="100%" h="100%" minH={0}>
       <style>{`
-        @keyframes flow-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.65; }
-        }
+        @keyframes flow-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
         .flow-pulse { animation: flow-pulse 2s ease-in-out infinite; }
       `}</style>
 
-      {/* Scrollable SVG area */}
       <Box flex={1} overflow="auto" px={2} minH={0}>
         <svg
           width={svgW}
           height={svgH}
           viewBox={`0 0 ${svgW} ${svgH}`}
-          style={{
-            display: "block",
-            background: "transparent",
-            userSelect: "none",
-          }}
+          style={{ display: "block", userSelect: "none" }}
         >
-          {columns.map((col, ci) => (
-            <g key={col.threadId}>
-              {(() => {
-                const startSel = isSelected("thread", col.threadId);
-                const threadIdColor = getThreadColor(
-                  col.threadId,
-                  columns.map((c) => c.threadId),
-                  isDark,
-                );
-                const showTid = col.w >= 60;
-                return (
+          {columns.map((col) => {
+            const threadColor = getThreadColor(col.threadId, threadIds, isDark);
+            const startStatusFill = getStatusFill(col.status, isDark);
+            const startFill = startStatusFill
+              ? startStatusFill.bg
+              : isDark ? "#2a2a2a" : "#f0f0f0";
+            const startFg = startStatusFill
+              ? startStatusFill.fg
+              : threadColor;
+            const startSel = isSelected("thread", col.threadId);
+
+            return (
+              <g key={col.threadId}>
+                {/* Start marker — START label + thread ID stacked */}
+                <rect
+                  x={col.x}
+                  y={col.startY}
+                  width={col.w}
+                  height={START_MARKER_H}
+                  fill={startFill}
+                  rx={RX}
+                  stroke={startSel ? selectedStroke : "none"}
+                  strokeWidth={startSel ? 1.5 : 0}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => selectNode({ type: "thread", threadId: col.threadId })}
+                />
+                {col.w > 24 && (
                   <>
-                    <rect
-                      x={col.x}
-                      y={col.startY}
-                      width={col.w}
-                      height={MARKER_H}
-                      fill={markerFill(col.status, false)}
-                      rx={RX}
-                      stroke={startSel ? selectedStroke : threadIdColor}
-                      strokeWidth={startSel ? 1.5 : 1}
-                      style={{ cursor: "pointer" }}
-                      onClick={() =>
-                        handleClick({ type: "thread", threadId: col.threadId })
-                      }
-                    />
-                    {col.w > 18 && (
-                      <text
-                        x={col.x + col.w / 2}
-                        y={col.startY + MARKER_H / 2}
-                        fill={textColor}
-                        fontFamily="monospace"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        style={{ pointerEvents: "none", fontSize: 10 }}
-                      >
-                        {showTid ? col.threadId.slice(0, 6) : useFullNames ? "Start" : "ST"}
-                      </text>
-                    )}
+                    <text
+                      x={col.x + col.w / 2}
+                      y={col.startY + 11}
+                      fill={startFg}
+                      fontFamily="monospace"
+                      fontWeight="700"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      style={{ pointerEvents: "none", fontSize: 9 }}
+                    >
+                      START
+                    </text>
+                    <text
+                      x={col.x + col.w / 2}
+                      y={col.startY + 23}
+                      fill={startFg}
+                      fontFamily="monospace"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      style={{ pointerEvents: "none", fontSize: 10, opacity: 0.85 }}
+                    >
+                      {col.threadId.slice(0, 6)}
+                    </text>
                   </>
-                );
-              })()}
+                )}
 
-              {col.steps.map((step) => {
-                const sel = isSelected("step", col.threadId, step.stepNumber);
-                const label = moveLabel(step.move, useFullNames);
-                const moveUpper = step.move?.toUpperCase();
-                const moveColor = moveUpper ? moveColors[moveUpper] : undefined;
-                const stepTextColor = moveColor?.fg || textColor;
-                return (
-                  <g key={`s-${step.stepNumber}`}>
-                    <rect
-                      x={step.x}
-                      y={step.y}
-                      width={step.w}
-                      height={step.h}
-                      fill={stepFill(step.move, step.status)}
-                      rx={RX}
-                      stroke={sel ? selectedStroke : stepStroke(step.move)}
-                      strokeWidth={sel ? 1.5 : moveColor ? 0.5 : 0}
-                      className={
-                        step.status === "running" ? "flow-pulse" : undefined
-                      }
-                      style={{ cursor: "pointer" }}
-                      onClick={() =>
-                        handleClick({
-                          type: "step",
-                          threadId: col.threadId,
-                          stepNumber: step.stepNumber,
-                        })
-                      }
-                    />
-                    {step.w > 18 && label && (
-                      <text
-                        x={step.x + step.w / 2}
-                        y={step.y + step.h / 2}
-                        fill={stepTextColor}
-                        fontFamily="monospace"
-                        fontWeight="600"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        style={{ pointerEvents: "none", fontSize: 10 }}
-                      >
-                        {label}
-                      </text>
-                    )}
+                {/* Steps */}
+                {col.steps.map((step) => {
+                  const sel = isSelected("step", col.threadId, step.stepNumber);
+                  // Error overrides move color; waiting uses neutral gray
+                  const moveColor =
+                    col.status === "error"
+                      ? getStatusFill("error", isDark)!
+                      : getMoveColor(step.move, isDark);
+                  const label = useFullNames
+                    ? (step.move || "").toUpperCase()
+                    : (step.move || "").toUpperCase().slice(0, 2);
 
-                    {step.events.map((evt) => {
-                      const eSel = isSelected(
-                        "event",
-                        col.threadId,
-                        step.stepNumber,
-                        evt.eventIndex,
-                      );
-                      return (
-                        <rect
-                          key={`e-${evt.eventIndex}`}
-                          x={evt.x}
-                          y={evt.y}
-                          width={evt.w}
-                          height={evt.h}
-                          fill={eventFill(evt.type, evt.threadStatus)}
-                          rx={2}
-                          stroke={eSel ? selectedStroke : "none"}
-                          strokeWidth={eSel ? 1 : 0}
-                          style={{ cursor: "pointer" }}
-                          onClick={() =>
-                            handleClick({
-                              type: "event",
-                              threadId: col.threadId,
-                              stepNumber: step.stepNumber,
-                              eventIndex: evt.eventIndex,
-                            })
-                          }
-                        />
-                      );
-                    })}
-                  </g>
-                );
-              })}
+                  return (
+                    <g key={`s-${step.stepNumber}`}>
+                      <rect
+                        x={step.x}
+                        y={step.y}
+                        width={step.w}
+                        height={step.h}
+                        fill={moveColor.bg}
+                        rx={RX}
+                        stroke={sel ? selectedStroke : "none"}
+                        strokeWidth={sel ? 1.5 : 0}
+                        className={col.status === "running" && step === col.steps[col.steps.length - 1] ? "flow-pulse" : undefined}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => selectNode({ type: "step", threadId: col.threadId, stepNumber: step.stepNumber })}
+                      />
+                      {step.w > 22 && label && (
+                        <text
+                          x={step.x + step.w / 2}
+                          y={step.y + step.h / 2}
+                          fill={moveColor.fg}
+                          fontFamily="monospace"
+                          fontWeight="700"
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          style={{ pointerEvents: "none", fontSize: 10 }}
+                        >
+                          {label}
+                        </text>
+                      )}
 
-              {col.showEnd &&
-                (() => {
+                      {/* Events — colored by step's move */}
+                      {step.events.map((evt) => {
+                        const eSel = isSelected("event", col.threadId, step.stepNumber, evt.eventIndex);
+                        return (
+                          <rect
+                            key={`e-${evt.eventIndex}`}
+                            x={evt.x}
+                            y={evt.y}
+                            width={evt.w}
+                            height={evt.h}
+                            fill={moveColor.bg}
+                            opacity={evt.type === "tool_call" ? 0.75 : 0.55}
+                            rx={2}
+                            stroke={eSel ? selectedStroke : "none"}
+                            strokeWidth={eSel ? 1 : 0}
+                            style={{ cursor: "pointer" }}
+                            onClick={() => selectNode({ type: "event", threadId: col.threadId, stepNumber: step.stepNumber, eventIndex: evt.eventIndex })}
+                          />
+                        );
+                      })}
+                    </g>
+                  );
+                })}
+
+                {/* End marker */}
+                {col.showEnd && (() => {
+                  const endStatusFill = getStatusFill(col.status, isDark);
+                  if (!endStatusFill) return null;
                   const endSel = isSelected("thread_end", col.threadId);
                   const endLabel = useFullNames
-                    ? col.status === "complete" ? "Complete"
-                      : col.status === "waiting" ? "Waiting"
-                      : col.status === "error" ? "Error"
-                      : col.status
+                    ? col.status.toUpperCase()
                     : col.status === "complete" ? "OK"
                       : col.status === "waiting" ? "WT"
                       : col.status === "error" ? "ER"
@@ -410,25 +286,20 @@ export const FlowViz: React.FC = () => {
                         y={col.endY}
                         width={col.w}
                         height={MARKER_H}
-                        fill={markerFill(col.status, true)}
+                        fill={endStatusFill.bg}
                         rx={RX}
                         stroke={endSel ? selectedStroke : "none"}
                         strokeWidth={endSel ? 1.5 : 0}
                         style={{ cursor: "pointer" }}
-                        onClick={() =>
-                          handleClick({
-                            type: "thread_end",
-                            threadId: col.threadId,
-                            threadStatus: col.status,
-                          })
-                        }
+                        onClick={() => selectNode({ type: "thread_end", threadId: col.threadId, threadStatus: col.status })}
                       />
-                      {col.w > 18 && (
+                      {col.w > 22 && (
                         <text
                           x={col.x + col.w / 2}
                           y={col.endY + MARKER_H / 2}
-                          fill={textColor}
+                          fill={endStatusFill.fg}
                           fontFamily="monospace"
+                          fontWeight="700"
                           textAnchor="middle"
                           dominantBaseline="central"
                           style={{ pointerEvents: "none", fontSize: 10 }}
@@ -439,48 +310,34 @@ export const FlowViz: React.FC = () => {
                     </>
                   );
                 })()}
-            </g>
-          ))}
+              </g>
+            );
+          })}
         </svg>
       </Box>
 
-      {/* Legend — fixed at bottom, hidden when full move names are visible */}
+      {/* Legend — only shown when using abbreviations */}
       {!useFullNames && (
-      <Flex
-        px={2}
-        py={1}
-        gap={3}
-        flexWrap="wrap"
-        borderTop="1px solid"
-        borderColor="gray.subtle"
-        bg="bg.panel"
-        flexShrink={0}
-      >
-        {[
-          ["ST", "Start"],
-          ["SC", "Scope"],
-          ["FO", "Forage"],
-          ["FR", "Frame"],
-          ["IN", "Interrogate"],
-          ["SY", "Synthesize"],
-          ["OK", "Complete"],
-          ["WT", "Waiting"],
-          ["ER", "Error"],
-        ].map(([abbr, label]) => (
-          <Text
-            key={abbr}
-            fontSize="2xs"
-            fontFamily="mono"
-            color="fg.muted"
-            lineHeight="1.2"
-          >
-            <Text as="span" fontWeight="bold" color="fg.subtle">
-              {abbr}
-            </Text>{" "}
-            {label}
-          </Text>
-        ))}
-      </Flex>
+        <Flex
+          px={2}
+          py={1}
+          gap={3}
+          flexWrap="wrap"
+          borderTop="1px solid"
+          borderColor="gray.subtle"
+          bg="bg.panel"
+          flexShrink={0}
+        >
+          {[
+            ["SC", "Scope"], ["FO", "Forage"], ["FR", "Frame"],
+            ["IN", "Interrogate"], ["SY", "Synthesize"],
+            ["OK", "Complete"], ["WT", "Waiting"], ["ER", "Error"],
+          ].map(([abbr, label]) => (
+            <Text key={abbr} fontSize="2xs" fontFamily="mono" color="fg.muted" lineHeight="1.2">
+              <Text as="span" fontWeight="bold" color="fg.subtle">{abbr}</Text> {label}
+            </Text>
+          ))}
+        </Flex>
       )}
     </Flex>
   );

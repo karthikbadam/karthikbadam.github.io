@@ -1,10 +1,11 @@
 import { Box, Flex, Heading, Link, Text, VStack } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LuArrowLeft, LuChevronDown, LuChevronRight, LuGithub } from "react-icons/lu";
 import { useParams } from "react-router-dom";
 import { PanelContainer } from "../../../../components/PanelContainer";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { FEATURED_SESSIONS, GITHUB_REPO_URL } from "../config";
+import { formatSchemaSummary } from "../utils";
 import { MarkdownContent } from "./MarkdownContent";
 import { CommandBar } from "./CommandBar";
 import { EventFeed } from "./EventFeed";
@@ -13,6 +14,7 @@ import { LandingScreen } from "./LandingScreen";
 
 function SchemaSummaryPanel({ summary }: { summary: string }) {
   const [open, setOpen] = useState(true);
+  const formatted = useMemo(() => formatSchemaSummary(summary), [summary]);
   return (
     <PanelContainer p={0} overflow="hidden" display="flex" flexDirection="column">
       <Box
@@ -41,12 +43,12 @@ function SchemaSummaryPanel({ summary }: { summary: string }) {
           px={3}
           pb={3}
           pt={1}
-          maxH="220px"
+          maxH="260px"
           overflowY="auto"
           borderTop="1px solid"
           borderColor="gray.subtle"
         >
-          <MarkdownContent content={summary} />
+          <MarkdownContent content={formatted} />
         </Box>
       )}
     </PanelContainer>
