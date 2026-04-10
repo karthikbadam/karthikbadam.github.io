@@ -181,10 +181,9 @@ export const FlowViz: React.FC = () => {
                       y={col.startY + 13}
                       fill={startFg}
                       fontFamily="Poppins, sans-serif"
-                      fontWeight="900"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      style={{ pointerEvents: "none", fontSize: 11 }}
+                      style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
                     >
                       START
                     </text>
@@ -193,10 +192,9 @@ export const FlowViz: React.FC = () => {
                       y={col.startY + 27}
                       fill={startFg}
                       fontFamily="Poppins, sans-serif"
-                      fontWeight="700"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      style={{ pointerEvents: "none", fontSize: 11 }}
+                      style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
                     >
                       {col.threadId.slice(0, 6)}
                     </text>
@@ -236,10 +234,9 @@ export const FlowViz: React.FC = () => {
                           y={step.y + step.h / 2}
                           fill={moveColor.fg}
                           fontFamily="Poppins, sans-serif"
-                          fontWeight="900"
                           textAnchor="middle"
                           dominantBaseline="central"
-                          style={{ pointerEvents: "none", fontSize: 11 }}
+                          style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
                         >
                           {label}
                         </text>
@@ -300,10 +297,9 @@ export const FlowViz: React.FC = () => {
                           y={col.endY + MARKER_H / 2}
                           fill={endStatusFill.fg}
                           fontFamily="Poppins, sans-serif"
-                          fontWeight="900"
                           textAnchor="middle"
                           dominantBaseline="central"
-                          style={{ pointerEvents: "none", fontSize: 11 }}
+                          style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
                         >
                           {endLabel}
                         </text>
