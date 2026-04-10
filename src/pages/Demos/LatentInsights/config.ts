@@ -23,10 +23,10 @@ export const STEP_GAP = 4;
 export const EVENT_H = 10;
 export const EVENT_GAP = 3;
 export const EVENT_WIDTH_RATIO = 0.65;
-export const THREAD_GAP = 24;
+export const THREAD_GAP = 20;
 export const TOP_PAD = 8;
 export const MARKER_H = 22;
-export const START_MARKER_H = 34; // taller: holds "START" label + thread id
+export const START_MARKER_H = 40; // holds "START" label + thread id on two lines
 export const SCROLL_BOTTOM_THRESHOLD = 40;
 
 // --- Thread palette (muted, neutral) ---

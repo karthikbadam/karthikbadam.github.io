@@ -151,7 +151,6 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
     const textContent = entry.response || entry.sql || entry.full_message || "";
     const previewText = textContent || (duration ? "" : entry.message || "");
     const typeHint = getTypeLabel(entry.event_type);
-    const isRunning = entry.thread_status === "running";
 
     return (
       <Box
@@ -167,10 +166,8 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         onClick={() => expandable && onToggle(entry.id, entry)}
       >
         <Flex gap="6px" align="center" minW={0} w="100%">
-          {/* Thread ID pill with status dot in thread color */}
-          <Flex
-            align="center"
-            gap="4px"
+          {/* Thread ID pill */}
+          <Box
             flexShrink={0}
             px="5px"
             py="1px"
@@ -178,18 +175,10 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             border="1px solid"
             borderColor={isDark ? "whiteAlpha.100" : "blackAlpha.100"}
           >
-            <Box
-              w="5px"
-              h="5px"
-              borderRadius="full"
-              bg={threadColor}
-              flexShrink={0}
-              animation={isRunning ? "flow-pulse 2s ease-in-out infinite" : undefined}
-            />
             <Text as="span" color={threadColor} fontWeight="medium">
               {tid}
             </Text>
-          </Flex>
+          </Box>
 
           {/* Step number */}
           {entry.step_number !== undefined && (

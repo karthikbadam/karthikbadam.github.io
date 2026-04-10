@@ -1,6 +1,6 @@
 import { Box, Flex, Heading, Link, Text, VStack } from "@chakra-ui/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuArrowLeft, LuChevronDown, LuChevronRight, LuGithub } from "react-icons/lu";
+import { LuArrowLeft, LuGithub } from "react-icons/lu";
 import { useParams } from "react-router-dom";
 import { PanelContainer } from "../../../../components/PanelContainer";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
@@ -12,42 +12,51 @@ import { EventFeed } from "./EventFeed";
 import { FlowViz } from "./FlowViz";
 import { LandingScreen } from "./LandingScreen";
 
+interface PanelHeaderProps {
+  title: string;
+  hint?: string;
+  onClick?: () => void;
+}
+
+function PanelHeader({ title, hint, onClick }: PanelHeaderProps) {
+  const clickable = !!onClick;
+  return (
+    <Text
+      as={clickable ? "button" : "div"}
+      type={clickable ? "button" : undefined}
+      fontSize="xs"
+      fontWeight="medium"
+      color="accentSubtle"
+      mb={2}
+      px={2}
+      pt={2}
+      textAlign="left"
+      cursor={clickable ? "pointer" : "default"}
+      _hover={clickable ? { color: "fg" } : undefined}
+      onClick={onClick}
+    >
+      {title}
+      {hint && (
+        <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
+          • {hint}
+        </Text>
+      )}
+    </Text>
+  );
+}
+
 function SchemaSummaryPanel({ summary }: { summary: string }) {
   const [open, setOpen] = useState(true);
   const formatted = useMemo(() => formatSchemaSummary(summary), [summary]);
   return (
     <PanelContainer p={0} overflow="hidden" display="flex" flexDirection="column">
-      <Box
-        as="button"
-        type="button"
-        display="flex"
-        alignItems="center"
-        gap={1}
-        fontSize="xs"
-        fontFamily="mono"
-        fontWeight="medium"
-        color="accentSubtle"
-        cursor="pointer"
-        _hover={{ color: "fg" }}
+      <PanelHeader
+        title="Dataset summary"
+        hint={`click to ${open ? "collapse" : "expand"}`}
         onClick={() => setOpen((v) => !v)}
-        w="100%"
-        textAlign="left"
-        px={3}
-        py={2}
-      >
-        {open ? <LuChevronDown size={11} /> : <LuChevronRight size={11} />}
-        Dataset summary
-      </Box>
+      />
       {open && (
-        <Box
-          px={3}
-          pb={3}
-          pt={1}
-          maxH="260px"
-          overflowY="auto"
-          borderTop="1px solid"
-          borderColor="gray.subtle"
-        >
+        <Box px={3} pb={3} maxH="260px" overflowY="auto">
           <MarkdownContent content={formatted} />
         </Box>
       )}
@@ -189,19 +198,17 @@ export function Dashboard() {
           gap={2}
         >
           <PanelContainer
-            p={2}
-            overflow="auto"
+            p={0}
+            overflow="hidden"
             display="flex"
             flexDirection="column"
             flex={1}
           >
-            <Text fontSize="xs" fontWeight="medium" color="accentSubtle" mb={2}>
-              Dataset {`${datasetFileName} (${threadCountForTitle} threads)`}
-              <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
-                {"• "}click a node to inspect
-              </Text>
-            </Text>
-            <Box flex={1} overflow="auto">
+            <PanelHeader
+              title={`Dataset ${datasetFileName} (${threadCountForTitle} threads)`}
+              hint="click a node to inspect"
+            />
+            <Box flex={1} minH={0} overflow="hidden">
               <FlowViz />
             </Box>
           </PanelContainer>
@@ -241,19 +248,10 @@ export function Dashboard() {
             flex={1}
             minH={0}
           >
-            <Text
-              fontSize="xs"
-              fontWeight="medium"
-              color="accentSubtle"
-              mb={2}
-              px={2}
-              pt={2}
-            >
-              Feed of agent actions across threads
-              <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
-                {"• "}click a row to expand
-              </Text>
-            </Text>
+            <PanelHeader
+              title="Feed of agent actions across threads"
+              hint="click a row to expand"
+            />
             <Box flex={1} minW={0} maxW="100%" overflow="hidden">
               <EventFeed />
             </Box>

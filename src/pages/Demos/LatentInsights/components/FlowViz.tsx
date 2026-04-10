@@ -49,11 +49,11 @@ export const FlowViz: React.FC = () => {
   const { state, selectNode } = useLatentInsights();
   const { session, selectedNode } = state;
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(400);
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = scrollRef.current;
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
       if (entry) setContainerWidth(Math.floor(entry.contentRect.width));
@@ -135,13 +135,13 @@ export const FlowViz: React.FC = () => {
   const threadIds = columns.map((c) => c.threadId);
 
   return (
-    <Flex ref={containerRef} direction="column" w="100%" h="100%" minH={0}>
+    <Flex direction="column" w="100%" h="100%" minH={0}>
       <style>{`
         @keyframes flow-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
         .flow-pulse { animation: flow-pulse 2s ease-in-out infinite; }
       `}</style>
 
-      <Box flex={1} overflow="auto" px={2} minH={0}>
+      <Box ref={scrollRef} flex={1} overflow="auto" px={1} minH={0}>
         <svg
           width={svgW}
           height={svgH}
@@ -178,24 +178,25 @@ export const FlowViz: React.FC = () => {
                   <>
                     <text
                       x={col.x + col.w / 2}
-                      y={col.startY + 11}
+                      y={col.startY + 13}
                       fill={startFg}
                       fontFamily="monospace"
-                      fontWeight="700"
+                      fontWeight="800"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      style={{ pointerEvents: "none", fontSize: 9 }}
+                      style={{ pointerEvents: "none", fontSize: 11 }}
                     >
                       START
                     </text>
                     <text
                       x={col.x + col.w / 2}
-                      y={col.startY + 23}
+                      y={col.startY + 27}
                       fill={startFg}
                       fontFamily="monospace"
+                      fontWeight="600"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      style={{ pointerEvents: "none", fontSize: 10, opacity: 0.85 }}
+                      style={{ pointerEvents: "none", fontSize: 11 }}
                     >
                       {col.threadId.slice(0, 6)}
                     </text>
@@ -235,10 +236,10 @@ export const FlowViz: React.FC = () => {
                           y={step.y + step.h / 2}
                           fill={moveColor.fg}
                           fontFamily="monospace"
-                          fontWeight="700"
+                          fontWeight="800"
                           textAnchor="middle"
                           dominantBaseline="central"
-                          style={{ pointerEvents: "none", fontSize: 10 }}
+                          style={{ pointerEvents: "none", fontSize: 11 }}
                         >
                           {label}
                         </text>
@@ -299,10 +300,10 @@ export const FlowViz: React.FC = () => {
                           y={col.endY + MARKER_H / 2}
                           fill={endStatusFill.fg}
                           fontFamily="monospace"
-                          fontWeight="700"
+                          fontWeight="800"
                           textAnchor="middle"
                           dominantBaseline="central"
-                          style={{ pointerEvents: "none", fontSize: 10 }}
+                          style={{ pointerEvents: "none", fontSize: 11 }}
                         >
                           {endLabel}
                         </text>
