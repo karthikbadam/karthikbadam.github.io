@@ -35,15 +35,61 @@ export const MOVE_ABBR: Record<string, string> = {
 
 // --- EventFeed colors and labels ---
 
+// Muted, distinct thread colors (subtle but identifiable)
 export const THREAD_SHADES_DARK = [
-  "#888", "#999", "#777", "#aaa", "#666",
-  "#8a8a8a", "#7a7a7a", "#9a9a9a", "#6a6a6a", "#b0b0b0",
+  "#7aa2f7", // blue
+  "#9ece6a", // green
+  "#e0af68", // amber
+  "#bb9af7", // purple
+  "#f7768e", // pink
+  "#7dcfff", // cyan
+  "#e0875f", // orange
+  "#9cd6a4", // mint
+  "#c4a7e7", // lavender
+  "#f0c674", // yellow
+  "#6ec3c9", // teal
+  "#d6a0d1", // mauve
+  "#a1c181", // olive
+  "#eab0a0", // salmon
+  "#8abeb7", // sea
+  "#b5bd68", // lime
 ];
 
 export const THREAD_SHADES_LIGHT = [
-  "#666", "#555", "#777", "#444", "#888",
-  "#5a5a5a", "#6a6a6a", "#4a4a4a", "#7a7a7a", "#3a3a3a",
+  "#3d5a99", "#548048", "#a47630", "#6b3e9e",
+  "#c84a60", "#2d89a5", "#a85832", "#4a8055",
+  "#7b4f9e", "#a87b2e", "#367b80", "#8d5a8a",
+  "#628044", "#a8624d", "#4a7c78", "#6f7a3a",
 ];
+
+// Move type colors — matched between dark/light
+export const MOVE_COLORS_DARK: Record<string, { fg: string; bg: string }> = {
+  SCOPE:       { fg: "#bb9af7", bg: "rgba(187, 154, 247, 0.12)" },
+  FORAGE:      { fg: "#7aa2f7", bg: "rgba(122, 162, 247, 0.12)" },
+  FRAME:       { fg: "#7dcfff", bg: "rgba(125, 207, 255, 0.12)" },
+  INTERROGATE: { fg: "#e0af68", bg: "rgba(224, 175, 104, 0.12)" },
+  SYNTHESIZE:  { fg: "#9ece6a", bg: "rgba(158, 206, 106, 0.12)" },
+  ERROR:       { fg: "#f7768e", bg: "rgba(247, 118, 142, 0.12)" },
+  UNKNOWN:     { fg: "#888",    bg: "rgba(136, 136, 136, 0.10)" },
+};
+
+export const MOVE_COLORS_LIGHT: Record<string, { fg: string; bg: string }> = {
+  SCOPE:       { fg: "#6b3e9e", bg: "rgba(107, 62, 158, 0.10)" },
+  FORAGE:      { fg: "#3d5a99", bg: "rgba(61, 90, 153, 0.10)" },
+  FRAME:       { fg: "#2d89a5", bg: "rgba(45, 137, 165, 0.10)" },
+  INTERROGATE: { fg: "#a47630", bg: "rgba(164, 118, 48, 0.10)" },
+  SYNTHESIZE:  { fg: "#548048", bg: "rgba(84, 128, 72, 0.10)" },
+  ERROR:       { fg: "#c84a60", bg: "rgba(200, 74, 96, 0.10)" },
+  UNKNOWN:     { fg: "#888",    bg: "rgba(136, 136, 136, 0.10)" },
+};
+
+// Status dot colors
+export const STATUS_COLORS: Record<string, string> = {
+  running:  "#7aa2f7",
+  waiting:  "#e0af68",
+  complete: "#9ece6a",
+  error:    "#f7768e",
+};
 
 export const TYPE_LABELS: Record<string, string> = {
   thread_start: "start",

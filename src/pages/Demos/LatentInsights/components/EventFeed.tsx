@@ -4,11 +4,13 @@ import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { MarkdownContent } from "./MarkdownContent";
 import { ReplyInput } from "./ReplyInput";
-import { FeedEntry, SSEEventType } from "../types";
+import { FeedEntry } from "../types";
 import {
-  TYPE_LABELS,
   THREAD_ID_PREVIEW_LENGTH,
   SCROLL_BOTTOM_THRESHOLD,
+  MOVE_COLORS_DARK,
+  MOVE_COLORS_LIGHT,
+  STATUS_COLORS,
 } from "../config";
 import {
   getThreadColor,
@@ -107,6 +109,12 @@ export const EventFeed: React.FC = () => {
 
   return (
     <Flex direction="column" h="100%" minW={0} maxW="100%" overflow="hidden">
+      <style>{`
+        @keyframes flow-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
       <Box
         ref={scrollRef}
         flex={1}
@@ -151,26 +159,67 @@ interface FeedRowProps {
   onToggle: (id: string, entry: FeedEntry) => void;
 }
 
+function getEventIcon(eventType: string): string {
+  switch (eventType) {
+    case "thread_start":    return "▸";
+    case "thread_complete": return "✓";
+    case "thread_waiting":  return "◐";
+    case "step_start":      return "·";
+    case "step_complete":   return "◆";
+    case "llm_call":        return "◇";
+    case "tool_call":       return "▪";
+    default:                return "·";
+  }
+}
+
+function getEventTypeHint(eventType: string): string {
+  switch (eventType) {
+    case "thread_start":    return "start";
+    case "thread_complete": return "done";
+    case "thread_waiting":  return "waiting";
+    case "llm_call":        return "llm";
+    case "tool_call":       return "sql";
+    case "step_complete":   return "step done";
+    default:                return "";
+  }
+}
+
 const FeedRow: React.FC<FeedRowProps> = React.memo(
   ({ entry, threadIds, isDark, isExpanded, onToggle }) => {
-    const color = getThreadColor(entry.thread_id, threadIds, isDark);
+    const threadColor = getThreadColor(entry.thread_id, threadIds, isDark);
     const expandable = hasExpandableContent(entry);
-    const typeLabel = TYPE_LABELS[entry.event_type as SSEEventType] || entry.event_type;
-    const activeColor = isDark ? "#eee" : "#111";
-    const dimColor = isExpanded ? activeColor : isDark ? "#888" : "#666";
-    const mutedColor = isExpanded ? activeColor : isDark ? "#555" : "#aaa";
-    const threadColor = isExpanded ? activeColor : color;
+    const moveColors = isDark ? MOVE_COLORS_DARK : MOVE_COLORS_LIGHT;
+    const fgColor = isDark ? "#d0d0d0" : "#222";
+    const dimColor = isDark ? "#888" : "#666";
+    const mutedColor = isDark ? "#555" : "#aaa";
 
-    // Compact: "797ae7" "5" "FO" "worker" "0.3s" or "797ae7" "start" "question text…"
     const tid = entry.thread_id.slice(0, THREAD_ID_PREVIEW_LENGTH);
     const isEvent = entry.event_type === "llm_call" || entry.event_type === "tool_call";
     const isStepBoundary = entry.event_type === "step_start" || entry.event_type === "step_complete";
+    const icon = getEventIcon(entry.event_type);
+
+    // Move badge colors
+    const moveUpper = entry.move?.toUpperCase();
+    const moveColor = moveUpper ? (moveColors[moveUpper] || moveColors.UNKNOWN) : null;
+
+    // Status dot color
+    const statusColor = entry.thread_status
+      ? STATUS_COLORS[entry.thread_status] || mutedColor
+      : null;
+
+    // Build content preview
+    const duration = entry.message && /^\d/.test(entry.message) ? entry.message : "";
+    const textContent = entry.response || entry.sql || entry.full_message || "";
+    const previewText = textContent || (duration ? "" : entry.message || "");
+    const typeHint = getEventTypeHint(entry.event_type);
 
     return (
       <Box
         data-entry-id={entry.id}
-        px={1}
-        py="1px"
+        position="relative"
+        pl="10px"
+        pr={2}
+        py="3px"
         minW={0}
         maxW="100%"
         w="100%"
@@ -178,79 +227,135 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         _hover={expandable ? { bg: isDark ? "whiteAlpha.50" : "blackAlpha.50" } : undefined}
         borderRadius="sm"
         onClick={() => expandable && onToggle(entry.id, entry)}
+        _before={{
+          content: '""',
+          position: "absolute",
+          left: "2px",
+          top: "3px",
+          bottom: "3px",
+          width: "2px",
+          borderRadius: "1px",
+          bg: threadColor,
+          opacity: isExpanded ? 1 : 0.7,
+        }}
       >
-        <Flex gap="5px" align="center" minW={0} w="100%">
-          {/* Thread ID — always shown */}
-          <Text as="span" color={threadColor} flexShrink={0}>
-            {tid}
+        <Flex gap="6px" align="center" minW={0} w="100%">
+          {/* Event type icon */}
+          <Text
+            as="span"
+            color={isEvent ? mutedColor : dimColor}
+            flexShrink={0}
+            fontSize="10px"
+            lineHeight="1"
+            w="10px"
+            textAlign="center"
+          >
+            {icon}
           </Text>
 
-          {/* Step number (compact) */}
+          {/* Thread ID pill */}
+          <Flex
+            align="center"
+            gap="3px"
+            flexShrink={0}
+            px="4px"
+            py="1px"
+            borderRadius="3px"
+            border="1px solid"
+            borderColor={isDark ? "whiteAlpha.100" : "blackAlpha.100"}
+          >
+            {statusColor && (
+              <Box
+                w="5px"
+                h="5px"
+                borderRadius="full"
+                bg={statusColor}
+                flexShrink={0}
+                animation={entry.thread_status === "running" ? "flow-pulse 2s ease-in-out infinite" : undefined}
+              />
+            )}
+            <Text as="span" color={threadColor} fontWeight="medium">
+              {tid}
+            </Text>
+          </Flex>
+
+          {/* Step number */}
           {entry.step_number !== undefined && (
-            <Text as="span" color={mutedColor} flexShrink={0}>
-              {entry.step_number}
+            <Text as="span" color={mutedColor} flexShrink={0} fontSize="2xs">
+              #{entry.step_number}
             </Text>
           )}
 
-          {/* Move or event type label */}
-          {entry.move ? (
-            <Text as="span" color={dimColor} fontWeight="bold" flexShrink={0}>
-              {entry.move}
-            </Text>
-          ) : !isEvent && !isStepBoundary ? (
-            <Text as="span" color={mutedColor} flexShrink={0}>
-              {typeLabel}
-            </Text>
-          ) : null}
+          {/* Move badge with colored background */}
+          {moveUpper && moveColor && (
+            <Box
+              px="5px"
+              py="1px"
+              borderRadius="3px"
+              bg={moveColor.bg}
+              flexShrink={0}
+            >
+              <Text
+                as="span"
+                color={moveColor.fg}
+                fontWeight="bold"
+                fontSize="2xs"
+                letterSpacing="0.03em"
+              >
+                {entry.move}
+              </Text>
+            </Box>
+          )}
 
-          {/* Agent role for events */}
+          {/* Type hint for non-move rows (start, waiting, llm, sql) */}
+          {!moveUpper && typeHint && (
+            <Text as="span" color={dimColor} flexShrink={0} fontSize="2xs" fontStyle="italic">
+              {typeHint}
+            </Text>
+          )}
+
+          {/* Agent role */}
           {isEvent && entry.agent && (
-            <Text as="span" color={mutedColor} flexShrink={0}>
+            <Text as="span" color={mutedColor} flexShrink={0} fontSize="2xs">
               {entry.agent}
             </Text>
           )}
 
-          {/* Event type indicator for tool calls */}
-          {isEvent && !entry.agent && (
-            <Text as="span" color={mutedColor} flexShrink={0}>
-              {typeLabel}
+          {/* Duration chip */}
+          {duration && (
+            <Text
+              as="span"
+              color={mutedColor}
+              flexShrink={0}
+              fontSize="2xs"
+              fontVariantNumeric="tabular-nums"
+            >
+              {duration}
             </Text>
           )}
 
-          {/* Message / duration + text preview — fill remaining space */}
-          {!isExpanded && (() => {
-            // Build preview: duration + text content
-            const duration = entry.message && /^\d/.test(entry.message) ? entry.message : "";
-            const textContent = entry.response || entry.sql || entry.full_message || "";
-            const preview = duration && textContent
-              ? `${duration} ${textContent}`
-              : textContent || entry.message || "";
-            if (!preview) return null;
-            return (
-              <Box
-                flex="1 1 0%"
-                minW={0}
-                maxW="100%"
+          {/* Preview text fills remaining */}
+          {!isExpanded && previewText && (
+            <Box
+              flex="1 1 0%"
+              minW={0}
+              maxW="100%"
+              overflow="hidden"
+              title={textContent || entry.message}
+            >
+              <Text
+                as="div"
+                color={isStepBoundary ? fgColor : dimColor}
                 overflow="hidden"
-                title={textContent || entry.message}
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
+                w="100%"
+                fontStyle={isStepBoundary ? "normal" : "normal"}
               >
-                <Box
-                  as="div"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
-                  whiteSpace="nowrap"
-                  w="100%"
-                >
-                  {duration && (
-                    <Text as="span" color={mutedColor}>{duration} </Text>
-                  )}
-                  <Text as="span" color={dimColor}>
-                    {textContent || (duration ? "" : entry.message)}
-                  </Text>
-                </Box>
-              </Box>
-            );
-          })()}
+                {previewText}
+              </Text>
+            </Box>
+          )}
         </Flex>
 
         {isExpanded && (
@@ -260,7 +365,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             ml={2}
             pl={2}
             borderLeft="2px solid"
-            borderColor={isDark ? "#444" : "#ccc"}
+            borderColor={threadColor}
           >
             <ExpandedContent entry={entry} />
           </Box>
