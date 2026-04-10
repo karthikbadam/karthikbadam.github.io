@@ -141,7 +141,7 @@ export const FlowViz: React.FC = () => {
         .flow-pulse { animation: flow-pulse 2s ease-in-out infinite; }
       `}</style>
 
-      <Box ref={scrollRef} flex={1} overflow="auto" px={1} minH={0}>
+      <Box ref={scrollRef} flex={1} overflow="auto" px={2} minH={0}>
         <svg
           width={svgW}
           height={svgH}
@@ -181,7 +181,7 @@ export const FlowViz: React.FC = () => {
                       y={col.startY + 13}
                       fill={startFg}
                       fontFamily="monospace"
-                      fontWeight="800"
+                      fontWeight="900"
                       textAnchor="middle"
                       dominantBaseline="central"
                       style={{ pointerEvents: "none", fontSize: 11 }}
@@ -193,7 +193,7 @@ export const FlowViz: React.FC = () => {
                       y={col.startY + 27}
                       fill={startFg}
                       fontFamily="monospace"
-                      fontWeight="600"
+                      fontWeight="700"
                       textAnchor="middle"
                       dominantBaseline="central"
                       style={{ pointerEvents: "none", fontSize: 11 }}
@@ -236,7 +236,7 @@ export const FlowViz: React.FC = () => {
                           y={step.y + step.h / 2}
                           fill={moveColor.fg}
                           fontFamily="monospace"
-                          fontWeight="800"
+                          fontWeight="900"
                           textAnchor="middle"
                           dominantBaseline="central"
                           style={{ pointerEvents: "none", fontSize: 11 }}
@@ -300,7 +300,7 @@ export const FlowViz: React.FC = () => {
                           y={col.endY + MARKER_H / 2}
                           fill={endStatusFill.fg}
                           fontFamily="monospace"
-                          fontWeight="800"
+                          fontWeight="900"
                           textAnchor="middle"
                           dominantBaseline="central"
                           style={{ pointerEvents: "none", fontSize: 11 }}
