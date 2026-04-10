@@ -210,8 +210,8 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
 
           {/* Type hint when no move */}
           {!entry.move && typeHint && (
-            <Text as="span" color={dimColor} flexShrink={0} fontSize="2xs" fontStyle="italic">
-              {typeHint}
+            <Text as="span" color={dimColor} flexShrink={0} fontSize="2xs">
+              {typeHint.toUpperCase()}
             </Text>
           )}
 

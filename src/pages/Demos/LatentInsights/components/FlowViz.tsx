@@ -180,7 +180,7 @@ export const FlowViz: React.FC = () => {
                       x={col.x + col.w / 2}
                       y={col.startY + 13}
                       fill={startFg}
-                      fontFamily="monospace"
+                      fontFamily="Poppins, sans-serif"
                       fontWeight="900"
                       textAnchor="middle"
                       dominantBaseline="central"
@@ -192,7 +192,7 @@ export const FlowViz: React.FC = () => {
                       x={col.x + col.w / 2}
                       y={col.startY + 27}
                       fill={startFg}
-                      fontFamily="monospace"
+                      fontFamily="Poppins, sans-serif"
                       fontWeight="700"
                       textAnchor="middle"
                       dominantBaseline="central"
@@ -235,7 +235,7 @@ export const FlowViz: React.FC = () => {
                           x={step.x + step.w / 2}
                           y={step.y + step.h / 2}
                           fill={moveColor.fg}
-                          fontFamily="monospace"
+                          fontFamily="Poppins, sans-serif"
                           fontWeight="900"
                           textAnchor="middle"
                           dominantBaseline="central"
@@ -299,7 +299,7 @@ export const FlowViz: React.FC = () => {
                           x={col.x + col.w / 2}
                           y={col.endY + MARKER_H / 2}
                           fill={endStatusFill.fg}
-                          fontFamily="monospace"
+                          fontFamily="Poppins, sans-serif"
                           fontWeight="900"
                           textAnchor="middle"
                           dominantBaseline="central"
