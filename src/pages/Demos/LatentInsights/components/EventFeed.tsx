@@ -259,14 +259,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         </Flex>
 
         {isExpanded && (
-          <Box
-            mt={1}
-            mb={2}
-            ml={2}
-            pl={2}
-            borderLeft="2px solid"
-            borderColor={threadColor}
-          >
+          <Box mt={1} mb={2} pl={1}>
             <ExpandedContent entry={entry} />
           </Box>
         )}
