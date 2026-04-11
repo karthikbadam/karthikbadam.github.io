@@ -62,7 +62,7 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({
       borderColor="gray.subtle"
     >
       <Text fontSize="xs" color="fg.muted" mb={1} fontFamily="mono">
-        {label || `Reply to thread ${threadId.slice(0, THREAD_ID_PREVIEW_LENGTH)}…`}
+        {label ?? `Reply to thread ${threadId.slice(0, THREAD_ID_PREVIEW_LENGTH)}…`}
       </Text>
       <Input
         ref={inputRef}
@@ -70,7 +70,7 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({
         variant="outline"
         fontFamily="mono"
         fontSize="xs"
-        placeholder={placeholder || "Type a message and press Enter…"}
+        placeholder={placeholder ?? "Type a message and press Enter…"}
         value={value}
         onClick={(e) => {
           e.stopPropagation();

@@ -115,7 +115,6 @@ export const CommandBar: React.FC<CommandBarProps> = ({
         <Input
           ref={inputRef}
           flex={1}
-          variant="unstyled"
           size="xs"
           fontFamily="mono"
           fontSize="xs"
@@ -133,7 +132,6 @@ export const CommandBar: React.FC<CommandBarProps> = ({
         {/* Send */}
         <Box
           as="button"
-          type="submit"
           display="flex"
           alignItems="center"
           justifyContent="center"
@@ -155,7 +153,6 @@ export const CommandBar: React.FC<CommandBarProps> = ({
       <Flex gap={3} mt={1} px={1}>
         <Box
           as="button"
-          type="button"
           fontSize="2xs"
           fontFamily="mono"
           color="fg.muted"
@@ -168,7 +165,6 @@ export const CommandBar: React.FC<CommandBarProps> = ({
         </Box>
         <Box
           as="button"
-          type="button"
           fontSize="2xs"
           fontFamily="mono"
           color="fg.muted"

@@ -23,16 +23,14 @@ function PanelHeader({ title, hint, onClick }: PanelHeaderProps) {
   return (
     <Text
       as={clickable ? "button" : "div"}
-      type={clickable ? "button" : undefined}
       fontSize="xs"
-      fontWeight="medium"
-      color="accentSubtle"
+      fontWeight="semibold"
+      color="accent"
       mb={2}
       px={2}
       pt={2}
       textAlign="left"
       cursor={clickable ? "pointer" : "default"}
-      _hover={clickable ? { color: "fg" } : undefined}
       onClick={onClick}
     >
       {title}
@@ -49,14 +47,19 @@ function SchemaSummaryPanel({ summary }: { summary: string }) {
   const [open, setOpen] = useState(false);
   const formatted = useMemo(() => formatSchemaSummary(summary), [summary]);
   return (
-    <PanelContainer p={0} overflow="hidden" display="flex" flexDirection="column">
+    <PanelContainer
+      p={0}
+      overflow="hidden"
+      display="flex"
+      flexDirection="column"
+    >
       <PanelHeader
         title="Dataset summary"
         hint={`click to ${open ? "collapse" : "expand"}`}
         onClick={() => setOpen((v) => !v)}
       />
       {open && (
-        <Box px={3} pb={3} maxH="260px" overflowY="auto">
+        <Box px={2} pb={2} maxH="260px" overflowY="auto">
           <MarkdownContent content={formatted} />
         </Box>
       )}
@@ -118,7 +121,7 @@ export function Dashboard() {
       pb={2}
     >
       {/* Header */}
-      <Flex px={4} py={2} gap={6} maxW="100ch" mx="auto" align="flex-start">
+      <Flex px={4} py={4} gap={4} maxW="100ch" mx="auto" align="flex-start">
         <Box
           as="button"
           onClick={() => {
@@ -224,7 +227,7 @@ export function Dashboard() {
 
         {/* Right: Schema summary (separate panel) + Feed */}
         <Flex
-          flex={3}
+          flex={4}
           minW={0}
           minH={{ base: "50vh", md: "100%" }}
           h={{ md: "100%" }}

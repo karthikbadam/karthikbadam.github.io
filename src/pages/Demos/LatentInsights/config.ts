@@ -18,14 +18,14 @@ export const SESSION_ID_PREVIEW_LENGTH = 12;
 
 // --- FlowViz layout ---
 
-export const STEP_H = 22;
-export const STEP_GAP = 4;
-export const EVENT_H = 10;
-export const EVENT_GAP = 3;
-export const EVENT_WIDTH_RATIO = 0.65;
-export const THREAD_GAP = 20;
+export const STEP_H = 20;
+export const STEP_GAP = 2;
+export const EVENT_H = 8;
+export const EVENT_GAP = 2;
+export const EVENT_WIDTH_RATIO = 0.55;
+export const THREAD_GAP = 16;
 export const TOP_PAD = 8;
-export const MARKER_H = 22;
+export const MARKER_H = 20;
 export const START_MARKER_H = 40; // holds "START" label + thread id on two lines
 export const SCROLL_BOTTOM_THRESHOLD = 40;
 
@@ -54,23 +54,23 @@ export const THREAD_SHADES_LIGHT = [
 export interface MoveColor { fg: string; bg: string; }
 
 export const MOVE_COLORS_DARK: Record<string, MoveColor> = {
-  SCOPE:       { fg: "#d4bcff", bg: "#2e2340" },
-  FORAGE:      { fg: "#a8c4ff", bg: "#20304d" },
-  FRAME:       { fg: "#a3dff7", bg: "#1a3644" },
-  INTERROGATE: { fg: "#ecc585", bg: "#3a2d1a" },
-  SYNTHESIZE:  { fg: "#b6de8a", bg: "#1f3520" },
-  ERROR:       { fg: "#f6909c", bg: "#3d1e26" },
-  UNKNOWN:     { fg: "#aaaaaa", bg: "#3a3a3a" },
+  SCOPE:       { fg: "#e0d2ff", bg: "#3a3055" },       // lighter fg and bg
+  FORAGE:      { fg: "#bad5ff", bg: "#2a4668" },
+  FRAME:       { fg: "#b9f0ff", bg: "#234c5c" },
+  INTERROGATE: { fg: "#ffe0a8", bg: "#564018" },
+  SYNTHESIZE:  { fg: "#c5f49d", bg: "#31582b" },
+  ERROR:       { fg: "#fcc1c8", bg: "#693945" },
+  UNKNOWN:     { fg: "#cccccc", bg: "#555555" },
 };
 
 export const MOVE_COLORS_LIGHT: Record<string, MoveColor> = {
-  SCOPE:       { fg: "#3e1c66", bg: "#e8dcf5" },
-  FORAGE:      { fg: "#1e3566", bg: "#d7e2f5" },
-  FRAME:       { fg: "#0d4a68", bg: "#cce8f2" },
-  INTERROGATE: { fg: "#5e3d12", bg: "#f2e4c7" },
-  SYNTHESIZE:  { fg: "#254820", bg: "#d8ecce" },
-  ERROR:       { fg: "#74212f", bg: "#f5d2d8" },
-  UNKNOWN:     { fg: "#444444", bg: "#e0e0e0" },
+  SCOPE:       { fg: "#2d1140", bg: "#a68fc6" },    // darker fg and bg
+  FORAGE:      { fg: "#13233b", bg: "#a3b8d9" },
+  FRAME:       { fg: "#09304a", bg: "#8abdcd" },
+  INTERROGATE: { fg: "#3d2707", bg: "#d4bc8a" },
+  SYNTHESIZE:  { fg: "#153110", bg: "#a7b598" },
+  ERROR:       { fg: "#4a131f", bg: "#d095a4" },
+  UNKNOWN:     { fg: "#222222", bg: "#bbbbbb" },
 };
 
 // Neutral gray fill for running/waiting/unknown state

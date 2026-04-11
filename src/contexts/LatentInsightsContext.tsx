@@ -53,7 +53,10 @@ type Action =
   | { type: "SELECT_NODE"; node: SelectedNode | null }
   | { type: "RESET" };
 
-function reducer(state: LatentInsightsState, action: Action): LatentInsightsState {
+function reducer(
+  state: LatentInsightsState,
+  action: Action,
+): LatentInsightsState {
   switch (action.type) {
     case "LOAD_START":
       return { ...state, status: "loading", error: null };
@@ -83,14 +86,14 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
 
         if (evt.event_type === "step_start") {
           const existing = thread.steps.find(
-            (s) => s.step_number === evt.step_number
+            (s) => s.step_number === evt.step_number,
           );
           if (!existing && evt.step_number !== undefined) {
             thread.steps = [
               ...thread.steps,
               {
                 step_number: evt.step_number,
-                move: "",
+                move: evt.move ?? "",
                 instruction: "",
                 result: "",
                 view_created: null,
@@ -102,8 +105,12 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
         } else if (evt.event_type === "step_complete") {
           thread.steps = thread.steps.map((s) =>
             s.step_number === evt.step_number
-              ? { ...s, result: evt.result || s.result, move: evt.move || s.move }
-              : s
+              ? {
+                  ...s,
+                  result: evt.result || s.result,
+                  move: evt.move || s.move,
+                }
+              : s,
           );
         } else if (evt.event_type === "thread_complete") {
           thread.status = "complete";
@@ -128,13 +135,15 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
                   input_tokens: evt.input_tokens || null,
                   output_tokens: evt.output_tokens || null,
                   sql: evt.sql || null,
-                  tool_result: evt.event_type === "tool_call" ? (evt.message || null) : null,
-                  response: evt.event_type === "llm_call" ? (evt.message || null) : null,
+                  tool_result:
+                    evt.event_type === "tool_call" ? evt.message || null : null,
+                  response:
+                    evt.event_type === "llm_call" ? evt.message || null : null,
                 },
               ],
             };
             thread.steps = thread.steps.map((s) =>
-              s.step_number === lastStep.step_number ? updatedStep : s
+              s.step_number === lastStep.step_number ? updatedStep : s,
             );
           }
         }
@@ -167,7 +176,10 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
           // scout_done message may not be JSON
         }
       }
-      if ((evt.event_type as string) === "schema_summary_ready" && evt.message) {
+      if (
+        (evt.event_type as string) === "schema_summary_ready" &&
+        evt.message
+      ) {
         session.schema_summary = evt.message;
       }
 
@@ -177,7 +189,7 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
     case "UPDATE_THREAD": {
       if (!state.session) return state;
       const threads = state.session.threads.map((t) =>
-        t.id === action.thread.id ? action.thread : t
+        t.id === action.thread.id ? action.thread : t,
       );
       return { ...state, session: { ...state.session, threads } };
     }
@@ -207,17 +219,30 @@ interface LatentInsightsContextValue {
   loadLiveSession: (sessionId: string) => Promise<void>;
   uploadDataset: (file: File, config?: SessionConfig) => Promise<string | null>;
   replyToThread: (threadId: string, content: string) => Promise<void>;
-  createThread: (sessionId: string, question: string, motivation?: string) => Promise<void>;
+  createThread: (
+    sessionId: string,
+    question: string,
+    motivation?: string,
+  ) => Promise<void>;
   broadcastMessage: (sessionId: string, content: string) => Promise<void>;
-  switchPattern: (sessionId: string, pattern: ExplorationPattern) => Promise<void>;
+  switchPattern: (
+    sessionId: string,
+    pattern: ExplorationPattern,
+  ) => Promise<void>;
   continueSession: (sessionId: string) => Promise<void>;
   selectNode: (node: SelectedNode | null) => void;
   reset: () => void;
 }
 
-const LatentInsightsContext = createContext<LatentInsightsContextValue | null>(null);
+const LatentInsightsContext = createContext<LatentInsightsContextValue | null>(
+  null,
+);
 
-export function LatentInsightsProvider({ children }: { children: React.ReactNode }) {
+export function LatentInsightsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const eventSourceRef = useRef<EventSource | null>(null);
   const seenEventsRef = useRef<Set<string>>(new Set());
@@ -264,7 +289,10 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
           es.addEventListener(eventType, (e: MessageEvent) => {
             try {
               const data = JSON.parse(e.data);
-              const sseEvent: SSEEvent = { event_type: eventType as SSEEventType, ...data };
+              const sseEvent: SSEEvent = {
+                event_type: eventType as SSEEventType,
+                ...data,
+              };
 
               const dedupeKey = `${data.thread_id}:${data.step_number ?? ""}:${eventType}:${data.timestamp}`;
               if (seenEventsRef.current.has(dedupeKey)) return;
@@ -295,8 +323,13 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
                 eventType === "step_complete"
                   ? String(data.result ?? data.message ?? "")
                   : eventType === "thread_waiting"
-                    ? String(data.error ?? data.message ?? data.running_summary ?? "")
-                    : (eventType === "llm_call" || eventType === "tool_call")
+                    ? String(
+                        data.error ??
+                          data.message ??
+                          data.running_summary ??
+                          "",
+                      )
+                    : eventType === "llm_call" || eventType === "tool_call"
                       ? durationStr
                       : String(data.message ?? "");
 
@@ -310,17 +343,26 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
                 move: eventType === "step_start" ? undefined : data.move,
                 agent: data.agent || undefined,
                 thread_status:
-                  eventType === "thread_complete" ? "complete"
-                  : eventType === "thread_waiting" ? "waiting"
-                  : "running",
+                  eventType === "thread_complete"
+                    ? "complete"
+                    : eventType === "thread_waiting"
+                      ? "waiting"
+                      : "running",
                 sql: data.sql || undefined,
-                response: eventType === "llm_call" ? (data.message || undefined) : undefined,
+                response:
+                  eventType === "llm_call"
+                    ? data.message || undefined
+                    : undefined,
                 full_message:
-                  eventType === "step_complete" ? (data.result || undefined)
-                  : eventType === "tool_call" ? (data.sql || data.message || undefined)
-                  : eventType === "llm_call" ? (data.message || undefined)
-                  : eventType === "thread_start" ? (data.message || undefined)
-                  : undefined,
+                  eventType === "step_complete"
+                    ? data.result || undefined
+                    : eventType === "tool_call"
+                      ? data.sql || data.message || undefined
+                      : eventType === "llm_call"
+                        ? data.message || undefined
+                        : eventType === "thread_start"
+                          ? data.message || undefined
+                          : undefined,
               };
 
               queueMicrotask(() => {
@@ -355,45 +397,51 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
 
       connect();
     },
-    [cleanup]
+    [cleanup],
   );
 
-  const loadSavedSession = useCallback(async (sessionId: string) => {
-    cleanup();
-    dispatch({ type: "LOAD_START" });
-    try {
-      const res = await fetch(`${API_BASE}/sessions/${sessionId}/saved`);
-      if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
-      const session: SessionResponse = await res.json();
-      dispatch({ type: "LOAD_SESSION", session, mode: "saved" });
-      const entries = buildFeedFromSession(session);
-      dispatch({ type: "SET_FEED_ENTRIES", entries });
-    } catch (e) {
-      dispatch({
-        type: "LOAD_ERROR",
-        error: e instanceof Error ? e.message : "Unknown error",
-      });
-    }
-  }, [cleanup]);
+  const loadSavedSession = useCallback(
+    async (sessionId: string) => {
+      cleanup();
+      dispatch({ type: "LOAD_START" });
+      try {
+        const res = await fetch(`${API_BASE}/sessions/${sessionId}/saved`);
+        if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
+        const session: SessionResponse = await res.json();
+        dispatch({ type: "LOAD_SESSION", session, mode: "saved" });
+        const entries = buildFeedFromSession(session);
+        dispatch({ type: "SET_FEED_ENTRIES", entries });
+      } catch (e) {
+        dispatch({
+          type: "LOAD_ERROR",
+          error: e instanceof Error ? e.message : "Unknown error",
+        });
+      }
+    },
+    [cleanup],
+  );
 
-  const loadLiveSession = useCallback(async (sessionId: string) => {
-    cleanup();
-    dispatch({ type: "LOAD_START" });
-    try {
-      const res = await fetch(`${API_BASE}/sessions/${sessionId}`);
-      if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
-      const session: SessionResponse = await res.json();
-      dispatch({ type: "LOAD_SESSION", session, mode: "live" });
-      const entries = buildFeedFromSession(session);
-      dispatch({ type: "SET_FEED_ENTRIES", entries });
-      connectSSE(session.id);
-    } catch (e) {
-      dispatch({
-        type: "LOAD_ERROR",
-        error: e instanceof Error ? e.message : "Unknown error",
-      });
-    }
-  }, [cleanup, connectSSE]);
+  const loadLiveSession = useCallback(
+    async (sessionId: string) => {
+      cleanup();
+      dispatch({ type: "LOAD_START" });
+      try {
+        const res = await fetch(`${API_BASE}/sessions/${sessionId}`);
+        if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
+        const session: SessionResponse = await res.json();
+        dispatch({ type: "LOAD_SESSION", session, mode: "live" });
+        const entries = buildFeedFromSession(session);
+        dispatch({ type: "SET_FEED_ENTRIES", entries });
+        connectSSE(session.id);
+      } catch (e) {
+        dispatch({
+          type: "LOAD_ERROR",
+          error: e instanceof Error ? e.message : "Unknown error",
+        });
+      }
+    },
+    [cleanup, connectSSE],
+  );
 
   const uploadDataset = useCallback(
     async (file: File, config?: SessionConfig): Promise<string | null> => {
@@ -402,24 +450,18 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
         const form = new FormData();
         form.append("file", file);
         if (config) {
-          // Send as nested config JSON (backend preferred format)
-          form.append("config", JSON.stringify(config));
-          // Also send as top-level fields for backends that expect that shape
-          if (config.question_source) form.append("question_source", config.question_source);
-          if (config.scout_context) form.append("scout_context", config.scout_context);
-          if (config.seed_threads) form.append("seed_threads", String(config.seed_threads));
+          const backendConfig = {
+            question_source: config.question_source,
+            scout_context: config.scout_context,
+            num_scout_seed_questions: config.seed_threads,
+          };
+          form.append("config", JSON.stringify(backendConfig));
         }
-        // Build query string fallback (some backends read from query params)
-        const params = new URLSearchParams();
-        if (config?.seed_threads) params.set("seed_threads", String(config.seed_threads));
-        if (config?.question_source) params.set("question_source", config.question_source);
-        const url = params.toString()
-          ? `${API_BASE}/sessions?${params.toString()}`
-          : `${API_BASE}/sessions`;
-        const res = await fetch(url, {
+        const res = await fetch(`${API_BASE}/sessions`, {
           method: "POST",
           body: form,
         });
+
         if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
         const data = await res.json();
         dispatch({ type: "RESET" });
@@ -432,42 +474,57 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
         return null;
       }
     },
-    [cleanup]
+    [cleanup],
   );
 
-  const replyToThread = useCallback(async (threadId: string, content: string) => {
-    const res = await fetch(`${API_BASE}/threads/${threadId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    if (!res.ok) throw new Error(`Reply failed: ${res.status}`);
-  }, []);
+  const replyToThread = useCallback(
+    async (threadId: string, content: string) => {
+      const res = await fetch(`${API_BASE}/threads/${threadId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error(`Reply failed: ${res.status}`);
+    },
+    [],
+  );
 
-  const createThread = useCallback(async (sessionId: string, question: string, motivation?: string) => {
-    const res = await fetch(`${API_BASE}/sessions/${sessionId}/threads`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, motivation }),
-    });
-    if (!res.ok) throw new Error(`Create thread failed: ${res.status}`);
-  }, []);
+  const createThread = useCallback(
+    async (sessionId: string, question: string, motivation?: string) => {
+      const res = await fetch(`${API_BASE}/sessions/${sessionId}/threads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, motivation }),
+      });
+      if (!res.ok) throw new Error(`Create thread failed: ${res.status}`);
+    },
+    [],
+  );
 
-  const broadcastMessage = useCallback(async (sessionId: string, content: string) => {
-    const res = await fetch(`${API_BASE}/sessions/${sessionId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    if (!res.ok) throw new Error(`Broadcast failed: ${res.status}`);
-  }, []);
+  const broadcastMessage = useCallback(
+    async (sessionId: string, content: string) => {
+      const res = await fetch(`${API_BASE}/sessions/${sessionId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error(`Broadcast failed: ${res.status}`);
+    },
+    [],
+  );
 
-  const switchPattern = useCallback(async (sessionId: string, pattern: ExplorationPattern) => {
-    const res = await fetch(`${API_BASE}/sessions/${sessionId}/patterns/${pattern}`, {
-      method: "POST",
-    });
-    if (!res.ok) throw new Error(`Switch pattern failed: ${res.status}`);
-  }, []);
+  const switchPattern = useCallback(
+    async (sessionId: string, pattern: ExplorationPattern) => {
+      const res = await fetch(
+        `${API_BASE}/sessions/${sessionId}/patterns/${pattern}`,
+        {
+          method: "POST",
+        },
+      );
+      if (!res.ok) throw new Error(`Switch pattern failed: ${res.status}`);
+    },
+    [],
+  );
 
   const continueSession = useCallback(async (sessionId: string) => {
     const res = await fetch(`${API_BASE}/sessions/${sessionId}/continue`, {
@@ -508,6 +565,9 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
 
 export function useLatentInsights() {
   const ctx = useContext(LatentInsightsContext);
-  if (!ctx) throw new Error("useLatentInsights must be used within LatentInsightsProvider");
+  if (!ctx)
+    throw new Error(
+      "useLatentInsights must be used within LatentInsightsProvider",
+    );
   return ctx;
 }

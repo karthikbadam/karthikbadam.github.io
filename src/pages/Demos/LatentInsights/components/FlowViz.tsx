@@ -1,23 +1,22 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
-import React, { useMemo, useCallback, useRef, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
-import { SelectedNode } from "../types";
 import {
-  STEP_H,
-  STEP_GAP,
-  EVENT_H,
   EVENT_GAP,
+  EVENT_H,
   EVENT_WIDTH_RATIO,
-  THREAD_GAP,
-  TOP_PAD,
   MARKER_H,
   START_MARKER_H,
+  STEP_GAP,
+  STEP_H,
+  THREAD_GAP,
+  TOP_PAD,
 } from "../config";
 import { getMoveColor, getThreadColor } from "../utils";
 
-const RX = 3;
-const MIN_THREAD_W = 40;
+const RX = 4;
+const MIN_THREAD_W = 35;
 const MAX_THREAD_W = 110;
 const FULL_NAME_THRESHOLD = 72;
 

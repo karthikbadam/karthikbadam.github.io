@@ -32,7 +32,6 @@ function ToggleGroup<T extends string>({
         <Box
           key={o.value}
           as="button"
-          type="button"
           px={2}
           py={1}
           fontSize="xs"
@@ -325,7 +324,6 @@ export function LandingScreen() {
                 </Text>
                 <Box
                   as="button"
-                  type="button"
                   onClick={() => setPendingFile(null)}
                   color="fg.muted"
                   _hover={{ color: "fg" }}
@@ -384,7 +382,6 @@ export function LandingScreen() {
                       </Text>
                       <Box
                         as="button"
-                        type="button"
                         onClick={() => removeQuestion(i)}
                         color="fg.muted"
                         _hover={{ color: "red.400" }}
@@ -414,7 +411,6 @@ export function LandingScreen() {
                     />
                     <Box
                       as="button"
-                      type="button"
                       display="flex"
                       alignItems="center"
                       gap={1}
@@ -491,7 +487,6 @@ export function LandingScreen() {
               {/* Start button */}
               <Box
                 as="button"
-                type="button"
                 w="100%"
                 px={4}
                 py={2}

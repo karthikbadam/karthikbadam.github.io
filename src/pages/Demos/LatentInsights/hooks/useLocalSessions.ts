@@ -25,8 +25,8 @@ export function useLocalSessions() {
           id: s.id as string,
           dataset_path: s.dataset_path as string,
           thread_count:
-            (s.thread_count as number) ??
-            (s.num_threads as number) ??
+            s.thread_count ??
+            s.num_threads ??
             (Array.isArray(s.threads) ? s.threads.length : 0),
           created_at: s.created_at as string,
           status: (s.status as string) || "running",
