@@ -4,98 +4,15 @@ import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { MarkdownContent } from "./MarkdownContent";
 import { ReplyInput } from "./ReplyInput";
-import { FeedEntry, SelectedNode, SSEEventType } from "../types";
-
-const THREAD_SHADES_DARK = [
-  "#888", "#999", "#777", "#aaa", "#666",
-  "#8a8a8a", "#7a7a7a", "#9a9a9a", "#6a6a6a", "#b0b0b0",
-];
-const THREAD_SHADES_LIGHT = [
-  "#666", "#555", "#777", "#444", "#888",
-  "#5a5a5a", "#6a6a6a", "#4a4a4a", "#7a7a7a", "#3a3a3a",
-];
-
-function getThreadColor(
-  threadId: string,
-  threadIds: string[],
-  isDark: boolean
-): string {
-  const palette = isDark ? THREAD_SHADES_DARK : THREAD_SHADES_LIGHT;
-  const idx = threadIds.indexOf(threadId);
-  return palette[idx % palette.length];
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  thread_start: "start",
-  step_start: "step",
-  llm_call: "llm",
-  tool_call: "sql",
-  step_complete: "done",
-  thread_complete: "finished",
-  thread_waiting: "waiting for input",
-};
-
-function hasExpandableContent(entry: FeedEntry): boolean {
-  return !!(
-    entry.full_message ||
-    entry.sql ||
-    entry.tool_result ||
-    entry.response ||
-    entry.tables ||
-    entry.event_type === "thread_waiting"
-  );
-}
-
-function feedEntryToSelectedNode(entry: FeedEntry): SelectedNode | null {
-  const id = entry.id;
-  if (id.startsWith("ts:")) {
-    return { type: "thread", threadId: id.slice(3) };
-  }
-  if (id.startsWith("tc:")) {
-    return { type: "thread_end", threadId: id.slice(3), threadStatus: "complete" };
-  }
-  if (id.startsWith("tw:")) {
-    return { type: "thread_end", threadId: id.slice(3), threadStatus: "waiting" };
-  }
-  if (id.startsWith("ss:")) {
-    const parts = id.slice(3).split(":");
-    return { type: "step", threadId: parts[0], stepNumber: Number(parts[1]) };
-  }
-  if (id.startsWith("sc:")) {
-    const parts = id.slice(3).split(":");
-    return { type: "step", threadId: parts[0], stepNumber: Number(parts[1]) };
-  }
-  if (id.startsWith("ev:")) {
-    const parts = id.slice(3).split(":");
-    return {
-      type: "event",
-      threadId: parts[0],
-      stepNumber: Number(parts[1]),
-      eventIndex: Number(parts[2]),
-    };
-  }
-  return null;
-}
-
-function selectedNodeToFeedId(node: SelectedNode | null): string | null {
-  if (!node) return null;
-  switch (node.type) {
-    case "thread":
-      return node.threadId ? `ts:${node.threadId}` : null;
-    case "thread_end":
-      if (!node.threadId) return null;
-      if (node.threadStatus === "waiting") return `tw:${node.threadId}`;
-      return `tc:${node.threadId}`;
-    case "step":
-      return node.threadId && node.stepNumber !== undefined
-        ? `ss:${node.threadId}:${node.stepNumber}` : null;
-    case "event":
-      return node.threadId && node.stepNumber !== undefined && node.eventIndex !== undefined
-        ? `ev:${node.threadId}:${node.stepNumber}:${node.eventIndex}` : null;
-    default:
-      return null;
-  }
-}
+import { FeedEntry } from "../types";
+import { THREAD_ID_PREVIEW_LENGTH, SCROLL_BOTTOM_THRESHOLD } from "../config";
+import {
+  getThreadColor,
+  getMoveColor,
+  hasExpandableContent,
+  feedEntryToSelectedNode,
+  selectedNodeToFeedId,
+} from "../utils";
 
 export const EventFeed: React.FC = () => {
   const { state, selectNode } = useLatentInsights();
@@ -109,17 +26,19 @@ export const EventFeed: React.FC = () => {
   const expandedIdRef = useRef<string | null>(null);
   expandedIdRef.current = expandedId;
 
-  const threadIds = useMemo(() => {
-    if (!session?.threads) return [];
-    return session.threads.map((t) => t.id);
-  }, [session]);
+  const threadIds = useMemo(
+    () => session?.threads?.map((t) => t.id) ?? [],
+    [session],
+  );
 
+  // Auto-scroll to bottom as new entries arrive
   useEffect(() => {
     if (autoScrollRef.current && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [feedEntries.length]);
 
+  // Scroll selected entry into view
   useEffect(() => {
     if (feedInitiatedRef.current) {
       feedInitiatedRef.current = false;
@@ -129,59 +48,38 @@ export const EventFeed: React.FC = () => {
     if (!targetId) return;
     setExpandedId(targetId);
     autoScrollRef.current = false;
-    const scrollToTarget = () => {
-      const container = scrollRef.current;
-      if (!container) return;
-      const el = container.querySelector(
-        `[data-entry-id="${targetId}"]`
-      ) as HTMLElement | null;
-      if (!el) return;
-      const containerRect = container.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
-      const targetTop =
-        container.scrollTop +
-        (elRect.top - containerRect.top) -
-        container.clientHeight / 2 +
-        elRect.height / 2;
-      container.scrollTo({
-        top: Math.max(0, targetTop),
-        behavior: "smooth",
-      });
-      if (el.tabIndex < 0) el.tabIndex = -1;
-      el.focus({ preventScroll: true });
-    };
-
-    const container = scrollRef.current;
-    const feedPanel = container?.closest("[data-feed-panel]") as HTMLElement | null;
-    if (feedPanel) {
-      feedPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
     requestAnimationFrame(() => {
-      setTimeout(scrollToTarget, 120);
+      setTimeout(() => {
+        const container = scrollRef.current;
+        const el = container?.querySelector(`[data-entry-id="${targetId}"]`) as HTMLElement | null;
+        if (!container || !el) return;
+        const cRect = container.getBoundingClientRect();
+        const eRect = el.getBoundingClientRect();
+        const targetTop =
+          container.scrollTop +
+          (eRect.top - cRect.top) -
+          container.clientHeight / 2 +
+          eRect.height / 2;
+        container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+      }, 120);
     });
   }, [selectedNode]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-    autoScrollRef.current = atBottom;
+    autoScrollRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_BOTTOM_THRESHOLD;
   }, []);
 
   const toggleExpand = useCallback(
     (id: string, entry: FeedEntry) => {
       feedInitiatedRef.current = true;
-      const prev = expandedIdRef.current;
-      const next = prev === id ? null : id;
+      const next = expandedIdRef.current === id ? null : id;
       setExpandedId(next);
-      if (next) {
-        const node = feedEntryToSelectedNode(entry);
-        if (node) selectNode(node);
-      } else {
-        selectNode(null);
-      }
+      selectNode(next ? feedEntryToSelectedNode(entry) : null);
     },
-    [selectNode]
+    [selectNode],
   );
 
   return (
@@ -202,9 +100,7 @@ export const EventFeed: React.FC = () => {
       >
         {feedEntries.length === 0 && (
           <Text color="fg.muted" fontSize="xs" p={2} textAlign="center">
-            {state.mode === "live"
-              ? "Waiting for events…"
-              : "No events to display"}
+            {state.mode === "live" ? "Waiting for events…" : "No events to display"}
           </Text>
         )}
         {feedEntries.map((entry) => (
@@ -230,21 +126,37 @@ interface FeedRowProps {
   onToggle: (id: string, entry: FeedEntry) => void;
 }
 
+function getTypeLabel(eventType: string): string {
+  switch (eventType) {
+    case "thread_start":    return "start";
+    case "thread_complete": return "done";
+    case "thread_waiting":  return "waiting";
+    case "llm_call":        return "llm";
+    case "tool_call":       return "sql";
+    case "step_complete":   return "step done";
+    default:                return "";
+  }
+}
+
 const FeedRow: React.FC<FeedRowProps> = React.memo(
   ({ entry, threadIds, isDark, isExpanded, onToggle }) => {
-    const color = getThreadColor(entry.thread_id, threadIds, isDark);
+    const threadColor = getThreadColor(entry.thread_id, threadIds, isDark);
+    const moveColor = getMoveColor(entry.move, isDark);
     const expandable = hasExpandableContent(entry);
-    const typeLabel = TYPE_LABELS[entry.event_type as SSEEventType] || entry.event_type;
-    const activeColor = isDark ? "#eee" : "#111";
-    const dimColor = isExpanded ? activeColor : isDark ? "#888" : "#666";
-    const mutedColor = isExpanded ? activeColor : isDark ? "#666" : "#999";
-    const threadColor = isExpanded ? activeColor : color;
+    const dimColor = isDark ? "#888" : "#666";
+    const mutedColor = isDark ? "#555" : "#aaa";
+
+    const tid = entry.thread_id.slice(0, THREAD_ID_PREVIEW_LENGTH);
+    const duration = entry.message && /^\d/.test(entry.message) ? entry.message : "";
+    const textContent = entry.response || entry.sql || entry.full_message || "";
+    const previewText = textContent || (duration ? "" : entry.message || "");
+    const typeHint = getTypeLabel(entry.event_type);
 
     return (
       <Box
         data-entry-id={entry.id}
-        px={1}
-        py="2px"
+        px={2}
+        py="3px"
         minW={0}
         maxW="100%"
         w="100%"
@@ -254,38 +166,85 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         onClick={() => expandable && onToggle(entry.id, entry)}
       >
         <Flex gap="6px" align="center" minW={0} w="100%">
-          <Text as="span" color={threadColor} flexShrink={0}>
-            thread {entry.thread_id.slice(0, 6)}
-          </Text>
+          {/* Thread ID pill */}
+          <Box
+            flexShrink={0}
+            px="5px"
+            py="1px"
+            borderRadius="3px"
+            border="1px solid"
+            borderColor={isDark ? "whiteAlpha.100" : "blackAlpha.100"}
+          >
+            <Text as="span" color={threadColor} fontWeight="medium">
+              {tid}
+            </Text>
+          </Box>
+
+          {/* Step number */}
           {entry.step_number !== undefined && (
-            <Text as="span" color={dimColor} flexShrink={0}>
-              step {entry.step_number}
+            <Text as="span" color={mutedColor} flexShrink={0} fontSize="2xs">
+              STEP {entry.step_number}
             </Text>
           )}
+
+          {/* Move badge */}
           {entry.move && (
-            <Text as="span" color={dimColor} fontWeight="bold" flexShrink={0}>
-              {entry.move}
+            <Box
+              px="5px"
+              py="1px"
+              borderRadius="3px"
+              bg={moveColor.bg}
+              flexShrink={0}
+            >
+              <Text
+                as="span"
+                color={moveColor.fg}
+                fontWeight="bold"
+                fontSize="2xs"
+                letterSpacing="0.03em"
+              >
+                {entry.move.toUpperCase()}
+              </Text>
+            </Box>
+          )}
+
+          {/* Type hint when no move */}
+          {!entry.move && typeHint && (
+            <Text as="span" color={dimColor} flexShrink={0} fontSize="2xs">
+              {typeHint.toUpperCase()}
             </Text>
           )}
+
+          {/* Agent */}
           {entry.agent && (
-            <Text as="span" color={mutedColor} flexShrink={0}>
+            <Text as="span" color={mutedColor} flexShrink={0} fontSize="2xs">
               {entry.agent}
             </Text>
           )}
-          {!entry.agent && !entry.move && (
-            <Text as="span" color={mutedColor} flexShrink={0}>
-              {typeLabel}
+
+          {/* Duration */}
+          {duration && (
+            <Text
+              as="span"
+              color={mutedColor}
+              flexShrink={0}
+              fontSize="2xs"
+              fontVariantNumeric="tabular-nums"
+            >
+              {duration}
             </Text>
           )}
-          {!isExpanded && entry.message && (
+
+          {/* Preview text */}
+          {!isExpanded && previewText && (
             <Box
               flex="1 1 0%"
               minW={0}
               maxW="100%"
               overflow="hidden"
-              title={entry.message}
+              title={textContent || entry.message}
             >
-              <Box
+              <Text
                 as="div"
                 color={dimColor}
                 overflow="hidden"
@@ -293,21 +252,14 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
                 whiteSpace="nowrap"
                 w="100%"
               >
-                {entry.message}
-              </Box>
+                {previewText}
+              </Text>
             </Box>
           )}
         </Flex>
 
         {isExpanded && (
-          <Box
-            mt={1}
-            mb={2}
-            ml={2}
-            pl={2}
-            borderLeft="2px solid"
-            borderColor={isDark ? "#444" : "#ccc"}
-          >
+          <Box mt={1} mb={2} pl={1}>
             <ExpandedContent entry={entry} />
           </Box>
         )}
@@ -315,6 +267,8 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
     );
   }
 );
+
+// --- Expanded content renderer ---
 
 const JsonTable: React.FC<{ data: unknown[]; label?: string }> = ({ data, label }) => {
   if (!data.length || typeof data[0] !== "object" || data[0] === null) return null;
@@ -326,11 +280,21 @@ const JsonTable: React.FC<{ data: unknown[]; label?: string }> = ({ data, label 
           {label}
         </Text>
       )}
-      <Box as="table" fontSize="2xs" fontFamily="mono" w="100%" css={{
-        borderCollapse: "collapse",
-        "& th, & td": { padding: "2px 6px", textAlign: "left", borderBottom: "1px solid var(--chakra-colors-border-muted, #333)" },
-        "& th": { fontWeight: "bold", opacity: 0.7 },
-      }}>
+      <Box
+        as="table"
+        fontSize="2xs"
+        fontFamily="mono"
+        w="100%"
+        css={{
+          borderCollapse: "collapse",
+          "& th, & td": {
+            padding: "2px 6px",
+            textAlign: "left",
+            borderBottom: "1px solid var(--chakra-colors-border-muted, #333)",
+          },
+          "& th": { fontWeight: "bold", opacity: 0.7 },
+        }}
+      >
         <thead>
           <tr>{cols.map((c) => <th key={c}>{c}</th>)}</tr>
         </thead>
@@ -362,6 +326,26 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
         )}
         <ReplyInput
           threadId={entry.thread_id}
+          label="Reply to waiting thread"
+          placeholder="Type a reply and press Enter…"
+          onClose={() => {}}
+        />
+      </Box>
+    );
+  }
+
+  if (entry.event_type === "thread_start" && entry.thread_status === "running") {
+    return (
+      <Box>
+        {entry.full_message && (
+          <Box mb={2}>
+            <MarkdownContent content={entry.full_message} />
+          </Box>
+        )}
+        <ReplyInput
+          threadId={entry.thread_id}
+          label="Send direction to running thread"
+          placeholder="Guide this thread…"
           onClose={() => {}}
         />
       </Box>
@@ -409,16 +393,14 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
     return (
       <Box>
         {entry.response && <MarkdownContent content={entry.response} />}
-        {entry.tables && Object.entries(entry.tables).map(([key, rows]) => (
-          <JsonTable key={key} data={rows} label={key} />
-        ))}
+        {entry.tables &&
+          Object.entries(entry.tables).map(([key, rows]) => (
+            <JsonTable key={key} data={rows} label={key} />
+          ))}
       </Box>
     );
   }
 
-  if (entry.full_message) {
-    return <MarkdownContent content={entry.full_message} />;
-  }
-
+  if (entry.full_message) return <MarkdownContent content={entry.full_message} />;
   return null;
 };

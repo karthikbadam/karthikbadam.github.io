@@ -86,6 +86,24 @@ export interface SSEEvent {
 
 export type SessionMode = "saved" | "live";
 
+export type ExplorationPattern = "coordinator_worker" | "fan_out" | "human_in_the_loop";
+export type QuestionSource = "scout" | "human" | "both";
+
+export type CommandMode = "ask" | "broadcast" | "direct" | "pattern" | "continue";
+
+export interface PatternConfig {
+  pattern: ExplorationPattern;
+  fan_out_size?: number;
+  seed_threads?: number;
+}
+
+export interface SessionConfig {
+  question_source?: QuestionSource;
+  scout_context?: string;
+  seed_threads?: number;
+  pattern?: PatternConfig;
+}
+
 export interface FeedEntry {
   id: string;
   event_type: SSEEventType | StepEvent["type"];
@@ -110,21 +128,3 @@ export interface SelectedNode {
   eventIndex?: number;
   threadStatus?: string;
 }
-
-export const FEATURED_SESSIONS = [
-  {
-    id: "846f0bbfefc0",
-    dataset: "cars.csv",
-    description: "10 threads · 60 steps",
-  },
-  {
-    id: "a59dfbbd0fee",
-    dataset: "exoplanets-nasa.csv",
-    description: "8 threads · 4 waiting",
-  },
-  {
-    id: "746fa2380425",
-    dataset: "star_classification.csv",
-    description: "8 threads · 3 waiting",
-  },
-] as const;
