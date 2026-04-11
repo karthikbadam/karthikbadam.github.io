@@ -454,6 +454,7 @@ export function LatentInsightsProvider({
             question_source: config.question_source,
             scout_context: config.scout_context,
             num_scout_seed_questions: config.seed_threads,
+            default_pattern: config.pattern?.pattern, 
           };
           form.append("config", JSON.stringify(backendConfig));
         }
