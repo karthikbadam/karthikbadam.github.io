@@ -1,6 +1,7 @@
 import { Box, Code, Text } from "@chakra-ui/react";
 import React from "react";
 import ReactMarkdown, { Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const components: Components = {
   h1: ({ children }) => (
@@ -68,8 +69,26 @@ const components: Components = {
     </Box>
   ),
   table: ({ children }) => (
-    <Box as="table" fontSize="xs" fontFamily="mono" mb={1} w="100%">
-      {children}
+    <Box overflowX="auto" mb={2}>
+      <Box
+        as="table"
+        fontSize="2xs"
+        fontFamily="mono"
+        w="100%"
+        css={{
+          borderCollapse: "collapse",
+          "& th, & td": {
+            padding: "3px 8px",
+            textAlign: "left",
+            verticalAlign: "top",
+            borderBottom: "1px solid var(--chakra-colors-border-muted, #333)",
+          },
+          "& th": { fontWeight: "bold", opacity: 0.75 },
+          "& tr:hover": { backgroundColor: "var(--chakra-colors-whiteAlpha-50)" },
+        }}
+      >
+        {children}
+      </Box>
     </Box>
   ),
   strong: ({ children }) => (
@@ -87,7 +106,9 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => 
   if (!content) return null;
   return (
     <Box>
-      <ReactMarkdown components={components}>{content}</ReactMarkdown>
+      <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}>
+        {content}
+      </ReactMarkdown>
     </Box>
   );
 };

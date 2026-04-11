@@ -14,11 +14,11 @@ import {
   FeedEntry,
   SessionMode,
   SelectedNode,
+  SessionConfig,
+  ExplorationPattern,
 } from "../pages/Demos/LatentInsights/types";
-
-const API_BASE = import.meta.env.DEV
-  ? "http://localhost:8000/api"
-  : "https://latent-insights-service-production.up.railway.app/api";
+import { API_BASE } from "../pages/Demos/LatentInsights/config";
+import { buildFeedFromSession } from "../pages/Demos/LatentInsights/utils";
 
 // --- State ---
 
@@ -53,7 +53,10 @@ type Action =
   | { type: "SELECT_NODE"; node: SelectedNode | null }
   | { type: "RESET" };
 
-function reducer(state: LatentInsightsState, action: Action): LatentInsightsState {
+function reducer(
+  state: LatentInsightsState,
+  action: Action,
+): LatentInsightsState {
   switch (action.type) {
     case "LOAD_START":
       return { ...state, status: "loading", error: null };
@@ -83,14 +86,14 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
 
         if (evt.event_type === "step_start") {
           const existing = thread.steps.find(
-            (s) => s.step_number === evt.step_number
+            (s) => s.step_number === evt.step_number,
           );
           if (!existing && evt.step_number !== undefined) {
             thread.steps = [
               ...thread.steps,
               {
                 step_number: evt.step_number,
-                move: evt.move || "UNKNOWN",
+                move: evt.move ?? "",
                 instruction: "",
                 result: "",
                 view_created: null,
@@ -102,8 +105,12 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
         } else if (evt.event_type === "step_complete") {
           thread.steps = thread.steps.map((s) =>
             s.step_number === evt.step_number
-              ? { ...s, result: evt.result || s.result, move: evt.move || s.move }
-              : s
+              ? {
+                  ...s,
+                  result: evt.result || s.result,
+                  move: evt.move || s.move,
+                }
+              : s,
           );
         } else if (evt.event_type === "thread_complete") {
           thread.status = "complete";
@@ -128,13 +135,15 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
                   input_tokens: evt.input_tokens || null,
                   output_tokens: evt.output_tokens || null,
                   sql: evt.sql || null,
-                  tool_result: evt.event_type === "tool_call" ? (evt.message || null) : null,
-                  response: evt.event_type === "llm_call" ? (evt.message || null) : null,
+                  tool_result:
+                    evt.event_type === "tool_call" ? evt.message || null : null,
+                  response:
+                    evt.event_type === "llm_call" ? evt.message || null : null,
                 },
               ],
             };
             thread.steps = thread.steps.map((s) =>
-              s.step_number === lastStep.step_number ? updatedStep : s
+              s.step_number === lastStep.step_number ? updatedStep : s,
             );
           }
         }
@@ -155,13 +164,32 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
       }
 
       session.threads = threads;
+
+      // Handle session-level SSE events
+      if (evt.event_type === "scout_done" && evt.message) {
+        try {
+          const questions = JSON.parse(evt.message);
+          if (Array.isArray(questions)) {
+            session.scout_questions = questions;
+          }
+        } catch {
+          // scout_done message may not be JSON
+        }
+      }
+      if (
+        (evt.event_type as string) === "schema_summary_ready" &&
+        evt.message
+      ) {
+        session.schema_summary = evt.message;
+      }
+
       return { ...state, session };
     }
 
     case "UPDATE_THREAD": {
       if (!state.session) return state;
       const threads = state.session.threads.map((t) =>
-        t.id === action.thread.id ? action.thread : t
+        t.id === action.thread.id ? action.thread : t,
       );
       return { ...state, session: { ...state.session, threads } };
     }
@@ -183,162 +211,38 @@ function reducer(state: LatentInsightsState, action: Action): LatentInsightsStat
   }
 }
 
-// --- Build feed from snapshot ---
-
-function tryParseJsonResponse(raw: string): { text: string; tables?: Record<string, unknown[]> } {
-  try {
-    const obj = JSON.parse(raw);
-    const tables: Record<string, unknown[]> = {};
-    for (const key of Object.keys(obj)) {
-      if (Array.isArray(obj[key]) && obj[key].length > 0 && typeof obj[key][0] === "object") {
-        tables[key] = obj[key];
-      }
-    }
-    const text = obj.summary || obj.assessment || "";
-    return { text, tables: Object.keys(tables).length > 0 ? tables : undefined };
-  } catch {
-    const summaryMatch = raw.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (summaryMatch) return { text: summaryMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"') };
-    return { text: raw };
-  }
-}
-
-function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
-  const entries: FeedEntry[] = [];
-  if (!session.threads) return entries;
-
-  for (const thread of session.threads) {
-    const firstEventTs = thread.steps[0]?.events[0]?.timestamp;
-    const threadStartTs = firstEventTs
-      ? firstEventTs - 0.01
-      : new Date(thread.updated_at).getTime() / 1000 - 1000;
-
-    const seed = thread.seed_question ?? "";
-    entries.push({
-      id: `ts:${thread.id}`,
-      event_type: "thread_start",
-      thread_id: thread.id,
-      message: seed,
-      timestamp: threadStartTs,
-      thread_status: thread.status,
-      full_message: seed + (thread.motivation ? `\n\n${thread.motivation}` : ""),
-    });
-
-    for (const step of thread.steps) {
-      entries.push({
-        id: `ss:${thread.id}:${step.step_number}`,
-        event_type: "step_start",
-        thread_id: thread.id,
-        message: "",
-        timestamp: step.events[0]?.timestamp || 0,
-        step_number: step.step_number,
-        move: step.move,
-        thread_status: thread.status,
-        full_message: step.instruction || undefined,
-      });
-
-      for (let ei = 0; ei < step.events.length; ei++) {
-        const evt = step.events[ei];
-
-        const hasSql = !!evt.sql;
-        const hasToolResult = !!evt.tool_result;
-
-        if (evt.type === "tool_call" || (hasSql && hasToolResult)) {
-          entries.push({
-            id: `ev:${thread.id}:${step.step_number}:${ei}`,
-            event_type: "tool_call",
-            thread_id: thread.id,
-            message: evt.duration_ms ? `${(evt.duration_ms / 1000).toFixed(1)}s` : "",
-            timestamp: evt.timestamp,
-            step_number: step.step_number,
-            move: step.move,
-            agent: evt.agent || "worker",
-            thread_status: thread.status,
-            sql: evt.sql || undefined,
-            tool_result: hasToolResult ? evt.tool_result! : undefined,
-          });
-        } else {
-          const parsed = evt.response ? tryParseJsonResponse(evt.response) : null;
-          entries.push({
-            id: `ev:${thread.id}:${step.step_number}:${ei}`,
-            event_type: "llm_call",
-            thread_id: thread.id,
-            message: evt.duration_ms ? `${(evt.duration_ms / 1000).toFixed(1)}s` : "",
-            timestamp: evt.timestamp,
-            step_number: step.step_number,
-            move: step.move,
-            agent: evt.agent || undefined,
-            thread_status: thread.status,
-            response: parsed?.text || undefined,
-            tables: parsed?.tables,
-            full_message: parsed?.text ? undefined : `LLM call${evt.agent ? ` (${evt.agent})` : ""}`,
-          });
-        }
-      }
-
-      if (step.result) {
-        entries.push({
-          id: `sc:${thread.id}:${step.step_number}`,
-          event_type: "step_complete",
-          thread_id: thread.id,
-          message: step.result,
-          timestamp:
-            (step.events[step.events.length - 1]?.timestamp || 0) + 0.001,
-          step_number: step.step_number,
-          move: step.move,
-          thread_status: thread.status,
-          full_message: step.result,
-        });
-      }
-    }
-
-    if (thread.status === "complete") {
-      entries.push({
-        id: `tc:${thread.id}`,
-        event_type: "thread_complete",
-        thread_id: thread.id,
-        message: "",
-        timestamp: new Date(thread.updated_at).getTime() / 1000,
-        thread_status: "complete",
-        full_message: thread.summary || undefined,
-      });
-    } else if (thread.status === "waiting") {
-      const waitParts: string[] = [];
-      if (thread.running_summary) waitParts.push(thread.running_summary);
-      if (thread.error) waitParts.push(`**Reason:** ${thread.error}`);
-      const lastStep = thread.steps[thread.steps.length - 1];
-      if (!waitParts.length && lastStep?.result) waitParts.push(lastStep.result);
-      entries.push({
-        id: `tw:${thread.id}`,
-        event_type: "thread_waiting",
-        thread_id: thread.id,
-        message: thread.error || thread.running_summary || "",
-        timestamp: new Date(thread.updated_at).getTime() / 1000,
-        thread_status: "waiting",
-        full_message: waitParts.join("\n\n") || undefined,
-      });
-    }
-  }
-
-  entries.sort((a, b) => a.timestamp - b.timestamp);
-  return entries;
-}
-
 // --- Context ---
 
 interface LatentInsightsContextValue {
   state: LatentInsightsState;
   loadSavedSession: (sessionId: string) => Promise<void>;
   loadLiveSession: (sessionId: string) => Promise<void>;
-  uploadDataset: (file: File) => Promise<boolean>;
+  uploadDataset: (file: File, config?: SessionConfig) => Promise<string | null>;
   replyToThread: (threadId: string, content: string) => Promise<void>;
+  createThread: (
+    sessionId: string,
+    question: string,
+    motivation?: string,
+  ) => Promise<void>;
+  broadcastMessage: (sessionId: string, content: string) => Promise<void>;
+  switchPattern: (
+    sessionId: string,
+    pattern: ExplorationPattern,
+  ) => Promise<void>;
+  continueSession: (sessionId: string) => Promise<void>;
   selectNode: (node: SelectedNode | null) => void;
   reset: () => void;
 }
 
-const LatentInsightsContext = createContext<LatentInsightsContextValue | null>(null);
+const LatentInsightsContext = createContext<LatentInsightsContextValue | null>(
+  null,
+);
 
-export function LatentInsightsProvider({ children }: { children: React.ReactNode }) {
+export function LatentInsightsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const eventSourceRef = useRef<EventSource | null>(null);
   const seenEventsRef = useRef<Set<string>>(new Set());
@@ -369,7 +273,7 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
         const es = new EventSource(`${API_BASE}/sessions/${sessionId}/events`);
         eventSourceRef.current = es;
 
-        const SSE_TYPES: SSEEventType[] = [
+        const SSE_TYPES: string[] = [
           "scout_done",
           "thread_start",
           "step_start",
@@ -378,13 +282,17 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
           "step_complete",
           "thread_complete",
           "thread_waiting",
+          "schema_summary_ready",
         ];
 
         for (const eventType of SSE_TYPES) {
           es.addEventListener(eventType, (e: MessageEvent) => {
             try {
               const data = JSON.parse(e.data);
-              const sseEvent: SSEEvent = { event_type: eventType, ...data };
+              const sseEvent: SSEEvent = {
+                event_type: eventType as SSEEventType,
+                ...data,
+              };
 
               const dedupeKey = `${data.thread_id}:${data.step_number ?? ""}:${eventType}:${data.timestamp}`;
               if (seenEventsRef.current.has(dedupeKey)) return;
@@ -408,34 +316,53 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
                 feedId = `ev:${data.thread_id}:${data.step_number ?? 0}:${count}`;
               }
 
+              const durationStr = data.duration_ms
+                ? `${(data.duration_ms / 1000).toFixed(1)}s`
+                : "";
               const previewMessage =
                 eventType === "step_complete"
                   ? String(data.result ?? data.message ?? "")
                   : eventType === "thread_waiting"
-                    ? String(data.error ?? data.message ?? data.running_summary ?? "")
-                    : String(data.message ?? "");
+                    ? String(
+                        data.error ??
+                          data.message ??
+                          data.running_summary ??
+                          "",
+                      )
+                    : eventType === "llm_call" || eventType === "tool_call"
+                      ? durationStr
+                      : String(data.message ?? "");
 
               const feedEntry: FeedEntry = {
                 id: feedId,
-                event_type: eventType,
+                event_type: eventType as SSEEventType,
                 thread_id: data.thread_id,
                 message: previewMessage,
                 timestamp: data.timestamp,
                 step_number: data.step_number,
-                move: data.move,
+                move: eventType === "step_start" ? undefined : data.move,
                 agent: data.agent || undefined,
                 thread_status:
-                  eventType === "thread_complete" ? "complete"
-                  : eventType === "thread_waiting" ? "waiting"
-                  : "running",
+                  eventType === "thread_complete"
+                    ? "complete"
+                    : eventType === "thread_waiting"
+                      ? "waiting"
+                      : "running",
                 sql: data.sql || undefined,
-                response: eventType === "llm_call" ? (data.message || undefined) : undefined,
+                response:
+                  eventType === "llm_call"
+                    ? data.message || undefined
+                    : undefined,
                 full_message:
-                  eventType === "step_complete" ? (data.result || undefined)
-                  : eventType === "tool_call" ? (data.sql || data.message || undefined)
-                  : eventType === "llm_call" ? (data.message || undefined)
-                  : eventType === "thread_start" ? (data.message || undefined)
-                  : undefined,
+                  eventType === "step_complete"
+                    ? data.result || undefined
+                    : eventType === "tool_call"
+                      ? data.sql || data.message || undefined
+                      : eventType === "llm_call"
+                        ? data.message || undefined
+                        : eventType === "thread_start"
+                          ? data.message || undefined
+                          : undefined,
               };
 
               queueMicrotask(() => {
@@ -470,78 +397,141 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
 
       connect();
     },
-    [cleanup]
+    [cleanup],
   );
 
-  const loadSavedSession = useCallback(async (sessionId: string) => {
-    cleanup();
-    dispatch({ type: "LOAD_START" });
-    try {
-      const res = await fetch(`${API_BASE}/sessions/${sessionId}/saved`);
-      if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
-      const session: SessionResponse = await res.json();
-      dispatch({ type: "LOAD_SESSION", session, mode: "saved" });
-      const entries = buildFeedFromSession(session);
-      dispatch({ type: "SET_FEED_ENTRIES", entries });
-    } catch (e) {
-      dispatch({
-        type: "LOAD_ERROR",
-        error: e instanceof Error ? e.message : "Unknown error",
-      });
-    }
-  }, [cleanup]);
-
-  const loadLiveSession = useCallback(async (sessionId: string) => {
-    cleanup();
-    dispatch({ type: "LOAD_START" });
-    try {
-      const res = await fetch(`${API_BASE}/sessions/${sessionId}`);
-      if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
-      const session: SessionResponse = await res.json();
-      dispatch({ type: "LOAD_SESSION", session, mode: "live" });
-      const entries = buildFeedFromSession(session);
-      dispatch({ type: "SET_FEED_ENTRIES", entries });
-      connectSSE(session.id);
-    } catch (e) {
-      dispatch({
-        type: "LOAD_ERROR",
-        error: e instanceof Error ? e.message : "Unknown error",
-      });
-    }
-  }, [cleanup, connectSSE]);
-
-  const uploadDataset = useCallback(
-    async (file: File): Promise<boolean> => {
+  const loadSavedSession = useCallback(
+    async (sessionId: string) => {
       cleanup();
+      dispatch({ type: "LOAD_START" });
       try {
-        const form = new FormData();
-        form.append("file", file);
-        const res = await fetch(`${API_BASE}/sessions`, {
-          method: "POST",
-          body: form,
-        });
-        if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-        await res.json();
-        dispatch({ type: "RESET" });
-        return true;
+        const res = await fetch(`${API_BASE}/sessions/${sessionId}/saved`);
+        if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
+        const session: SessionResponse = await res.json();
+        dispatch({ type: "LOAD_SESSION", session, mode: "saved" });
+        const entries = buildFeedFromSession(session);
+        dispatch({ type: "SET_FEED_ENTRIES", entries });
       } catch (e) {
         dispatch({
           type: "LOAD_ERROR",
           error: e instanceof Error ? e.message : "Unknown error",
         });
-        return false;
       }
     },
-    [cleanup]
+    [cleanup],
   );
 
-  const replyToThread = useCallback(async (threadId: string, content: string) => {
-    const res = await fetch(`${API_BASE}/threads/${threadId}/messages`, {
+  const loadLiveSession = useCallback(
+    async (sessionId: string) => {
+      cleanup();
+      dispatch({ type: "LOAD_START" });
+      try {
+        const res = await fetch(`${API_BASE}/sessions/${sessionId}`);
+        if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
+        const session: SessionResponse = await res.json();
+        dispatch({ type: "LOAD_SESSION", session, mode: "live" });
+        const entries = buildFeedFromSession(session);
+        dispatch({ type: "SET_FEED_ENTRIES", entries });
+        connectSSE(session.id);
+      } catch (e) {
+        dispatch({
+          type: "LOAD_ERROR",
+          error: e instanceof Error ? e.message : "Unknown error",
+        });
+      }
+    },
+    [cleanup, connectSSE],
+  );
+
+  const uploadDataset = useCallback(
+    async (file: File, config?: SessionConfig): Promise<string | null> => {
+      cleanup();
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        if (config) {
+          const backendConfig = {
+            question_source: config.question_source,
+            scout_context: config.scout_context,
+            num_scout_seed_questions: config.seed_threads,
+            default_pattern: config.pattern?.pattern, 
+          };
+          form.append("config", JSON.stringify(backendConfig));
+        }
+        const res = await fetch(`${API_BASE}/sessions`, {
+          method: "POST",
+          body: form,
+        });
+
+        if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+        const data = await res.json();
+        dispatch({ type: "RESET" });
+        return data.id || data.session_id || null;
+      } catch (e) {
+        dispatch({
+          type: "LOAD_ERROR",
+          error: e instanceof Error ? e.message : "Unknown error",
+        });
+        return null;
+      }
+    },
+    [cleanup],
+  );
+
+  const replyToThread = useCallback(
+    async (threadId: string, content: string) => {
+      const res = await fetch(`${API_BASE}/threads/${threadId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error(`Reply failed: ${res.status}`);
+    },
+    [],
+  );
+
+  const createThread = useCallback(
+    async (sessionId: string, question: string, motivation?: string) => {
+      const res = await fetch(`${API_BASE}/sessions/${sessionId}/threads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, motivation }),
+      });
+      if (!res.ok) throw new Error(`Create thread failed: ${res.status}`);
+    },
+    [],
+  );
+
+  const broadcastMessage = useCallback(
+    async (sessionId: string, content: string) => {
+      const res = await fetch(`${API_BASE}/sessions/${sessionId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error(`Broadcast failed: ${res.status}`);
+    },
+    [],
+  );
+
+  const switchPattern = useCallback(
+    async (sessionId: string, pattern: ExplorationPattern) => {
+      const res = await fetch(
+        `${API_BASE}/sessions/${sessionId}/patterns/${pattern}`,
+        {
+          method: "POST",
+        },
+      );
+      if (!res.ok) throw new Error(`Switch pattern failed: ${res.status}`);
+    },
+    [],
+  );
+
+  const continueSession = useCallback(async (sessionId: string) => {
+    const res = await fetch(`${API_BASE}/sessions/${sessionId}/continue`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
     });
-    if (!res.ok) throw new Error(`Reply failed: ${res.status}`);
+    if (!res.ok) throw new Error(`Continue failed: ${res.status}`);
   }, []);
 
   const selectNode = useCallback((node: SelectedNode | null) => {
@@ -561,6 +551,10 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
         loadLiveSession,
         uploadDataset,
         replyToThread,
+        createThread,
+        broadcastMessage,
+        switchPattern,
+        continueSession,
         selectNode,
         reset,
       }}
@@ -572,6 +566,9 @@ export function LatentInsightsProvider({ children }: { children: React.ReactNode
 
 export function useLatentInsights() {
   const ctx = useContext(LatentInsightsContext);
-  if (!ctx) throw new Error("useLatentInsights must be used within LatentInsightsProvider");
+  if (!ctx)
+    throw new Error(
+      "useLatentInsights must be used within LatentInsightsProvider",
+    );
   return ctx;
 }
