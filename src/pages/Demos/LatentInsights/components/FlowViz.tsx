@@ -85,8 +85,11 @@ export const FlowViz: React.FC = () => {
       y += START_MARKER_H + STEP_GAP;
 
       const steps = thread.steps.map((step) => {
+        const isTwoLine =
+          step.move === "HUMAN_INPUT" || step.move === "WAITING_FOR_HUMAN";
+        const h = isTwoLine ? STEP_H * 2 : STEP_H;
         const stepY = y;
-        y += STEP_H + STEP_GAP;
+        y += h + STEP_GAP;
         const evtW = threadW * EVENT_WIDTH_RATIO;
         const evtX = x + (threadW - evtW) / 2;
         const events = step.events.map((evt, ei) => {
@@ -96,9 +99,10 @@ export const FlowViz: React.FC = () => {
         });
         y += STEP_GAP;
         return {
-          x, y: stepY, w: threadW, h: STEP_H,
+          x, y: stepY, w: threadW, h,
           stepNumber: step.step_number,
           move: step.move,
+          isTwoLine,
           events,
         };
       });
@@ -208,12 +212,12 @@ export const FlowViz: React.FC = () => {
                     col.status === "error"
                       ? getStatusFill("error", isDark)!
                       : getMoveColor(step.move, isDark);
-                  const moveUp = (step.move ?? "").toUpperCase();
+                  const moveUp = (step.move ?? "").toUpperCase().replace(/_/g, " ");
                   const label = useFullNames
                     ? moveUp
-                    : moveUp === "HUMAN_INPUT" ? "HI"
-                    : moveUp === "WAITING_FOR_HUMAN" ? "WH"
-                    : moveUp.slice(0, 2);
+                    : moveUp === "HUMAN INPUT" ? "HI"
+                    : moveUp === "WAITING FOR HUMAN" ? "WH"
+                    : moveUp.replace(/ /g, "").slice(0, 2);
 
                   return (
                     <g key={`s-${step.stepNumber}`}>
@@ -230,7 +234,29 @@ export const FlowViz: React.FC = () => {
                         style={{ cursor: "pointer" }}
                         onClick={() => selectNode({ type: "step", threadId: col.threadId, stepNumber: step.stepNumber })}
                       />
-                      {step.w > 22 && label && (
+                      {step.w > 22 && label && step.isTwoLine ? (
+                        // Two-line label for taller nodes
+                        (() => {
+                          const words = label.split(" ");
+                          const mid = Math.ceil(words.length / 2);
+                          const line1 = words.slice(0, mid).join(" ");
+                          const line2 = words.slice(mid).join(" ");
+                          return (
+                            <text
+                              x={step.x + step.w / 2}
+                              y={step.y + step.h / 2 - 6}
+                              fill={moveColor.fg}
+                              fontFamily="Poppins, sans-serif"
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
+                            >
+                              <tspan x={step.x + step.w / 2} dy={0}>{line1}</tspan>
+                              <tspan x={step.x + step.w / 2} dy={13}>{line2}</tspan>
+                            </text>
+                          );
+                        })()
+                      ) : step.w > 22 && label ? (
                         <text
                           x={step.x + step.w / 2}
                           y={step.y + step.h / 2}
@@ -242,7 +268,7 @@ export const FlowViz: React.FC = () => {
                         >
                           {label}
                         </text>
-                      )}
+                      ) : null}
 
                       {/* Events — colored by step's move */}
                       {step.events.map((evt) => {
