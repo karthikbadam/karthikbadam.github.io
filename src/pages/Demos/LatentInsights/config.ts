@@ -1,6 +1,6 @@
 // Centralized configuration and constants for Latent Insights demo
 
-import type { CommandMode, ExplorationPattern, QuestionSource } from "./types";
+import type { CommandMode, QuestionSource } from "./types";
 
 // --- API ---
 
@@ -60,6 +60,10 @@ export const MOVE_COLORS_DARK: Record<string, MoveColor> = {
   INTERROGATE: { fg: "#ffe0a8", bg: "#564018" },
   SYNTHESIZE:  { fg: "#c5f49d", bg: "#31582b" },
   ERROR:       { fg: "#fcc1c8", bg: "#693945" },
+  HUMAN_INPUT:        { fg: "#f5e6c8", bg: "#4a3920" },
+  WAITING_FOR_HUMAN:  { fg: "#d0d0d0", bg: "#3a3a3a" },
+  DONE:               { fg: "#b6de8a", bg: "#1f3520" },
+  STUCK:              { fg: "#f6909c", bg: "#3d1e26" },
   UNKNOWN:     { fg: "#cccccc", bg: "#555555" },
 };
 
@@ -70,6 +74,10 @@ export const MOVE_COLORS_LIGHT: Record<string, MoveColor> = {
   INTERROGATE: { fg: "#3d2707", bg: "#d4bc8a" },
   SYNTHESIZE:  { fg: "#153110", bg: "#a7b598" },
   ERROR:       { fg: "#4a131f", bg: "#d095a4" },
+  HUMAN_INPUT:        { fg: "#5a3d12", bg: "#e8d5a8" },
+  WAITING_FOR_HUMAN:  { fg: "#444444", bg: "#e0e0e0" },
+  DONE:               { fg: "#254820", bg: "#d8ecce" },
+  STUCK:              { fg: "#74212f", bg: "#f5d2d8" },
   UNKNOWN:     { fg: "#222222", bg: "#bbbbbb" },
 };
 
@@ -98,23 +106,12 @@ export const MODE_CONFIG: Record<
     placeholder: "Send direction to selected thread…",
     description: "Message a specific thread",
   },
-  pattern: {
-    label: "Pattern",
-    placeholder: "Select a pattern below…",
-    description: "Switch exploration pattern",
-  },
   continue: {
     label: "Continue",
     placeholder: "Press Enter to resume stuck threads…",
     description: "Resume waiting/stuck threads",
   },
 };
-
-export const PATTERN_OPTIONS: { value: ExplorationPattern; label: string; description: string }[] = [
-  { value: "coordinator_worker", label: "Coordinator-Worker", description: "Standard sequential analysis" },
-  { value: "fan_out", label: "Fan Out", description: "Parallel exploration branches" },
-  { value: "human_in_the_loop", label: "Human in the Loop", description: "Interactive guided analysis" },
-];
 
 export const SOURCE_OPTIONS: { value: QuestionSource; label: string }[] = [
   { value: "scout", label: "Auto (scout)" },

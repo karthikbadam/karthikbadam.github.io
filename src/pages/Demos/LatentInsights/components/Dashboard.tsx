@@ -107,7 +107,7 @@ export function Dashboard() {
   }
 
   const datasetFileName =
-    session.dataset_path?.split("/").pop()?.trim() || "Dataset";
+    session.dataset_path?.split("/").pop()?.trim() ?? "Dataset";
   const threadCountForTitle = session.threads?.length ?? 0;
   const isLive = state.mode === "live";
 

@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useMemo,
 } from "react";
 import {
   SessionResponse,
@@ -15,7 +16,6 @@ import {
   SessionMode,
   SelectedNode,
   SessionConfig,
-  ExplorationPattern,
 } from "../pages/Demos/LatentInsights/types";
 import { API_BASE } from "../pages/Demos/LatentInsights/config";
 import { buildFeedFromSession } from "../pages/Demos/LatentInsights/utils";
@@ -26,7 +26,6 @@ interface LatentInsightsState {
   status: "idle" | "loading" | "ready" | "error";
   mode: SessionMode | null;
   session: SessionResponse | null;
-  feedEntries: FeedEntry[];
   selectedNode: SelectedNode | null;
   error: string | null;
 }
@@ -35,7 +34,6 @@ const initialState: LatentInsightsState = {
   status: "idle",
   mode: null,
   session: null,
-  feedEntries: [],
   selectedNode: null,
   error: null,
 };
@@ -48,8 +46,6 @@ type Action =
   | { type: "LOAD_ERROR"; error: string }
   | { type: "SSE_EVENT"; event: SSEEvent }
   | { type: "UPDATE_THREAD"; thread: ThreadResponse }
-  | { type: "ADD_FEED_ENTRY"; entry: FeedEntry }
-  | { type: "SET_FEED_ENTRIES"; entries: FeedEntry[] }
   | { type: "SELECT_NODE"; node: SelectedNode | null }
   | { type: "RESET" };
 
@@ -85,6 +81,11 @@ function reducer(
         const thread = { ...threads[idx] };
 
         if (evt.event_type === "step_start") {
+          // When a real HUMAN_INPUT step arrives, clear any temporary
+          // placeholder steps created by message_injected.
+          if (evt.move === "HUMAN_INPUT") {
+            thread.steps = thread.steps.filter((s) => s.step_number >= 0);
+          }
           const existing = thread.steps.find(
             (s) => s.step_number === evt.step_number,
           );
@@ -94,11 +95,12 @@ function reducer(
               {
                 step_number: evt.step_number,
                 move: evt.move ?? "",
-                instruction: "",
+                instruction: evt.instruction ?? "",
                 result: "",
                 view_created: null,
                 duration_ms: null,
                 events: [],
+                started_at: evt.timestamp,
               },
             ];
           }
@@ -107,52 +109,105 @@ function reducer(
             s.step_number === evt.step_number
               ? {
                   ...s,
-                  result: evt.result || s.result,
-                  move: evt.move || s.move,
+                  result: evt.result ?? s.result,
+                  move: evt.move ?? s.move,
+                  instruction: evt.instruction ?? s.instruction,
+                  duration_ms: evt.duration_ms ?? s.duration_ms,
                 }
               : s,
           );
         } else if (evt.event_type === "thread_complete") {
           thread.status = "complete";
+        } else if (evt.event_type === "thread_resumed") {
+          thread.status = "running";
+          thread.error = null;
+          thread.running_summary = null;
         } else if (evt.event_type === "thread_waiting") {
           thread.status = "waiting";
+          thread.error = evt.reason ?? thread.error ?? null;
+          thread.running_summary =
+            evt.running_summary ?? thread.running_summary ?? null;
+        } else if (evt.event_type === "message_injected") {
+          // Immediate echo: create a temporary HUMAN_INPUT step so the
+          // message shows up in the feed before the runner drains it.
+          // The real step arrives via step_start + step_complete shortly.
+          thread.steps = [
+            ...thread.steps,
+            {
+              step_number: -(Date.now()),
+              move: "HUMAN_INPUT",
+              instruction: evt.target ?? "thread",
+              result: evt.content ?? "",
+              view_created: null,
+              duration_ms: 0,
+              events: [],
+              started_at: evt.timestamp,
+            },
+          ];
         } else if (
           evt.event_type === "llm_call" ||
           evt.event_type === "tool_call"
         ) {
           const lastStep = thread.steps[thread.steps.length - 1];
           if (lastStep) {
-            const updatedStep = {
-              ...lastStep,
-              events: [
-                ...lastStep.events,
-                {
-                  type: evt.event_type as "llm_call" | "tool_call",
-                  timestamp: evt.timestamp,
-                  agent: evt.role || null,
-                  model: evt.model || null,
-                  duration_ms: evt.duration_ms || null,
-                  input_tokens: evt.input_tokens || null,
-                  output_tokens: evt.output_tokens || null,
-                  sql: evt.sql || null,
-                  tool_result:
-                    evt.event_type === "tool_call" ? evt.message || null : null,
-                  response:
-                    evt.event_type === "llm_call" ? evt.message || null : null,
-                },
-              ],
+            const newEvent = {
+              type: evt.event_type,
+              timestamp: evt.timestamp,
+              agent:
+                evt.agent ??
+                (evt.event_type === "tool_call" ? "worker" : null),
+              model: evt.model ?? null,
+              duration_ms: evt.duration_ms ?? null,
+              input_tokens: evt.input_tokens ?? null,
+              output_tokens: evt.output_tokens ?? null,
+              sql: evt.sql ?? null,
+              tool_result:
+                evt.event_type === "tool_call"
+                  ? evt.tool_result ?? null
+                  : null,
+              response:
+                evt.event_type === "llm_call"
+                  ? evt.response ?? null
+                  : null,
             };
             thread.steps = thread.steps.map((s) =>
-              s.step_number === lastStep.step_number ? updatedStep : s,
+              s.step_number === lastStep.step_number
+                ? { ...s, events: [...s.events, newEvent] }
+                : s,
             );
           }
         }
 
         threads[idx] = thread;
+      } else if (evt.event_type === "message_injected") {
+        // Session-level broadcast: create temporary HUMAN_INPUT steps
+        // on each target thread for immediate feedback.
+        const targets = new Set([
+          ...(evt.injected_threads ?? []),
+          ...(evt.resumed_threads ?? []),
+        ]);
+        for (let i = 0; i < threads.length; i++) {
+          if (!targets.has(threads[i].id)) continue;
+          const t = { ...threads[i] };
+          t.steps = [
+            ...t.steps,
+            {
+              step_number: -(Date.now() + i),
+              move: "HUMAN_INPUT",
+              instruction: "session",
+              result: evt.content ?? "",
+              view_created: null,
+              duration_ms: 0,
+              events: [],
+              started_at: evt.timestamp,
+            },
+          ];
+          threads[i] = t;
+        }
       } else if (evt.event_type === "thread_start") {
         threads.push({
           id: evt.thread_id,
-          seed_question: evt.message,
+          seed_question: evt.message ?? "",
           motivation: null,
           status: "running",
           summary: null,
@@ -176,11 +231,8 @@ function reducer(
           // scout_done message may not be JSON
         }
       }
-      if (
-        (evt.event_type as string) === "schema_summary_ready" &&
-        evt.message
-      ) {
-        session.schema_summary = evt.message;
+      if (evt.event_type === "schema_summary_ready" && evt.schema_summary) {
+        session.schema_summary = evt.schema_summary;
       }
 
       return { ...state, session };
@@ -193,12 +245,6 @@ function reducer(
       );
       return { ...state, session: { ...state.session, threads } };
     }
-
-    case "ADD_FEED_ENTRY":
-      return { ...state, feedEntries: [...state.feedEntries, action.entry] };
-
-    case "SET_FEED_ENTRIES":
-      return { ...state, feedEntries: action.entries };
 
     case "SELECT_NODE":
       return { ...state, selectedNode: action.node };
@@ -215,6 +261,7 @@ function reducer(
 
 interface LatentInsightsContextValue {
   state: LatentInsightsState;
+  feedEntries: FeedEntry[];
   loadSavedSession: (sessionId: string) => Promise<void>;
   loadLiveSession: (sessionId: string) => Promise<void>;
   uploadDataset: (file: File, config?: SessionConfig) => Promise<string | null>;
@@ -225,10 +272,6 @@ interface LatentInsightsContextValue {
     motivation?: string,
   ) => Promise<void>;
   broadcastMessage: (sessionId: string, content: string) => Promise<void>;
-  switchPattern: (
-    sessionId: string,
-    pattern: ExplorationPattern,
-  ) => Promise<void>;
   continueSession: (sessionId: string) => Promise<void>;
   selectNode: (node: SelectedNode | null) => void;
   reset: () => void;
@@ -237,6 +280,20 @@ interface LatentInsightsContextValue {
 const LatentInsightsContext = createContext<LatentInsightsContextValue | null>(
   null,
 );
+
+const SSE_TYPES: SSEEventType[] = [
+  "scout_done",
+  "thread_start",
+  "thread_resumed",
+  "step_start",
+  "llm_call",
+  "tool_call",
+  "step_complete",
+  "thread_complete",
+  "thread_waiting",
+  "schema_summary_ready",
+  "message_injected",
+];
 
 export function LatentInsightsProvider({
   children,
@@ -247,7 +304,6 @@ export function LatentInsightsProvider({
   const eventSourceRef = useRef<EventSource | null>(null);
   const seenEventsRef = useRef<Set<string>>(new Set());
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sseEventCountRef = useRef<Map<string, number>>(new Map());
 
   const cleanup = useCallback(() => {
     if (eventSourceRef.current) {
@@ -259,7 +315,6 @@ export function LatentInsightsProvider({
       reconnectTimerRef.current = null;
     }
     seenEventsRef.current.clear();
-    sseEventCountRef.current.clear();
   }, []);
 
   useEffect(() => cleanup, [cleanup]);
@@ -273,24 +328,12 @@ export function LatentInsightsProvider({
         const es = new EventSource(`${API_BASE}/sessions/${sessionId}/events`);
         eventSourceRef.current = es;
 
-        const SSE_TYPES: string[] = [
-          "scout_done",
-          "thread_start",
-          "step_start",
-          "llm_call",
-          "tool_call",
-          "step_complete",
-          "thread_complete",
-          "thread_waiting",
-          "schema_summary_ready",
-        ];
-
         for (const eventType of SSE_TYPES) {
           es.addEventListener(eventType, (e: MessageEvent) => {
             try {
               const data = JSON.parse(e.data);
               const sseEvent: SSEEvent = {
-                event_type: eventType as SSEEventType,
+                event_type: eventType,
                 ...data,
               };
 
@@ -298,78 +341,7 @@ export function LatentInsightsProvider({
               if (seenEventsRef.current.has(dedupeKey)) return;
               seenEventsRef.current.add(dedupeKey);
 
-              let feedId: string;
-              if (eventType === "thread_start") {
-                feedId = `ts:${data.thread_id}`;
-              } else if (eventType === "step_start") {
-                feedId = `ss:${data.thread_id}:${data.step_number}`;
-              } else if (eventType === "step_complete") {
-                feedId = `sc:${data.thread_id}:${data.step_number}`;
-              } else if (eventType === "thread_complete") {
-                feedId = `tc:${data.thread_id}`;
-              } else if (eventType === "thread_waiting") {
-                feedId = `tw:${data.thread_id}`;
-              } else {
-                const stepKey = `${data.thread_id}:${data.step_number ?? "?"}`;
-                const count = sseEventCountRef.current.get(stepKey) ?? 0;
-                sseEventCountRef.current.set(stepKey, count + 1);
-                feedId = `ev:${data.thread_id}:${data.step_number ?? 0}:${count}`;
-              }
-
-              const durationStr = data.duration_ms
-                ? `${(data.duration_ms / 1000).toFixed(1)}s`
-                : "";
-              const previewMessage =
-                eventType === "step_complete"
-                  ? String(data.result ?? data.message ?? "")
-                  : eventType === "thread_waiting"
-                    ? String(
-                        data.error ??
-                          data.message ??
-                          data.running_summary ??
-                          "",
-                      )
-                    : eventType === "llm_call" || eventType === "tool_call"
-                      ? durationStr
-                      : String(data.message ?? "");
-
-              const feedEntry: FeedEntry = {
-                id: feedId,
-                event_type: eventType as SSEEventType,
-                thread_id: data.thread_id,
-                message: previewMessage,
-                timestamp: data.timestamp,
-                step_number: data.step_number,
-                move: eventType === "step_start" ? undefined : data.move,
-                agent: data.agent || undefined,
-                thread_status:
-                  eventType === "thread_complete"
-                    ? "complete"
-                    : eventType === "thread_waiting"
-                      ? "waiting"
-                      : "running",
-                sql: data.sql || undefined,
-                response:
-                  eventType === "llm_call"
-                    ? data.message || undefined
-                    : undefined,
-                full_message:
-                  eventType === "step_complete"
-                    ? data.result || undefined
-                    : eventType === "tool_call"
-                      ? data.sql || data.message || undefined
-                      : eventType === "llm_call"
-                        ? data.message || undefined
-                        : eventType === "thread_start"
-                          ? data.message || undefined
-                          : undefined,
-              };
-
-              queueMicrotask(() => {
-                dispatch({ type: "SSE_EVENT", event: sseEvent });
-                dispatch({ type: "ADD_FEED_ENTRY", entry: feedEntry });
-              });
-
+              dispatch({ type: "SSE_EVENT", event: sseEvent });
               backoff = 1000;
             } catch {
               // ignore parse errors
@@ -385,8 +357,6 @@ export function LatentInsightsProvider({
               .then((r) => r.json())
               .then((session: SessionResponse) => {
                 dispatch({ type: "LOAD_SESSION", session, mode: "live" });
-                const entries = buildFeedFromSession(session);
-                dispatch({ type: "SET_FEED_ENTRIES", entries });
               })
               .catch(() => {});
             connect();
@@ -409,8 +379,6 @@ export function LatentInsightsProvider({
         if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
         const session: SessionResponse = await res.json();
         dispatch({ type: "LOAD_SESSION", session, mode: "saved" });
-        const entries = buildFeedFromSession(session);
-        dispatch({ type: "SET_FEED_ENTRIES", entries });
       } catch (e) {
         dispatch({
           type: "LOAD_ERROR",
@@ -430,8 +398,6 @@ export function LatentInsightsProvider({
         if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
         const session: SessionResponse = await res.json();
         dispatch({ type: "LOAD_SESSION", session, mode: "live" });
-        const entries = buildFeedFromSession(session);
-        dispatch({ type: "SET_FEED_ENTRIES", entries });
         connectSSE(session.id);
       } catch (e) {
         dispatch({
@@ -450,12 +416,16 @@ export function LatentInsightsProvider({
         const form = new FormData();
         form.append("file", file);
         if (config) {
-          const backendConfig = {
+          const backendConfig: Record<string, unknown> = {
             question_source: config.question_source,
-            scout_context: config.scout_context,
-            num_scout_seed_questions: config.seed_threads,
-            default_pattern: config.pattern?.pattern, 
+            seed_threads: config.seed_threads,
           };
+          if (config.scout_context) {
+            backendConfig.scout_context = config.scout_context;
+          }
+          if (config.initial_questions && config.initial_questions.length > 0) {
+            backendConfig.initial_questions = config.initial_questions;
+          }
           form.append("config", JSON.stringify(backendConfig));
         }
         const res = await fetch(`${API_BASE}/sessions`, {
@@ -466,7 +436,7 @@ export function LatentInsightsProvider({
         if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
         const data = await res.json();
         dispatch({ type: "RESET" });
-        return data.id || data.session_id || null;
+        return data.id ?? data.session_id ?? null;
       } catch (e) {
         dispatch({
           type: "LOAD_ERROR",
@@ -514,19 +484,6 @@ export function LatentInsightsProvider({
     [],
   );
 
-  const switchPattern = useCallback(
-    async (sessionId: string, pattern: ExplorationPattern) => {
-      const res = await fetch(
-        `${API_BASE}/sessions/${sessionId}/patterns/${pattern}`,
-        {
-          method: "POST",
-        },
-      );
-      if (!res.ok) throw new Error(`Switch pattern failed: ${res.status}`);
-    },
-    [],
-  );
-
   const continueSession = useCallback(async (sessionId: string) => {
     const res = await fetch(`${API_BASE}/sessions/${sessionId}/continue`, {
       method: "POST",
@@ -543,17 +500,22 @@ export function LatentInsightsProvider({
     dispatch({ type: "RESET" });
   }, [cleanup]);
 
+  const feedEntries = useMemo(
+    () => (state.session ? buildFeedFromSession(state.session) : []),
+    [state.session],
+  );
+
   return (
     <LatentInsightsContext.Provider
       value={{
         state,
+        feedEntries,
         loadSavedSession,
         loadLiveSession,
         uploadDataset,
         replyToThread,
         createThread,
         broadcastMessage,
-        switchPattern,
         continueSession,
         selectNode,
         reset,
