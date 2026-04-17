@@ -208,9 +208,12 @@ export const FlowViz: React.FC = () => {
                     col.status === "error"
                       ? getStatusFill("error", isDark)!
                       : getMoveColor(step.move, isDark);
+                  const moveUp = (step.move ?? "").toUpperCase();
                   const label = useFullNames
-                    ? (step.move || "").toUpperCase()
-                    : (step.move || "").toUpperCase().slice(0, 2);
+                    ? moveUp
+                    : moveUp === "HUMAN_INPUT" ? "HI"
+                    : moveUp === "WAITING_FOR_HUMAN" ? "WH"
+                    : moveUp.slice(0, 2);
 
                   return (
                     <g key={`s-${step.stepNumber}`}>
@@ -244,6 +247,15 @@ export const FlowViz: React.FC = () => {
                       {/* Events — colored by step's move */}
                       {step.events.map((evt) => {
                         const eSel = isSelected("event", col.threadId, step.stepNumber, evt.eventIndex);
+                        const isHuman = evt.type === "human_message";
+                        // Human messages share the same rectangle geometry as
+                        // other events so the timeline stays uniform — they're
+                        // distinguished by a subtle accent stroke + fill tint.
+                        const opacity = isHuman ? 1 : evt.type === "tool_call" ? 0.75 : 0.55;
+                        const fill = isHuman
+                          ? (isDark ? "#d6c5a8" : "#7a5e2a")
+                          : moveColor.bg;
+                        const humanStroke = isDark ? "#f0e2c4" : "#5a4318";
                         return (
                           <rect
                             key={`e-${evt.eventIndex}`}
@@ -251,11 +263,11 @@ export const FlowViz: React.FC = () => {
                             y={evt.y}
                             width={evt.w}
                             height={evt.h}
-                            fill={moveColor.bg}
-                            opacity={evt.type === "tool_call" ? 0.75 : 0.55}
+                            fill={fill}
+                            opacity={opacity}
                             rx={2}
-                            stroke={eSel ? selectedStroke : "none"}
-                            strokeWidth={eSel ? 1 : 0}
+                            stroke={eSel ? selectedStroke : isHuman ? humanStroke : "none"}
+                            strokeWidth={eSel ? 1 : isHuman ? 0.75 : 0}
                             style={{ cursor: "pointer" }}
                             onClick={() => selectNode({ type: "event", threadId: col.threadId, stepNumber: step.stepNumber, eventIndex: evt.eventIndex })}
                           />
@@ -327,6 +339,7 @@ export const FlowViz: React.FC = () => {
           {[
             ["SC", "Scope"], ["FO", "Forage"], ["FR", "Frame"],
             ["IN", "Interrogate"], ["SY", "Synthesize"],
+            ["HI", "Human Input"], ["WH", "Wait/Human"],
             ["OK", "Complete"], ["WT", "Waiting"], ["ER", "Error"],
           ].map(([abbr, label]) => (
             <Text key={abbr} fontSize="2xs" fontFamily="mono" color="fg.muted" lineHeight="1.2">
