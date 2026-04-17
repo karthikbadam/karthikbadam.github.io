@@ -1,6 +1,6 @@
 import { Box, Flex, Input, Text } from "@chakra-ui/react";
 import React, { useState, useCallback, useRef } from "react";
-import { LuSend } from "react-icons/lu";
+import { LuCornerDownLeft } from "react-icons/lu";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { THREAD_ID_PREVIEW_LENGTH } from "../config";
 
@@ -80,8 +80,8 @@ export const CommandBar: React.FC<CommandBarProps> = ({
   }, [sending, sessionId, continueSession]);
 
   const placeholder = isDirectMode
-    ? `Direct thread ${selectedThreadId!.slice(0, THREAD_ID_PREVIEW_LENGTH)}…`
-    : "Ask a new question to start a thread…";
+    ? `Reply to ${selectedThreadId!.slice(0, THREAD_ID_PREVIEW_LENGTH)}…`
+    : "Ask a question…";
 
   return (
     <Box>
@@ -90,67 +90,58 @@ export const CommandBar: React.FC<CommandBarProps> = ({
         onSubmit={handleSubmit}
         align="center"
         gap={0}
+        borderRadius="xl"
+        bg="bg.subtle"
         border="1px solid"
-        borderColor="gray.600"
-        borderRadius="md"
-        bg="bg.panel"
+        borderColor="border.muted"
         overflow="hidden"
+        transition="border-color 0.15s"
+        _focusWithin={{ borderColor: "fg.muted" }}
       >
-        {/* Mode indicator */}
-        <Text
-          px={2}
-          fontSize="2xs"
-          fontFamily="mono"
-          color="fg.muted"
-          flexShrink={0}
-          borderRight="1px solid"
-          borderColor="gray.600"
-          h="32px"
-          lineHeight="32px"
-          whiteSpace="nowrap"
-        >
-          {isDirectMode ? "direct" : "ask"}
-        </Text>
-
         <Input
           ref={inputRef}
           flex={1}
-          size="xs"
+          variant="flushed"
+          size="sm"
           fontFamily="mono"
           fontSize="xs"
-          px={2}
-          h="32px"
+          px={4}
+          py={2}
+          h="36px"
+          border="none"
+          borderBottom="none"
+          outline="none"
           placeholder={placeholder}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           disabled={sending}
+          _placeholder={{ color: "fg.muted" }}
+          _focus={{ boxShadow: "none", borderColor: "transparent" }}
           onKeyDown={(e) => {
             if (e.key === "Escape") setValue("");
           }}
         />
 
-        {/* Send */}
         <Box
           as="button"
           display="flex"
           alignItems="center"
           justifyContent="center"
-          px={2}
-          h="32px"
+          px={3}
+          h="36px"
           color="fg.muted"
           cursor={sending ? "wait" : "pointer"}
           _hover={{ color: "fg" }}
-          opacity={sending ? 0.5 : 1}
-          borderLeft="1px solid"
-          borderColor="gray.600"
+          opacity={sending ? 0.4 : value.trim() ? 0.8 : 0.3}
           flexShrink={0}
+          transition="opacity 0.15s, color 0.15s"
         >
-          <LuSend size={11} />
+          <LuCornerDownLeft size={14} />
         </Box>
       </Flex>
 
-      {/* Secondary actions row */}
-      <Flex gap={3} mt={1} px={1}>
+      {/* Secondary actions */}
+      <Flex gap={1} mt="6px" px={2} align="center">
         <Box
           as="button"
           fontSize="2xs"
@@ -158,11 +149,15 @@ export const CommandBar: React.FC<CommandBarProps> = ({
           color="fg.muted"
           cursor="pointer"
           _hover={{ color: "fg" }}
+          opacity={value.trim() ? 0.8 : 0.35}
+          transition="opacity 0.15s"
           onClick={handleBroadcast}
-          opacity={value.trim() ? 1 : 0.4}
         >
-          broadcast to all
+          broadcast
         </Box>
+        <Text fontSize="2xs" color="fg.muted" opacity={0.3} userSelect="none">
+          ·
+        </Text>
         <Box
           as="button"
           fontSize="2xs"
@@ -170,15 +165,17 @@ export const CommandBar: React.FC<CommandBarProps> = ({
           color="fg.muted"
           cursor="pointer"
           _hover={{ color: "fg" }}
+          opacity={0.8}
+          transition="opacity 0.15s"
           onClick={handleContinue}
-          title="Resumes stuck threads and scouts for new questions (may spawn new threads)"
+          title="Resume waiting threads and scout for new questions"
         >
           continue + rescan
         </Box>
       </Flex>
 
       {error && (
-        <Text fontSize="2xs" color="red.400" mt={1} px={1} fontFamily="mono">
+        <Text fontSize="2xs" color="red.400" mt={1} px={2} fontFamily="mono">
           {error}
         </Text>
       )}

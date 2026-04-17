@@ -9,6 +9,17 @@ export interface LocalSession {
   status: string;
 }
 
+function deriveSessionStatus(
+  statusCounts: Record<string, number> | undefined,
+): string {
+  if (!statusCounts || Object.keys(statusCounts).length === 0) return "idle";
+  if (statusCounts.running) return "running";
+  if (statusCounts.waiting) return "waiting";
+  if (statusCounts.error) return "error";
+  if (statusCounts.complete) return "complete";
+  return "idle";
+}
+
 export function useLocalSessions() {
   const [sessions, setSessions] = useState<LocalSession[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,7 +40,9 @@ export function useLocalSessions() {
             s.num_threads ??
             (Array.isArray(s.threads) ? s.threads.length : 0),
           created_at: s.created_at as string,
-          status: (s.status as string) || "running",
+          status: deriveSessionStatus(
+            s.status_counts as Record<string, number> | undefined,
+          ),
         })),
       );
     } catch {

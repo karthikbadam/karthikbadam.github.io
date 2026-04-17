@@ -30,7 +30,7 @@ export function getMoveColor(
   const table = isDark ? MOVE_COLORS_DARK : MOVE_COLORS_LIGHT;
   const neutral = isDark ? NEUTRAL_FILL_DARK : NEUTRAL_FILL_LIGHT;
   if (!move) return neutral;
-  return table[move.toUpperCase()] || neutral;
+  return table[move.toUpperCase()] ?? neutral;
 }
 
 // --- JSON response parsing ---
@@ -50,7 +50,7 @@ export function tryParseJsonResponse(
         tables[key] = obj[key];
       }
     }
-    const text = obj.summary || obj.assessment || "";
+    const text = obj.summary ?? obj.assessment ?? "";
     return { text, tables: Object.keys(tables).length > 0 ? tables : undefined };
   } catch {
     const summaryMatch = raw.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
@@ -131,6 +131,7 @@ export function hasExpandableContent(entry: FeedEntry): boolean {
     entry.tool_result ||
     entry.response ||
     entry.tables ||
+    entry.content ||
     entry.event_type === "thread_waiting" ||
     entry.event_type === "thread_start"
   );
@@ -208,17 +209,69 @@ export function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
       full_message: seed + (thread.motivation ? `\n\n${thread.motivation}` : ""),
     });
 
+    // Running cursor: tracks the last known timestamp so steps without
+    // events or started_at (HUMAN_INPUT, WAITING_FOR_HUMAN) inherit a
+    // correct chronological position from their neighbors.
+    let cursor = threadStartTs;
+
     for (const step of thread.steps) {
+      // Skip temporary placeholder steps from message_injected
+      if (step.step_number < 0) continue;
+
+      const stepTs =
+        step.started_at ?? step.events[0]?.timestamp ?? cursor + 0.001;
+
+      // HUMAN_INPUT step — first-class human message (no sub-events)
+      if (step.move === "HUMAN_INPUT") {
+        entries.push({
+          id: `ss:${thread.id}:${step.step_number}`,
+          event_type: "human_message",
+          thread_id: thread.id,
+          message: step.result || "",
+          timestamp: stepTs,
+          step_number: step.step_number,
+          move: step.move,
+          agent: step.instruction === "session" ? "broadcast" : "user",
+          content: step.result ?? "",
+          target: (step.instruction as "thread" | "session") ?? "thread",
+          thread_status: thread.status,
+        });
+        cursor = stepTs;
+        continue;
+      }
+
+      // WAITING_FOR_HUMAN step — terminal waiting state as a step
+      if (step.move === "WAITING_FOR_HUMAN") {
+        const parts: string[] = [];
+        if (thread.running_summary) parts.push(thread.running_summary);
+        if (step.result) parts.push(step.result);
+        if (step.instruction) parts.push(step.instruction);
+        entries.push({
+          id: `tw:${thread.id}`,
+          event_type: "thread_waiting",
+          thread_id: thread.id,
+          message: thread.error ?? step.result ?? "",
+          timestamp: stepTs,
+          step_number: step.step_number,
+          move: step.move,
+          thread_status: "waiting",
+          reason: (thread.error as FeedEntry["reason"]) ?? null,
+          full_message: parts.length ? parts.join("\n\n") : undefined,
+        });
+        cursor = stepTs;
+        continue;
+      }
+
       entries.push({
         id: `ss:${thread.id}:${step.step_number}`,
         event_type: "step_start",
         thread_id: thread.id,
         message: "",
-        timestamp: step.events[0]?.timestamp || 0,
+        timestamp: stepTs,
         step_number: step.step_number,
         move: step.move,
         thread_status: thread.status,
-        full_message: step.instruction || undefined,
+        full_message: step.instruction ?? undefined,
       });
 
       step.events.forEach((evt, ei) => {
@@ -232,22 +285,29 @@ export function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
           thread_status: thread.status,
         };
 
-        const isToolCall = evt.type === "tool_call" || (!!evt.sql && !!evt.tool_result);
-        if (isToolCall) {
+        if (evt.type === "tool_call" || evt.sql) {
           entries.push({
             ...base,
             event_type: "tool_call",
-            agent: evt.agent || "worker",
-            sql: evt.sql || undefined,
-            tool_result: evt.tool_result || undefined,
+            agent: evt.agent ?? "worker",
+            sql: evt.sql ?? undefined,
+            tool_result: evt.tool_result ?? undefined,
+          });
+        } else if (evt.type === "human_message") {
+          entries.push({
+            ...base,
+            event_type: "human_message",
+            agent: evt.target === "session" ? "broadcast" : "user",
+            content: evt.content ?? "",
+            target: evt.target ?? "thread",
           });
         } else {
           const parsed = evt.response ? tryParseJsonResponse(evt.response) : null;
           entries.push({
             ...base,
             event_type: "llm_call",
-            agent: evt.agent || undefined,
-            response: parsed?.text || undefined,
+            agent: evt.agent ?? undefined,
+            response: parsed?.text ?? undefined,
             tables: parsed?.tables,
             full_message: parsed?.text
               ? undefined
@@ -256,18 +316,24 @@ export function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
         }
       });
 
+      // Advance cursor past this step's events
+      const lastEvtTs =
+        step.events[step.events.length - 1]?.timestamp ?? stepTs;
+      cursor = lastEvtTs;
+
       if (step.result) {
         entries.push({
           id: `sc:${thread.id}:${step.step_number}`,
           event_type: "step_complete",
           thread_id: thread.id,
           message: step.result,
-          timestamp: (step.events[step.events.length - 1]?.timestamp || 0) + 0.001,
+          timestamp: lastEvtTs + 0.001,
           step_number: step.step_number,
           move: step.move,
           thread_status: thread.status,
           full_message: step.result,
         });
+        cursor = lastEvtTs + 0.001;
       }
     }
 
@@ -279,22 +345,7 @@ export function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
         message: "",
         timestamp: new Date(thread.updated_at).getTime() / 1000,
         thread_status: "complete",
-        full_message: thread.summary || undefined,
-      });
-    } else if (thread.status === "waiting") {
-      const parts: string[] = [];
-      if (thread.running_summary) parts.push(thread.running_summary);
-      if (thread.error) parts.push(`**Reason:** ${thread.error}`);
-      const lastStep = thread.steps[thread.steps.length - 1];
-      if (!parts.length && lastStep?.result) parts.push(lastStep.result);
-      entries.push({
-        id: `tw:${thread.id}`,
-        event_type: "thread_waiting",
-        thread_id: thread.id,
-        message: thread.error || thread.running_summary || "",
-        timestamp: new Date(thread.updated_at).getTime() / 1000,
-        thread_status: "waiting",
-        full_message: parts.join("\n\n") || undefined,
+        full_message: thread.summary ?? undefined,
       });
     }
   }

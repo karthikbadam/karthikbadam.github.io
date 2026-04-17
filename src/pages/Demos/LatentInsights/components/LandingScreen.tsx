@@ -5,14 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
 import { useLocalSessions } from "../hooks/useLocalSessions";
 import {
-  ExplorationPattern,
   QuestionSource,
   SessionConfig,
 } from "../types";
 import {
   FEATURED_SESSIONS,
   GITHUB_REPO_URL,
-  PATTERN_OPTIONS,
   SESSION_ID_PREVIEW_LENGTH,
   SOURCE_OPTIONS,
 } from "../config";
@@ -46,9 +44,9 @@ function ToggleGroup<T extends string>({
           onClick={() => onChange(o.value)}
         >
           {o.label}
-          {(o.desc || o.description) && (
+          {(o.desc ?? o.description) && (
             <Text as="span" color="fg.muted" ml={1} fontSize="2xs">
-              {o.desc || o.description}
+              {o.desc ?? o.description}
             </Text>
           )}
         </Box>
@@ -72,9 +70,7 @@ export function LandingScreen() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [questionSource, setQuestionSource] = useState<QuestionSource>("scout");
   const [scoutContext, setScoutContext] = useState("");
-  const [pattern, setPattern] = useState<ExplorationPattern>("coordinator_worker");
   const [seedThreads, setSeedThreads] = useState(3);
-  const [fanOutSize, setFanOutSize] = useState(3);
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
   const [questionInput, setQuestionInput] = useState("");
   const [starting, setStarting] = useState(false);
@@ -125,14 +121,12 @@ export function LandingScreen() {
     const config: SessionConfig = {
       question_source: questionSource,
       seed_threads: seedThreads,
-      pattern: {
-        pattern,
-        ...(pattern === "fan_out" ? { fan_out_size: fanOutSize } : {}),
-        seed_threads: seedThreads,
-      },
     };
     if (scoutContext.trim() && questionSource !== "human") {
       config.scout_context = scoutContext.trim();
+    }
+    if (questionSource !== "scout" && customQuestions.length > 0) {
+      config.initial_questions = customQuestions;
     }
     const sessionId = await uploadDataset(pendingFile, config);
     if (sessionId) {
@@ -147,9 +141,8 @@ export function LandingScreen() {
     starting,
     questionSource,
     scoutContext,
-    pattern,
     seedThreads,
-    fanOutSize,
+    customQuestions,
     uploadDataset,
     refresh,
     navigate,
@@ -188,8 +181,8 @@ export function LandingScreen() {
               Latent Insights
             </Heading>
             <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-              Parallel-agent data analysis modeling a sensemaking process. Upload
-              a dataset or explore a saved session.
+              Run parallel threads of agents to gather insights and answer
+              specific questions from the dataset.
             </Text>
           </VStack>
 
@@ -239,39 +232,48 @@ export function LandingScreen() {
             </Link>
           </Flex>
 
-          {/* Past sessions + featured */}
+          {/* Live sessions */}
+          {localSessions.length > 0 && (
+            <VStack gap={2} w="100%" alignItems="flex-start">
+              <Text fontSize="xs" color="fg.muted" fontFamily="mono">
+                Live sessions
+              </Text>
+              {localSessions.map((s) => (
+                <Box
+                  key={s.id}
+                  as="button"
+                  w="100%"
+                  p={3}
+                  border="1px solid"
+                  borderColor="gray.600"
+                  borderRadius="md"
+                  textAlign="left"
+                  cursor={isLoading ? "wait" : "pointer"}
+                  _hover={{ borderColor: "fg.muted" }}
+                  transition="border-color 0.15s"
+                  onClick={() => openLive(s.id)}
+                  opacity={isLoading ? 0.5 : 1}
+                >
+                  <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
+                    {s.dataset_path?.split("/").pop() ?? s.id.slice(0, SESSION_ID_PREVIEW_LENGTH)}
+                  </Text>
+                  <Text fontSize="xs" fontFamily="mono" color="fg.muted">
+                    {s.id.slice(0, SESSION_ID_PREVIEW_LENGTH)}
+                    {s.thread_count > 0
+                      ? ` · ${s.thread_count} threads`
+                      : ""}{" "}
+                    · {s.status}
+                  </Text>
+                </Box>
+              ))}
+            </VStack>
+          )}
+
+          {/* Saved sessions */}
           <VStack gap={2} w="100%" alignItems="flex-start">
             <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-              Past sessions
+              Demos
             </Text>
-            {localSessions.map((s) => (
-              <Box
-                key={s.id}
-                as="button"
-                w="100%"
-                p={3}
-                border="1px solid"
-                borderColor="gray.600"
-                borderRadius="md"
-                textAlign="left"
-                cursor={isLoading ? "wait" : "pointer"}
-                _hover={{ borderColor: "fg.muted" }}
-                transition="border-color 0.15s"
-                onClick={() => openLive(s.id)}
-                opacity={isLoading ? 0.5 : 1}
-              >
-                <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
-                  {s.dataset_path?.split("/").pop() ?? s.id.slice(0, SESSION_ID_PREVIEW_LENGTH)}
-                </Text>
-                <Text fontSize="xs" fontFamily="mono" color="fg.muted">
-                  {s.id.slice(0, SESSION_ID_PREVIEW_LENGTH)}
-                  {s.thread_count > 0
-                    ? ` · ${s.thread_count} threads`
-                    : ""}{" "}
-                  · {s.status}
-                </Text>
-              </Box>
-            ))}
             {FEATURED_SESSIONS.map((s) => (
               <Box
                 key={s.id}
@@ -432,57 +434,27 @@ export function LandingScreen() {
                 </Box>
               )}
 
-              {/* Exploration pattern */}
-              <Box w="100%">
+              {/* Seed threads */}
+              <Box>
                 <Text fontSize="2xs" fontFamily="mono" color="fg.muted" mb={1}>
-                  Exploration pattern
+                  Seed threads
                 </Text>
-                <ToggleGroup
-                  options={PATTERN_OPTIONS}
-                  value={pattern}
-                  onChange={setPattern}
+                <Input
+                  size="xs"
+                  variant="outline"
+                  fontFamily="mono"
+                  fontSize="xs"
+                  type="number"
+                  min={1}
+                  max={10}
+                  w="60px"
+                  value={seedThreads}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setSeedThreads(Number.isFinite(n) && n > 0 ? n : 3);
+                  }}
                 />
               </Box>
-
-              {/* Pattern parameters */}
-              <Flex gap={4}>
-                <Box>
-                  <Text fontSize="2xs" fontFamily="mono" color="fg.muted" mb={1}>
-                    Seed threads
-                  </Text>
-                  <Input
-                    size="xs"
-                    variant="outline"
-                    fontFamily="mono"
-                    fontSize="xs"
-                    type="number"
-                    min={1}
-                    max={10}
-                    w="60px"
-                    value={seedThreads}
-                    onChange={(e) => setSeedThreads(Number(e.target.value) || 3)}
-                  />
-                </Box>
-                {pattern === "fan_out" && (
-                  <Box>
-                    <Text fontSize="2xs" fontFamily="mono" color="fg.muted" mb={1}>
-                      Fan-out size
-                    </Text>
-                    <Input
-                      size="xs"
-                      variant="outline"
-                      fontFamily="mono"
-                      fontSize="xs"
-                      type="number"
-                      min={2}
-                      max={10}
-                      w="60px"
-                      value={fanOutSize}
-                      onChange={(e) => setFanOutSize(Number(e.target.value) || 3)}
-                    />
-                  </Box>
-                )}
-              </Flex>
 
               {/* Start button */}
               <Box

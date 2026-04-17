@@ -15,8 +15,8 @@ import {
 } from "../utils";
 
 export const EventFeed: React.FC = () => {
-  const { state, selectNode } = useLatentInsights();
-  const { feedEntries, session, selectedNode } = state;
+  const { state, feedEntries, selectNode } = useLatentInsights();
+  const { session, selectedNode } = state;
 
   const isDark = useColorModeValue(false, true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -134,9 +134,19 @@ function getTypeLabel(eventType: string): string {
     case "llm_call":        return "llm";
     case "tool_call":       return "sql";
     case "step_complete":   return "step done";
+    case "human_message":   return "msg";
     default:                return "";
   }
 }
+
+const WAITING_HEADERS: Record<string, string> = {
+  coordinator_stuck: "Analysis paused — needs guidance",
+  repeated_moves: "Analysis got stuck in a loop",
+  retry_exhausted: "LLM provider unreachable — send any reply to retry",
+  unexpected_error: "Unexpected error",
+  human_review: "Step complete — review and continue",
+  context_exhausted: "Context window exhausted — send a narrower follow-up",
+};
 
 const FeedRow: React.FC<FeedRowProps> = React.memo(
   ({ entry, threadIds, isDark, isExpanded, onToggle }) => {
@@ -148,8 +158,11 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
 
     const tid = entry.thread_id.slice(0, THREAD_ID_PREVIEW_LENGTH);
     const duration = entry.message && /^\d/.test(entry.message) ? entry.message : "";
-    const textContent = entry.response || entry.sql || entry.full_message || "";
-    const previewText = textContent || (duration ? "" : entry.message || "");
+    const textContent =
+      entry.content ?? entry.response ?? entry.sql ?? entry.full_message ?? "";
+    const previewText = textContent !== ""
+      ? textContent
+      : (duration ? "" : (entry.message ?? ""));
     const typeHint = getTypeLabel(entry.event_type);
 
     return (
@@ -242,7 +255,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
               minW={0}
               maxW="100%"
               overflow="hidden"
-              title={textContent || entry.message}
+              title={textContent !== "" ? textContent : entry.message}
             >
               <Text
                 as="div"
@@ -317,8 +330,21 @@ const JsonTable: React.FC<{ data: unknown[]; label?: string }> = ({ data, label 
 
 const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
   if (entry.event_type === "thread_waiting") {
+    const reason = entry.reason ?? undefined;
+    const header = reason ? WAITING_HEADERS[reason] : undefined;
     return (
       <Box>
+        {header && (
+          <Text
+            fontSize="2xs"
+            fontFamily="mono"
+            fontWeight="semibold"
+            color="fg"
+            mb={1}
+          >
+            {header}
+          </Text>
+        )}
         {entry.full_message && (
           <Box mb={2}>
             <MarkdownContent content={entry.full_message} />
@@ -326,10 +352,50 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
         )}
         <ReplyInput
           threadId={entry.thread_id}
-          label="Reply to waiting thread"
-          placeholder="Type a reply and press Enter…"
+          label={
+            reason === "retry_exhausted"
+              ? "Send any reply to retry"
+              : reason === "human_review"
+                ? "Review and continue"
+                : reason === "context_exhausted"
+                  ? "Send a narrower follow-up"
+                  : "Reply to waiting thread"
+          }
+          placeholder={
+            reason === "retry_exhausted"
+              ? "Press Enter to retry, or add new context…"
+              : reason === "human_review"
+                ? "Add direction, or press Enter to continue…"
+                : reason === "context_exhausted"
+                  ? "Narrow the question or add constraints…"
+                  : "Type a reply and press Enter…"
+          }
           onClose={() => {}}
         />
+      </Box>
+    );
+  }
+
+  if (entry.event_type === "human_message") {
+    return (
+      <Box>
+        <Flex align="center" gap={2} mb={1}>
+          <Text fontSize="2xs" fontFamily="mono" color="fg.muted">
+            {entry.target === "session" ? "→ all threads" : "→ this thread"}
+          </Text>
+        </Flex>
+        <Box
+          as="blockquote"
+          fontSize="xs"
+          fontFamily="mono"
+          borderLeft="2px solid"
+          borderColor="gray.500"
+          pl={2}
+          py={0.5}
+          whiteSpace="pre-wrap"
+        >
+          {entry.content ?? ""}
+        </Box>
       </Box>
     );
   }
