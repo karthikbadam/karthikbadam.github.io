@@ -375,7 +375,7 @@ export function LatentInsightsProvider({
       cleanup();
       dispatch({ type: "LOAD_START" });
       try {
-        const res = await fetch(`${API_BASE}/sessions/${sessionId}/saved`);
+        const res = await fetch(`/data/latent-insights/${sessionId}.json`);
         if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
         const session: SessionResponse = await res.json();
         dispatch({ type: "LOAD_SESSION", session, mode: "saved" });
