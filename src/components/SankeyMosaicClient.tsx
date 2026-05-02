@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { clauseList } from "@uwdata/mosaic-core";
+import { clausePoints } from "@uwdata/mosaic-core";
 import type { Coordinator, Selection as VgSelection } from "@uwdata/mosaic-core";
 import { Group } from "@visx/group";
 import { Bar } from "@visx/shape";
@@ -296,12 +296,12 @@ export function SankeyMosaicClient({
     if (selection) {
       if (next === null) {
         selection.update(
-          clauseList(idCol, undefined, { source: sourceRef.current, clients: new Set() }),
+          clausePoints([idCol], undefined, { source: sourceRef.current, clients: new Set() }),
         );
       } else {
-        const ids = Array.from(lk.trajIds);
+        const ids = Array.from(lk.trajIds).map((id) => [id]);
         selection.update(
-          clauseList(idCol, ids, { source: sourceRef.current, clients: new Set() }),
+          clausePoints([idCol], ids, { source: sourceRef.current, clients: new Set() }),
         );
       }
     }

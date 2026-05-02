@@ -1,6 +1,6 @@
-// TrajectoryStatsPanel — KPI strip + source/outcome filters, styled to match
-// the SWE-Bench StatsPanel pattern (compact single-row Stat tiles inside a
-// `bg.panel` card).
+// TrajectoryStatsPanel — KPI strip + search + outcome filter chips, styled
+// to match the SWE-Bench StatsPanel pattern (compact single-row Stat tiles
+// inside a `bg.panel` card).
 
 import {
   Box,
@@ -8,12 +8,11 @@ import {
   Flex,
   HStack,
   Input,
-  Link,
   NativeSelect,
   Stat,
   Text,
 } from "@chakra-ui/react";
-import { LuExternalLink, LuSearch, LuX } from "react-icons/lu";
+import { LuSearch, LuX } from "react-icons/lu";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import type { Outcome, SourceKey } from "./types";
 
@@ -30,7 +29,6 @@ export function TrajectoryStatsPanel() {
     setOutcomeFilter,
     stats,
   } = useTrajectoryAtlas();
-  const hfUrl = sources[source].hfUrl;
 
   const passRate = stats.n ? `${((stats.pass / stats.n) * 100).toFixed(1)}%` : "—";
   const avgSteps = stats.avgSteps ? stats.avgSteps.toFixed(1) : "—";
@@ -122,22 +120,6 @@ export function TrajectoryStatsPanel() {
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>
-
-          {hfUrl && (
-            <Link
-              href={hfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              color="fg.muted"
-              fontSize="xs"
-              display="inline-flex"
-              alignItems="center"
-              gap={1}
-            >
-              source
-              <LuExternalLink size={11} />
-            </Link>
-          )}
 
           <HStack gap={0} bg="bg.muted" p="2px" borderRadius="md">
             {OUTCOMES.map((o) => (

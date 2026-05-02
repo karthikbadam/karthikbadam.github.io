@@ -89,7 +89,6 @@ function TrajectoryTableInner() {
             cost: Number(row.cost ?? 0),
             tools_used: asStringList(row.tools_used),
             step_tools: asStringList(row.step_tools),
-            step_categories: asStringList(row.step_categories),
             steps: asStepList(row.steps),
           };
           setRowSelection(traj);

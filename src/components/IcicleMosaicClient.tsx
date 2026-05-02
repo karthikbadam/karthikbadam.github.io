@@ -25,8 +25,7 @@
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { makeClient } from "@uwdata/mosaic-core";
-import { clauseList } from "@uwdata/mosaic-core";
+import { makeClient, clausePoints } from "@uwdata/mosaic-core";
 import { Query, sql, column, verbatim } from "@uwdata/mosaic-sql";
 import type { Coordinator, MosaicClient, Selection as VgSelection } from "@uwdata/mosaic-core";
 import { Group } from "@visx/group";
@@ -54,6 +53,10 @@ export interface IcicleMosaicClientProps {
   maxLevels?: number;
   /** Step values to exclude from the tree (e.g. ["task","thought","observation"]). */
   filterStepNames?: string[];
+  /** Optional WHERE-body (without WHERE) applied alongside the upstream
+   * selection's predicate. Used by the wrapper to push the user's UI
+   * filters (search / outcome chip) into the query. */
+  whereExpr?: string | null;
   /** Cap on children per tree level. Excess collapsed into "other (N)". */
   maxNodesPerLevel?: number;
   /** Minimum row height in CSS pixels. The container scrolls vertically if
@@ -114,6 +117,7 @@ export function IcicleMosaicClient({
   selection,
   maxLevels,
   filterStepNames,
+  whereExpr,
   maxNodesPerLevel,
   minRowHeight = 0,
   colorRamp = DEFAULT_RAMP,
@@ -167,6 +171,9 @@ export function IcicleMosaicClient({
             .join(",");
           filtered.where(sql`${cat} NOT IN (${verbatim(list)})`);
         }
+        if (whereExpr) {
+          filtered.where(sql`${verbatim(`(${whereExpr})`)}`);
+        }
 
         const ranked = Query.with({ filtered }).from("filtered").select({
           traj_id: column("traj_id"),
@@ -189,7 +196,7 @@ export function IcicleMosaicClient({
         }).groupby("step_idx", "category", "path")
           .orderby(column("step_idx"), sql`COUNT(DISTINCT traj_id) DESC`);
       },
-    [table, idCol, levelCol, categoryCol, maxLevels, filterStepNames],
+    [table, idCol, levelCol, categoryCol, maxLevels, filterStepNames, whereExpr],
   );
 
   useEffect(() => {
@@ -266,16 +273,14 @@ export function IcicleMosaicClient({
     if (selection && clientRef.current) {
       const client = clientRef.current;
       if (next === null) {
-        // Pass `undefined` (not null) — clauseList encodes null as
-        // list_has_any(field, NULL) which DuckDB rejects. undefined yields
-        // a null predicate that Mosaic interprets as clearing this source.
+        // undefined value yields a null predicate → Mosaic clears this source's clause.
         selection.update(
-          clauseList(idCol, undefined, { source: client, clients: new Set([client]) }),
+          clausePoints([idCol], undefined, { source: client, clients: new Set([client]) }),
         );
       } else {
-        const ids = Array.from(rect.node.trajIds);
+        const ids = Array.from(rect.node.trajIds).map((id) => [id]);
         selection.update(
-          clauseList(idCol, ids, { source: client, clients: new Set([client]) }),
+          clausePoints([idCol], ids, { source: client, clients: new Set([client]) }),
         );
       }
     }
