@@ -46,6 +46,8 @@ export interface SankeyMosaicClientProps {
   orderings?: Record<string, string[]>;
   /** Whether to render light or dark mode chrome (tooltip). */
   dark?: boolean;
+  /** Cap on nodes per column. Long tail collapsed into a single 'other (N)' node. */
+  maxNodesPerColumn?: number;
   /** Optional fired-after-Selection-write callback. */
   onLinkClick?: (col: number, from: string, to: string, ids: string[]) => void;
 }
@@ -96,6 +98,7 @@ export function SankeyMosaicClient({
   palette = DEFAULT_PALETTE,
   orderings,
   dark = false,
+  maxNodesPerColumn,
   onLinkClick,
 }: SankeyMosaicClientProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -180,7 +183,7 @@ export function SankeyMosaicClient({
 
         if (cancelled) return;
 
-        const nextNodes: NodeRow[] = [];
+        let nextNodes: NodeRow[] = [];
         for (const { i, rows } of nodeRes) {
           for (const r of rows) {
             nextNodes.push({
@@ -191,7 +194,7 @@ export function SankeyMosaicClient({
             });
           }
         }
-        const nextLinks: LinkRow[] = [];
+        let nextLinks: LinkRow[] = [];
         for (const { i, rows } of linkRes) {
           for (const r of rows) {
             nextLinks.push({
@@ -203,6 +206,13 @@ export function SankeyMosaicClient({
             });
           }
         }
+
+        if (typeof maxNodesPerColumn === "number" && maxNodesPerColumn > 1) {
+          const collapse = collapseTopK(nextNodes, nextLinks, columns, maxNodesPerColumn);
+          nextNodes = collapse.nodes;
+          nextLinks = collapse.links;
+        }
+
         setNodes(nextNodes);
         setLinks(nextLinks);
       } catch (err) {
@@ -213,7 +223,7 @@ export function SankeyMosaicClient({
     return () => {
       cancelled = true;
     };
-  }, [version, coordinator, table, idCol, columns, whereExpr, selection]);
+  }, [version, coordinator, table, idCol, columns, whereExpr, selection, maxNodesPerColumn]);
 
   // Layout — produces nodes and links with x/y/w/h.
   const layout = useMemo(() => {
@@ -328,7 +338,7 @@ export function SankeyMosaicClient({
         <div
           style={{
             position: "absolute",
-            left: Math.min((hover.x0 + hover.x1) / 2, size.w - 220),
+            left: Math.min((hover.x0 + hover.x1) / 2, Math.max(0, size.w - 240)),
             top: Math.max(0, Math.min((hover.y0 + hover.y1) / 2 - 10, size.h - 80)),
             background: dark ? "#1a202c" : "#ffffff",
             color: dark ? "#f7fafc" : "#1a202c",
@@ -338,13 +348,18 @@ export function SankeyMosaicClient({
             padding: "6px 10px",
             fontSize: 11,
             pointerEvents: "none",
-            minWidth: 180,
+            width: 220,
+            maxWidth: 220,
             zIndex: 5,
             lineHeight: 1.5,
+            whiteSpace: "normal",
+            wordBreak: "break-all",
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: 4 }}>
-            {hover.from} → {hover.to}
+            {hover.from === OTHER_KEY ? "other" : hover.from}
+            {" → "}
+            {hover.to === OTHER_KEY ? "other" : hover.to}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", color: dark ? "#cbd5e0" : "#4a5568" }}>
             <span>trajectories</span>
@@ -454,8 +469,10 @@ function layoutSankey(
         y,
         w: colW,
         h,
-        label: n.key,
-        color: palette(col.name, n.key),
+        label: n.key === OTHER_KEY ? "other" : n.key,
+        color: n.key === OTHER_KEY
+          ? "var(--chart-gray)"
+          : palette(col.name, n.key),
       };
       orderedNodes.push(layout);
       nodeIndex.set(`${ci}|${n.key}`, layout);
@@ -517,4 +534,73 @@ function ribbonPath(x0: number, y0: number, t0: number, x1: number, y1: number, 
     `C${mx},${y1 + t1} ${mx},${y0 + t0} ${x0},${y0 + t0}`,
     "Z",
   ].join(" ");
+}
+
+const OTHER_KEY = "__other__";
+
+/**
+ * Per-column, keep the top (k-1) nodes and aggregate the long tail into a
+ * single synthetic `__other__` node. Re-route any link whose endpoint was
+ * collapsed to point at the synthetic node and merge duplicate links.
+ */
+function collapseTopK(
+  nodes: NodeRow[],
+  links: LinkRow[],
+  columns: SankeyColumnSpec[],
+  k: number,
+): { nodes: NodeRow[]; links: LinkRow[] } {
+  // Build the set of "kept" keys per column.
+  const kept: Array<Set<string>> = columns.map(() => new Set());
+  // Group nodes by column.
+  const byCol: Record<number, NodeRow[]> = {};
+  for (const n of nodes) (byCol[n.col] ??= []).push(n);
+
+  const collapsedNodes: NodeRow[] = [];
+  for (let ci = 0; ci < columns.length; ci++) {
+    const list = (byCol[ci] ?? []).slice().sort((a, b) => b.count - a.count);
+    if (list.length <= k) {
+      list.forEach((n) => kept[ci].add(n.key));
+      collapsedNodes.push(...list);
+      continue;
+    }
+    const head = list.slice(0, k - 1);
+    const tail = list.slice(k - 1);
+    head.forEach((n) => kept[ci].add(n.key));
+    const otherIds = new Set<string>();
+    let otherCount = 0;
+    for (const t of tail) {
+      otherCount += t.count;
+      t.trajIds.forEach((id) => otherIds.add(id));
+    }
+    collapsedNodes.push(...head, {
+      col: ci,
+      key: OTHER_KEY,
+      count: otherCount,
+      trajIds: otherIds,
+    });
+  }
+
+  // Re-route links: replace any endpoint not in `kept` with OTHER_KEY, then
+  // merge duplicates.
+  const linkMap = new Map<string, LinkRow>();
+  for (const lk of links) {
+    const fromKey = kept[lk.fromCol].has(lk.from) ? lk.from : OTHER_KEY;
+    const toKey = kept[lk.fromCol + 1]?.has(lk.to) ? lk.to : OTHER_KEY;
+    const key = `${lk.fromCol}|${fromKey}|${toKey}`;
+    const existing = linkMap.get(key);
+    if (existing) {
+      existing.count += lk.count;
+      lk.trajIds.forEach((id) => existing.trajIds.add(id));
+    } else {
+      linkMap.set(key, {
+        fromCol: lk.fromCol,
+        from: fromKey,
+        to: toKey,
+        count: lk.count,
+        trajIds: new Set(lk.trajIds),
+      });
+    }
+  }
+
+  return { nodes: collapsedNodes, links: Array.from(linkMap.values()) };
 }

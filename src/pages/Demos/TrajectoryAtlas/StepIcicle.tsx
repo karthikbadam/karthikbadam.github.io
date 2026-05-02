@@ -27,6 +27,11 @@ export function StepIcicle() {
       levelCol="step_idx"
       categoryCol="name"
       selection={crossfilter}
+      // Drop meta-steps so each visible level represents the i-th tool call
+      // rather than the i-th raw message.
+      filterStepNames={["task", "thought", "observation", "think", "thinking"]}
+      // Collapse the long tail of rare tools into an "other (N)" node per level.
+      maxNodesPerLevel={10}
       colorRamp={(level, maxLevel) =>
         accentRamp(level / Math.max(1, maxLevel - 1), colorMode === "dark")
       }

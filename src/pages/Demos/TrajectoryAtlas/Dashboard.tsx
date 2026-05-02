@@ -18,15 +18,21 @@ export function Dashboard() {
   return (
     <Flex direction="column" h={{ base: "auto", md: "100%" }} bg="bg.muted" overflow="hidden">
       <Box px={4} pt={3} pb={2}>
-        <Flex align="baseline" gap={3} flexWrap="wrap" mb={2}>
-          <Heading as="h1" size="md" color="accent" fontWeight="semibold">
+        <Box mb={2}>
+          <Heading as="h1" size="md" color="accent" fontWeight="semibold" lineHeight="1.2">
             Visualizing Agent Trajectories
           </Heading>
-          <Text fontSize="sm" color="gray.fg" maxW="80ch">
-            Each step is one message in the agent's run — a user task, a tool call, an
-            observation, or an assistant thought. Click any node or row to cross-filter.
+          <Text
+            fontSize="sm"
+            color="gray.fg"
+            mt={1}
+            whiteSpace="nowrap"
+            overflow="hidden"
+            textOverflow="ellipsis"
+          >
+            Each step is one message — a user task, tool call, observation, or assistant thought. Click any node or row to cross-filter.
           </Text>
-        </Flex>
+        </Box>
         <TrajectoryStatsPanel />
       </Box>
 

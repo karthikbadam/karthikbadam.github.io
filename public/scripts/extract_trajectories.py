@@ -461,6 +461,11 @@ SCHEMA = pa.schema(
         ("tools_used", pa.list_(pa.string())),
         ("step_tools", pa.list_(pa.string())),
         ("step_categories", pa.list_(pa.string())),
+        # Comma-joined mirrors of step_tools / step_categories — primitive
+        # strings are easier for downstream tools (e.g. AnyTable's DuckDBStore)
+        # to round-trip than Arrow List<Utf8>.
+        ("step_tools_str", pa.string()),
+        ("step_categories_str", pa.string()),
         ("steps", pa.list_(STEP_STRUCT)),
     ]
 )
@@ -667,6 +672,8 @@ def main() -> int:
                 "tools_used": tools_used,
                 "step_tools": step_tools,
                 "step_categories": step_categories,
+                "step_tools_str": ",".join(step_tools),
+                "step_categories_str": ",".join(step_categories),
                 "steps": steps,
             }
         )

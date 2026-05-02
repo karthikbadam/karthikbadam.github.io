@@ -27,7 +27,7 @@ const COLUMNS: ColumnDef[] = [
   { key: "task", flex: 1, minWidth: "12rem" },
   { key: "model", width: "11rem" },
   { key: "step_count", width: "4.5rem" },
-  { key: "step_tools", width: "16rem" },
+  { key: "step_tools_str", width: "16rem" },
   { key: "outcome", width: "6rem" },
   { key: "tokens", width: "5rem" },
   { key: "reward", width: "5rem" },
@@ -38,7 +38,7 @@ const COL_META: Record<string, ColMeta> = {
   task: { key: "task", label: "Task" },
   model: { key: "model", label: "Model", mono: true },
   step_count: { key: "step_count", label: "Steps", align: "right", mono: true },
-  step_tools: { key: "step_tools", label: "Path" },
+  step_tools_str: { key: "step_tools_str", label: "Path" },
   outcome: { key: "outcome", label: "Outcome" },
   tokens: { key: "tokens", label: "Tokens", align: "right", mono: true },
   reward: { key: "reward", label: "Reward", align: "right", mono: true },
@@ -238,6 +238,30 @@ function TrajectoryTableInner() {
 function renderCell(column: string, value: unknown): React.ReactNode {
   if (value == null) return "";
   switch (column) {
+    case "step_tools_str": {
+      const raw = String(value ?? "").trim();
+      if (!raw) return null;
+      const names = raw.split(",");
+      const max = 24;
+      const shown = names.slice(0, max);
+      const more = names.length - shown.length;
+      return (
+        <div className="ta-step-path">
+          {shown.map((name, i) => {
+            const cat = categoryFor(name);
+            return (
+              <span
+                key={i}
+                className="ta-step-dot"
+                title={`${i + 1}. ${name}`}
+                style={{ background: CAT_COLOR[cat as Category] ?? "var(--chakra-colors-fg-subtle)" }}
+              />
+            );
+          })}
+          {more > 0 && <span className="ta-step-more">+{more}</span>}
+        </div>
+      );
+    }
     case "step_tools": {
       const names = asStringList(value);
       if (!names.length) return null;

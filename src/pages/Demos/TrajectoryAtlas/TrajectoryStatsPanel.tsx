@@ -52,17 +52,18 @@ export function TrajectoryStatsPanel() {
       border="1px solid"
       borderColor="gray.subtle"
     >
-      <Flex gap={3} wrap="wrap" align="center" justify="space-between">
-        <Flex gap={2} wrap="wrap">
+      <Flex gap={4} wrap="wrap" align="center" justify="space-between">
+        <Flex gap={5} wrap="nowrap">
           {items.map((item) => (
-            <Stat.Root key={item.label} size="sm" px={2} minW="auto">
-              <Stat.Label fontSize="xs" color="accentSubtle">
+            <Stat.Root key={item.label} size="sm" px={0} minW="6rem">
+              <Stat.Label fontSize="xs" color="accentSubtle" whiteSpace="nowrap">
                 {item.label}
               </Stat.Label>
               <Stat.ValueText
                 fontSize="md"
                 fontWeight="semibold"
                 color={item.accent ? "accent" : undefined}
+                whiteSpace="nowrap"
               >
                 {item.value}
               </Stat.ValueText>
