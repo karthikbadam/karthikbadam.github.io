@@ -315,7 +315,14 @@ def extract_steps_smolagents(messages: list[dict]) -> list[dict]:
             pending_tool_call = m
             wrapper, code = _parse_smolagents_tool_call(content)
             tool_name = _first_tool_call_in_code(code) or wrapper or "tool_call"
-            steps.append(_make_step(len(steps), name=tool_name, role="tool", text=code or text))
+            steps.append(
+                _make_step(
+                    len(steps),
+                    name=_canonicalize_tool(tool_name),
+                    role="tool",
+                    text=code or text,
+                ),
+            )
             continue
 
         if role in ("tool-response", "tool_response"):
@@ -356,7 +363,7 @@ def extract_steps_inline_xml(messages: list[dict], xml_pattern: re.Pattern) -> l
             # Most assistant turns have one block; some multi-step exports include
             # several, and we want to surface each.
             for f in funcs:
-                tool = f.group(1)
+                tool = _canonicalize_tool(f.group(1))
                 body = f.group("body") or ""
                 params = INLINE_XML_PARAM_PATTERN.findall(body)
                 blob = " ".join(f"{k}={v[:60]}" for k, v in params)
@@ -375,6 +382,21 @@ def extract_steps_inline_xml(messages: list[dict], xml_pattern: re.Pattern) -> l
         # Other roles ignored.
 
     return steps
+
+
+# Map equivalent tool/role names to a canonical form so the same concept
+# doesn't appear under multiple labels.
+_TOOL_ALIASES = {
+    "think": "thought",
+    "thinking": "thought",
+    "thoughts": "thought",
+    "reasoning": "thought",
+    "reflection": "thought",
+}
+
+
+def _canonicalize_tool(name: str) -> str:
+    return _TOOL_ALIASES.get(name, name)
 
 
 def _make_step(idx: int, name: str, role: str, text: str, ok: bool = True) -> dict:

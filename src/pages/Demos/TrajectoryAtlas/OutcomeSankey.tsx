@@ -61,7 +61,7 @@ export function OutcomeSankey() {
       palette={paletteFor}
       orderings={ORDERINGS}
       dark={colorMode === "dark"}
-      maxNodesPerColumn={8}
+      maxNodesPerColumn={10}
     />
   );
 }
