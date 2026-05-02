@@ -270,9 +270,15 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       )
       SELECT t.id,
              t.outcome,
-             e.entry_tool,
-             d.dominant_1,
-             d.dominant_2
+             -- A trajectory whose only tool calls are submit-class steps
+             -- (e.g. just final_answer) has no entry tool by our criteria.
+             -- Surface it as '(none)' so the flow doesn't go missing.
+             COALESCE(e.entry_tool, '(none)') AS entry_tool,
+             COALESCE(d.dominant_1, '(none)') AS dominant_1,
+             -- Many trajectories use only ONE distinct tool — dominant_2
+             -- is null for those. Coalesce so they still flow through the
+             -- 2nd-dominant column rather than silently dropping out.
+             COALESCE(d.dominant_2, '(none)') AS dominant_2
       FROM trajectories t
       LEFT JOIN entry e USING (id)
       LEFT JOIN dominant d USING (id)
