@@ -58,6 +58,10 @@ export interface SankeyMosaicClientProps {
   dark?: boolean;
   /** Cap on nodes per column. Long tail collapsed into a single 'other (N)' node. */
   maxNodesPerColumn?: number;
+  /** Trajectory ids to highlight (e.g. clicked-row in the trajectory table).
+   * Ribbons whose trajectory set intersects this are emphasised; the rest
+   * dim. */
+  highlightedTrajIds?: Set<string> | null;
   /** Optional fired-after-Selection-write callback. */
   onLinkClick?: (col: number, from: string, to: string, ids: string[]) => void;
 }
@@ -71,11 +75,19 @@ interface NodeRow {
 
 interface LinkRow {
   fromCol: number;
+  /** Destination column. May be > fromCol+1 (skip-edges) when intermediate
+   * columns are the synthetic NONE_VALUE. */
+  toCol: number;
   from: string;
   to: string;
   count: number;
   trajIds: Set<string>;
 }
+
+// Trajectories whose value at a column is the synthetic placeholder are
+// SKIPPED past that column entirely — links route directly to the next
+// non-NONE column. Excluded from node lists.
+const NONE_VALUE = "(none)";
 
 interface NodeLayout extends NodeRow {
   x: number;
@@ -109,6 +121,7 @@ export function SankeyMosaicClient({
   orderings,
   dark = false,
   maxNodesPerColumn,
+  highlightedTrajIds,
   onLinkClick,
 }: SankeyMosaicClientProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -116,7 +129,12 @@ export function SankeyMosaicClient({
   const [nodes, setNodes] = useState<NodeRow[]>([]);
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [hover, setHover] = useState<LinkLayout | null>(null);
-  const [localSelection, setLocalSelection] = useState<{ col: number; from: string; to: string } | null>(null);
+  const [localSelection, setLocalSelection] = useState<{
+    col: number;
+    toCol: number;
+    from: string;
+    to: string;
+  } | null>(null);
 
   // Stable token for the selection's "source" identity.
   const sourceRef = useRef<{ id: string }>({ id: "sankey-mosaic-client" });
@@ -159,6 +177,20 @@ export function SankeyMosaicClient({
       )
     `;
 
+    // For each pair (i, j) with i < j, generate a link query that captures
+    // trajectories whose values at i and j are non-NONE AND whose
+    // intermediate columns are all NONE — i.e. trajectories that "skip"
+    // through (none) on intermediate columns and want a direct edge.
+    const linkPairs: Array<{ i: number; j: number }> = [];
+    for (let i = 0; i < columns.length - 1; i++) {
+      for (let j = i + 1; j < columns.length; j++) linkPairs.push({ i, j });
+    }
+    const noneStr = `'${NONE_VALUE.replace(/'/g, "''")}'`;
+    const realCheck = (k: number) =>
+      `${col(columns[k].name)} IS NOT NULL AND ${col(columns[k].name)} <> ${noneStr}`;
+    const noneCheck = (k: number) =>
+      `${col(columns[k].name)} = ${noneStr}`;
+
     (async () => {
       try {
         const [nodeRes, linkRes] = await Promise.all([
@@ -169,25 +201,30 @@ export function SankeyMosaicClient({
                   ${trajCte}
                   SELECT ${col(c.name)} AS key, COUNT(*) AS n,
                          ARRAY_AGG(traj_id) AS traj_ids
-                  FROM traj_cols WHERE ${col(c.name)} IS NOT NULL
+                  FROM traj_cols
+                  WHERE ${col(c.name)} IS NOT NULL AND ${col(c.name)} <> ${noneStr}
                   GROUP BY 1 ORDER BY n DESC
                 `)
                 .then((r) => ({ i, rows: arrowRows(r) })),
             ),
           ),
           Promise.all(
-            columns.slice(0, -1).map((c, i) =>
-              coordinator
+            linkPairs.map(({ i, j }) => {
+              const intermediates: string[] = [];
+              for (let k = i + 1; k < j; k++) intermediates.push(noneCheck(k));
+              const where = [realCheck(i), realCheck(j), ...intermediates].join(" AND ");
+              return coordinator
                 .query(`
                   ${trajCte}
-                  SELECT ${col(c.name)} AS from_key, ${col(columns[i + 1].name)} AS to_key,
+                  SELECT ${col(columns[i].name)} AS from_key,
+                         ${col(columns[j].name)} AS to_key,
                          COUNT(*) AS n, ARRAY_AGG(traj_id) AS traj_ids
                   FROM traj_cols
-                  WHERE ${col(c.name)} IS NOT NULL AND ${col(columns[i + 1].name)} IS NOT NULL
+                  WHERE ${where}
                   GROUP BY 1, 2 ORDER BY 1, 2
                 `)
-                .then((r) => ({ i, rows: arrowRows(r) })),
-            ),
+                .then((r) => ({ i, j, rows: arrowRows(r) }));
+            }),
           ),
         ]);
 
@@ -205,10 +242,11 @@ export function SankeyMosaicClient({
           }
         }
         let nextLinks: LinkRow[] = [];
-        for (const { i, rows } of linkRes) {
+        for (const { i, j, rows } of linkRes) {
           for (const r of rows) {
             nextLinks.push({
               fromCol: i,
+              toCol: j,
               from: String(r.from_key ?? ""),
               to: String(r.to_key ?? ""),
               count: Number(r.n ?? 0),
@@ -244,13 +282,16 @@ export function SankeyMosaicClient({
     return (
       localSelection !== null &&
       localSelection.col === lk.fromCol &&
+      localSelection.toCol === lk.toCol &&
       localSelection.from === lk.from &&
       localSelection.to === lk.to
     );
   }
 
   function handleClick(lk: LinkLayout) {
-    const next = isSelected(lk) ? null : { col: lk.fromCol, from: lk.from, to: lk.to };
+    const next = isSelected(lk)
+      ? null
+      : { col: lk.fromCol, toCol: lk.toCol, from: lk.from, to: lk.to };
     setLocalSelection(next);
     if (selection) {
       if (next === null) {
@@ -273,13 +314,17 @@ export function SankeyMosaicClient({
         <Group>
           {layout.links.map((lk, i) => {
             const sel = isSelected(lk);
-            const dimmed = localSelection !== null && !sel;
+            const hi =
+              highlightedTrajIds && setIntersects(lk.trajIds, highlightedTrajIds);
+            const dimmed =
+              (localSelection !== null && !sel) ||
+              (highlightedTrajIds != null && !hi);
             return (
               <path
                 key={`l-${i}`}
                 d={ribbonPath(lk.x0, lk.y0, lk.t0, lk.x1, lk.y1, lk.t1)}
                 fill={lk.color}
-                opacity={sel ? 0.85 : dimmed ? 0.06 : 0.32}
+                opacity={hi ? 0.85 : sel ? 0.85 : dimmed ? 0.06 : 0.32}
                 style={{ cursor: "pointer", transition: "opacity .2s" }}
                 onClick={() => handleClick(lk)}
                 onMouseEnter={() => setHover(lk)}
@@ -492,8 +537,8 @@ function layoutSankey(
     if (a.fromCol !== b.fromCol) return a.fromCol - b.fromCol;
     const srcA = nodeIndex.get(`${a.fromCol}|${a.from}`);
     const srcB = nodeIndex.get(`${b.fromCol}|${b.from}`);
-    const dstA = nodeIndex.get(`${a.fromCol + 1}|${a.to}`);
-    const dstB = nodeIndex.get(`${b.fromCol + 1}|${b.to}`);
+    const dstA = nodeIndex.get(`${a.toCol}|${a.to}`);
+    const dstB = nodeIndex.get(`${b.toCol}|${b.to}`);
     if (srcA && srcB && srcA.y !== srcB.y) return srcA.y - srcB.y;
     if (dstA && dstB) return dstA.y - dstB.y;
     return 0;
@@ -502,10 +547,10 @@ function layoutSankey(
   const linkLayouts: LinkLayout[] = [];
   for (const lk of sortedLinks) {
     const src = nodeIndex.get(`${lk.fromCol}|${lk.from}`);
-    const dst = nodeIndex.get(`${lk.fromCol + 1}|${lk.to}`);
+    const dst = nodeIndex.get(`${lk.toCol}|${lk.to}`);
     if (!src || !dst) continue;
     const srcKey = `${lk.fromCol}|${lk.from}`;
-    const dstKey = `${lk.fromCol + 1}|${lk.to}`;
+    const dstKey = `${lk.toCol}|${lk.to}`;
     const srcSum = src.count || 1;
     const dstSum = dst.count || 1;
     const srcThickness = (lk.count / srcSum) * src.h;
@@ -532,6 +577,15 @@ function layoutSankey(
   }
 
   return { nodes: orderedNodes, links: linkLayouts };
+}
+
+function setIntersects(a: Set<string>, b: Set<string>): boolean {
+  const [s, l] = a.size < b.size ? [a, b] : [b, a];
+  let found = false;
+  s.forEach((x) => {
+    if (!found && l.has(x)) found = true;
+  });
+  return found;
 }
 
 function ribbonPath(x0: number, y0: number, t0: number, x1: number, y1: number, t1: number): string {
@@ -590,12 +644,13 @@ function collapseTopK(
   }
 
   // Re-route links: replace any endpoint not in `kept` with OTHER_KEY, then
-  // merge duplicates.
+  // merge duplicates. Link span (fromCol, toCol) is preserved so skip edges
+  // continue to skip after collapse.
   const linkMap = new Map<string, LinkRow>();
   for (const lk of links) {
     const fromKey = kept[lk.fromCol].has(lk.from) ? lk.from : OTHER_KEY;
-    const toKey = kept[lk.fromCol + 1]?.has(lk.to) ? lk.to : OTHER_KEY;
-    const key = `${lk.fromCol}|${fromKey}|${toKey}`;
+    const toKey = kept[lk.toCol]?.has(lk.to) ? lk.to : OTHER_KEY;
+    const key = `${lk.fromCol}|${fromKey}|${lk.toCol}|${toKey}`;
     const existing = linkMap.get(key);
     if (existing) {
       existing.count += lk.count;
@@ -603,6 +658,7 @@ function collapseTopK(
     } else {
       linkMap.set(key, {
         fromCol: lk.fromCol,
+        toCol: lk.toCol,
         from: fromKey,
         to: toKey,
         count: lk.count,

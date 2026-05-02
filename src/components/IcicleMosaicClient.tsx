@@ -298,8 +298,13 @@ export function IcicleMosaicClient({
         <Group>
           {rects.map((r, i) => {
             const sel = isSelected(r);
-            const dimmed = localSelection !== null && !pathRelatedToSelection(r);
             const hi = highlightedTrajIds && setIntersects(r.node.trajIds, highlightedTrajIds);
+            // Dim a rect when:
+            //   - the user clicked another node and this rect isn't on its path, OR
+            //   - a row is highlighted and this rect's trajectories don't include it.
+            const dimmed =
+              (localSelection !== null && !pathRelatedToSelection(r)) ||
+              (highlightedTrajIds != null && !hi);
             return (
               <Group key={i}>
                 <Bar
@@ -315,7 +320,7 @@ export function IcicleMosaicClient({
                       ? "var(--chakra-colors-accent)"
                       : "var(--chakra-colors-bg-panel)"
                   }
-                  strokeWidth={sel ? 2 : hi ? 1.5 : 1}
+                  strokeWidth={sel ? 2 : hi ? 2 : 1}
                   opacity={dimmed ? 0.2 : 1}
                   rx={2}
                   style={{ cursor: "pointer", transition: "opacity .2s" }}
