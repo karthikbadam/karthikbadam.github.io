@@ -1,107 +1,90 @@
-import { Box, Spinner, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Container,
+  Grid,
+  GridItem,
+  Heading,
+  HStack,
+  Text,
+} from "@chakra-ui/react";
+import { LoadingIndicator } from "../../../components/LoadingIndicator";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
-import { Topbar } from "./Topbar";
+import { TrajectoryStatsPanel } from "./TrajectoryStatsPanel";
 import { StepIcicle } from "./StepIcicle";
 import { OutcomeSankey } from "./OutcomeSankey";
 import { TrajectoryTable } from "./TrajectoryTable";
 import { DetailPanel } from "./DetailPanel";
-import "./trajectory-atlas.css";
+import { TrajectoryPanel } from "./TrajectoryPanel";
 
 export function Dashboard() {
   const { state, selectedTrajectory, setRowSelection } = useTrajectoryAtlas();
 
-  if (state.status === "error") {
-    return (
-      <Box p={6} color="red.500">
-        <Text>Failed to load trajectories: {state.message}</Text>
-      </Box>
-    );
+  if (state.status !== "ready") {
+    return <LoadingIndicator state={state} title="Loading agent trajectories" />;
   }
 
-  const ready = state.status === "ready";
-
   return (
-    <div className="trajectory-atlas">
-      <Topbar />
+    <Box
+      h={{ base: "auto", md: "100%" }}
+      overflow="hidden"
+      display="flex"
+      flexDirection="column"
+      bg="bg.muted"
+      pb={2}
+    >
+      <Container maxW="85ch" px={4} py={4} mx="auto">
+        <Box mb={2}>
+          <Heading as="h1" size="lg" color="accent" mb={1}>
+            Visualizing Agent Trajectories
+          </Heading>
+          <HStack gap={2} alignItems="baseline" flexWrap="wrap">
+            <Text fontSize="sm" color="gray.fg">
+              Step icicle reveals the most-traveled paths; outcome sankey traces
+              entry actions through dominant tools to outcomes; the table cross-filters with both.
+            </Text>
+          </HStack>
+        </Box>
+        <TrajectoryStatsPanel />
+      </Container>
 
-      <div className="ta-viz-grid">
-        <Panel
-          title="Step Icicle"
-          subtitle="→ Step depth (rows) · width = share of trajectories taking this path"
-        >
-          {ready ? <StepIcicle /> : <Loading state={state} />}
-        </Panel>
-        <Panel
-          title="Outcome Sankey"
-          sub="3 columns · click a ribbon"
-          subtitle="→ Entry action → dominant action → outcome"
-        >
-          {ready ? <OutcomeSankey /> : <Loading state={state} />}
-        </Panel>
-      </div>
+      <Grid
+        templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+        templateRows={{ base: "auto auto auto", md: "1fr 1fr" }}
+        gap={2}
+        flex={1}
+        px={4}
+        overflow="hidden"
+      >
+        <GridItem overflow="hidden">
+          <TrajectoryPanel
+            title="Step Icicle"
+            subtitle="Step depth (rows) · width = share of trajectories taking this path"
+          >
+            <StepIcicle />
+          </TrajectoryPanel>
+        </GridItem>
+        <GridItem overflow="hidden">
+          <TrajectoryPanel
+            title="Outcome Sankey"
+            subtitle="Entry action → dominant action → outcome · click a ribbon"
+          >
+            <OutcomeSankey />
+          </TrajectoryPanel>
+        </GridItem>
 
-      <div className="ta-table-section">
-        <div className="ta-table-section-head">
-          <p className="ta-table-section-title">
-            Trajectories
-            <span className="ta-panel-sub"> • sort any column, click to inspect</span>
-          </p>
-        </div>
-        <div className="ta-table-host">{ready ? <TrajectoryTable /> : <Loading state={state} />}</div>
-      </div>
+        <GridItem colSpan={{ base: 1, md: 2 }} overflow="hidden">
+          <TrajectoryPanel
+            title="Trajectories"
+            subtitle="sort any column, click to inspect"
+          >
+            <TrajectoryTable />
+          </TrajectoryPanel>
+        </GridItem>
+      </Grid>
 
       {selectedTrajectory && (
         <DetailPanel traj={selectedTrajectory} onClose={() => setRowSelection(null)} />
       )}
-    </div>
-  );
-}
-
-function Loading({ state }: { state: ReturnType<typeof useTrajectoryAtlas>["state"] }) {
-  return (
-    <Box
-      position="absolute"
-      inset="0"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      gap={3}
-    >
-      <Spinner size="sm" />
-      <Text fontSize="xs" color="fg.muted">
-        {state.status === "initializing" && "Initializing DuckDB…"}
-        {state.status === "loading-parquet" && "Loading trajectories…"}
-        {state.status === "creating-tables" && "Building tables…"}
-        {state.status === "updating-tables" && "Updating tables…"}
-        {state.status === "idle" && "Starting…"}
-      </Text>
     </Box>
-  );
-}
-
-function Panel({
-  title,
-  sub,
-  subtitle,
-  children,
-}: {
-  title: string;
-  sub?: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="ta-panel">
-      <div className="ta-panel-head">
-        <div>
-          <p className="ta-panel-title">
-            {title}
-            {sub && <span className="ta-panel-sub"> • {sub}</span>}
-          </p>
-          {subtitle && <p className="ta-panel-subtitle">{subtitle}</p>}
-        </div>
-      </div>
-      <div className="ta-panel-body">{children}</div>
-    </div>
   );
 }

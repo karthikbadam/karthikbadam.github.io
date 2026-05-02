@@ -1,331 +1,95 @@
-/* Trajectory Atlas — component-scoped styles.
-   Tokens are pulled from the site's Chakra theme (see src/theme.ts) and don't
-   redeclare anything global. Selectors are nested under `.trajectory-atlas`.
-
-   The site already defines these CSS variables; we only declare *fallback*
-   values for the chart palette so the demo still works in isolation. The site
-   theme's --chart-* values are authoritative when present.
+/* Trajectory Atlas — only the bits that can't easily be Chakra props.
+   Everything that *can* be expressed via Chakra `<Box bg="bg.panel" ...>` is
+   in components, not here. The CSS below covers chart-internal SVG styling,
+   the trajectory step dots in the table, and the outcome badge variants — all
+   keyed off Chakra's semantic-token CSS variables so dark mode flows for free.
 */
 
-.trajectory-atlas {
+/* Chart palette — Observable 10. These names are referenced by sankey
+   ribbons + step-path dots via inline `style="background: var(--chart-...)"`.
+   Light/dark variants come from the dark-mode override block below. */
+:root {
   --chart-blue:       #4269D0;
   --chart-orange:     #EFB118;
   --chart-red:        #FF725C;
   --chart-cyan:       #6CC5B0;
   --chart-green:      #3CA951;
+  --chart-pink:       #FF8AB7;
   --chart-purple:     #A463F2;
   --chart-light-blue: #97BBF5;
   --chart-brown:      #9C6B4E;
   --chart-gray:       #9498A0;
-
-  --ta-accent: var(--chakra-colors-accent, #2b6cb0);
-  --ta-accent-bg: var(--chakra-colors-accentBg, #f0f5f9);
-  --ta-fg: var(--chakra-colors-fg-DEFAULT, #1a202c);
-  --ta-fg-muted: var(--chakra-colors-fg-muted, #4a5568);
-  --ta-fg-subtle: var(--chakra-colors-fg-subtle, #718096);
-  --ta-bg: var(--chakra-colors-bg-DEFAULT, #ffffff);
-  --ta-bg-subtle: var(--chakra-colors-bg-subtle, #f7fafc);
-  --ta-bg-muted: var(--chakra-colors-bg-muted, #edf2f7);
-  --ta-border: var(--chakra-colors-border-DEFAULT, #e2e8f0);
-  --ta-border-subtle: var(--chakra-colors-border-subtle, #edf2f7);
-
-  display: grid;
-  grid-template-rows: auto 1fr 38vh;
-  height: 100%;
-  min-height: 0;
-  background: var(--ta-bg);
-  color: var(--ta-fg);
-  font-feature-settings: "tnum";
 }
 
-.dark .trajectory-atlas,
-[data-theme="dark"] .trajectory-atlas {
+[data-theme="dark"], .dark {
   --chart-blue:       #7B9BE8;
   --chart-orange:     #F5C44D;
   --chart-red:        #FF9580;
   --chart-cyan:       #8FD8C5;
   --chart-green:      #6BC97D;
+  --chart-pink:       #FFA8C8;
   --chart-purple:     #BC8AF5;
   --chart-light-blue: #B5CFFB;
   --chart-brown:      #B58A72;
   --chart-gray:       #B8BCC4;
 }
 
-/* topbar */
-.trajectory-atlas .ta-topbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  align-items: center;
-  gap: 8px 24px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--ta-border);
-  background: var(--ta-bg);
-}
-.trajectory-atlas .ta-brand { display: flex; align-items: center; gap: 12px; grid-column: 1; grid-row: 1; }
-.trajectory-atlas .ta-brand-mark {
-  display: grid; place-items: center;
-  width: 24px; height: 24px;
-  background: var(--ta-accent-bg);
-  color: var(--ta-accent);
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: -0.04em;
-}
-.trajectory-atlas .ta-brand-name { color: var(--ta-accent); font-weight: 600; font-size: 14px; }
-.trajectory-atlas .ta-brand-divider { width: 1px; height: 14px; background: var(--ta-border); }
-.trajectory-atlas .ta-brand-route { color: var(--ta-fg-subtle); font-size: 11px; font-family: var(--font-mono, ui-monospace); }
-
-.trajectory-atlas .ta-topbar-tools { display: flex; align-items: center; gap: 12px; grid-column: 2; grid-row: 1; }
-.trajectory-atlas .ta-search {
-  display: flex; align-items: center; gap: 8px;
-  width: 280px; height: 30px;
-  padding: 0 12px;
-  border: 1px solid var(--ta-border);
-  border-radius: 6px;
-  background: var(--ta-bg);
-  transition: border-color 0.15s;
-}
-.trajectory-atlas .ta-search:focus-within { border-color: var(--ta-accent); }
-.trajectory-atlas .ta-search input {
-  flex: 1; min-width: 0;
-  border: none; outline: none;
-  background: transparent;
-  font: inherit;
-  font-size: 13px;
-  color: var(--ta-fg);
-}
-.trajectory-atlas .ta-pill {
-  display: flex; align-items: center; gap: 8px;
-  height: 30px; padding: 0 12px;
-  border: 1px solid var(--ta-border);
-  border-radius: 6px;
-  background: var(--ta-accent-bg);
-  font-size: 12px;
-  color: var(--ta-fg);
-}
-.trajectory-atlas .ta-pill .ta-pill-link { color: var(--ta-fg-subtle); }
-.trajectory-atlas .ta-pill .ta-pill-link:hover { color: var(--ta-accent); }
-.trajectory-atlas .ta-chips { display: flex; gap: 2px; padding: 2px; background: var(--ta-bg-muted); border-radius: 6px; }
-.trajectory-atlas .ta-chip {
-  border: none; background: transparent;
-  font-size: 12px; font-weight: 500;
-  color: var(--ta-fg-subtle);
-  padding: 4px 10px;
-  border-radius: 4px;
-  text-transform: capitalize;
-  cursor: pointer;
-}
-.trajectory-atlas .ta-chip:hover { color: var(--ta-fg); }
-.trajectory-atlas .ta-chip.is-active {
-  background: var(--ta-bg);
-  color: var(--ta-fg);
-  box-shadow: 0 1px 2px rgba(0,0,0,.05);
-}
-.trajectory-atlas .ta-chip.is-active.ta-chip-success { color: var(--chart-blue); }
-.trajectory-atlas .ta-chip.is-active.ta-chip-fail { color: var(--chart-red); }
-.trajectory-atlas .ta-chip.is-active.ta-chip-partial { color: var(--chart-orange); }
-
-.trajectory-atlas .ta-stats {
-  grid-column: 1 / -1; grid-row: 2;
-  display: flex; gap: 32px;
-  padding-top: 12px;
-  border-top: 1px solid var(--ta-border-subtle);
-}
-.trajectory-atlas .ta-stat { display: flex; flex-direction: column; gap: 2px; }
-.trajectory-atlas .ta-stat-value {
-  font-size: 20px; font-weight: 400;
-  letter-spacing: -0.02em; line-height: 1.25;
-  color: var(--ta-fg);
-}
-.trajectory-atlas .ta-stat-value.is-accent { color: var(--ta-accent); }
-.trajectory-atlas .ta-stat-label { font-size: 11px; color: var(--ta-fg-subtle); }
-
-/* viz grid */
-.trajectory-atlas .ta-viz-grid {
-  display: grid;
-  grid-template-columns: 1.05fr 1fr;
-  gap: 16px;
-  padding: 16px;
-  min-height: 0;
-}
-@media (max-width: 980px) {
-  .trajectory-atlas .ta-viz-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
-}
-
-.trajectory-atlas .ta-panel {
-  display: flex; flex-direction: column;
-  background: var(--ta-bg-subtle);
-  border: 1px solid var(--ta-border);
-  border-radius: 8px;
-  min-width: 0; min-height: 0;
-  overflow: hidden;
-  padding: 10px 12px;
-  gap: 6px;
-}
-.trajectory-atlas .ta-panel-head {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 12px; flex-shrink: 0;
-}
-.trajectory-atlas .ta-panel-title { font-size: 11px; font-weight: 600; color: var(--ta-accent); margin: 0; }
-.trajectory-atlas .ta-panel-sub { font-weight: 400; color: var(--ta-fg-subtle); margin-left: 4px; }
-.trajectory-atlas .ta-panel-subtitle { font-size: 9px; color: var(--ta-fg-muted); margin: 0; }
-.trajectory-atlas .ta-panel-body { flex: 1; min-height: 0; position: relative; }
-.trajectory-atlas .ta-panel-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11px;
-  color: var(--ta-fg-muted);
-  padding: 3px 8px;
-  background: var(--ta-accent-bg);
-  border-radius: 9999px;
-}
-.trajectory-atlas .ta-panel-pill b { color: var(--ta-accent); font-weight: 500; }
-.trajectory-atlas .ta-panel-pill button {
-  border: none; background: transparent; padding: 0;
-  display: grid; place-items: center; cursor: pointer;
-  color: var(--ta-fg-subtle);
-}
-.trajectory-atlas .ta-panel-pill button:hover { color: var(--ta-fg); }
-
-.trajectory-atlas .ta-viz-root { width: 100%; height: 100%; position: absolute; inset: 0; }
-
-.trajectory-atlas .ta-tooltip {
+/* Chart tooltip — used by both icicle and sankey. */
+.ta-tooltip {
   position: absolute;
-  background: var(--ta-bg);
-  border: 1px solid var(--ta-border);
+  background: var(--chakra-colors-bg-panel);
+  border: 1px solid var(--chakra-colors-gray-subtle);
   border-radius: 6px;
   box-shadow: 0 4px 6px rgba(0,0,0,.07);
   padding: 8px 12px;
-  font-size: 11px;
+  font-size: 12px;
   pointer-events: none;
   min-width: 160px;
   z-index: 5;
+  color: var(--chakra-colors-fg-DEFAULT, currentColor);
 }
-.trajectory-atlas .ta-tooltip .ta-t-title { font-weight: 600; color: var(--ta-fg); margin-bottom: 4px; }
-.trajectory-atlas .ta-tooltip .ta-t-row {
+.ta-tooltip .ta-t-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.ta-tooltip .ta-t-row {
   display: flex; justify-content: space-between;
-  color: var(--ta-fg-muted); line-height: 1.5;
+  color: var(--chakra-colors-fg-muted);
+  line-height: 1.5;
 }
-.trajectory-atlas .ta-tooltip .ta-t-row b {
-  color: var(--ta-fg);
+.ta-tooltip .ta-t-row b {
+  color: inherit;
   font-weight: 500;
   font-family: var(--font-mono, ui-monospace);
 }
 
-/* table */
-.trajectory-atlas .ta-table-section {
-  display: flex; flex-direction: column;
-  min-height: 0;
-  padding: 0 16px 16px;
-}
-.trajectory-atlas .ta-table-section-head {
-  display: flex; justify-content: space-between; align-items: baseline;
-  padding: 10px 12px 6px;
-  background: var(--ta-bg-subtle);
-  border: 1px solid var(--ta-border);
-  border-bottom: none;
-  border-radius: 8px 8px 0 0;
-  flex-shrink: 0;
-}
-.trajectory-atlas .ta-table-section-title { font-size: 11px; font-weight: 600; color: var(--ta-accent); }
-.trajectory-atlas .ta-table-host {
-  flex: 1; min-height: 0;
-  border: 1px solid var(--ta-border);
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  overflow: hidden;
-  background: var(--ta-bg-subtle);
-}
-
-.trajectory-atlas .ta-step-path {
+/* Step-path dots in the table's Path column. */
+.ta-step-path {
   display: flex; align-items: center; gap: 2px;
   flex-wrap: nowrap;
   overflow: hidden;
 }
-.trajectory-atlas .ta-step-dot {
+.ta-step-dot {
   display: inline-block;
-  width: 8px; height: 8px;
+  width: 10px; height: 10px;
   border-radius: 2px;
   flex-shrink: 0;
 }
-.trajectory-atlas .ta-step-more { font-size: 10px; color: var(--ta-fg-subtle); margin-left: 4px; font-family: var(--font-mono, ui-monospace); }
+.ta-step-more {
+  font-size: 11px;
+  color: var(--chakra-colors-fg-subtle);
+  margin-left: 4px;
+  font-family: var(--font-mono, ui-monospace);
+}
 
-.trajectory-atlas .ta-outcome-badge {
+/* Outcome badges. Use Chakra's color tokens via color-mix on chart hues. */
+.ta-outcome-badge {
   display: inline-flex; align-items: center;
   font-size: 10px; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.05em;
   padding: 2px 8px;
   border-radius: 9999px;
 }
-.trajectory-atlas .ta-outcome-success { color: var(--chart-blue); background: color-mix(in oklab, var(--chart-blue) 15%, transparent); }
-.trajectory-atlas .ta-outcome-partial { color: var(--chart-orange); background: color-mix(in oklab, var(--chart-orange) 18%, transparent); }
-.trajectory-atlas .ta-outcome-fail    { color: var(--chart-red);    background: color-mix(in oklab, var(--chart-red) 15%, transparent); }
-
-/* detail panel */
-.trajectory-atlas .ta-detail {
-  position: fixed;
-  top: 0; right: 0; bottom: 0;
-  width: min(440px, 95vw);
-  background: var(--ta-bg);
-  border-left: 1px solid var(--ta-border);
-  box-shadow: 0 20px 25px rgba(0,0,0,.10);
-  display: flex; flex-direction: column;
-  z-index: 50;
-  animation: ta-slide-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-@keyframes ta-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
-.trajectory-atlas .ta-detail-head {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  padding: 16px;
-  border-bottom: 1px solid var(--ta-border);
-  gap: 12px;
-}
-.trajectory-atlas .ta-detail-id { font-size: 11px; color: var(--ta-fg-subtle); margin-bottom: 4px; font-family: var(--font-mono, ui-monospace); }
-.trajectory-atlas .ta-detail-task { font-size: 14px; font-weight: 500; color: var(--ta-fg); }
-.trajectory-atlas .ta-detail-meta {
-  padding: 12px 16px;
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 8px 16px;
-  border-bottom: 1px solid var(--ta-border);
-  font-size: 11px;
-}
-.trajectory-atlas .ta-detail-meta > div { display: flex; justify-content: space-between; align-items: center; }
-.trajectory-atlas .ta-meta-k { color: var(--ta-fg-subtle); text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
-
-.trajectory-atlas .ta-detail-steps-title {
-  font-size: 11px; font-weight: 600; color: var(--ta-fg-muted);
-  text-transform: uppercase; letter-spacing: 0.05em;
-  padding: 12px 16px 8px;
-}
-.trajectory-atlas .ta-detail-steps {
-  flex: 1; min-height: 0;
-  overflow-y: auto;
-  padding: 0 16px 16px;
-}
-.trajectory-atlas .ta-step-row {
-  display: grid;
-  grid-template-columns: 24px 4px 70px 1fr auto;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 0;
-  border-bottom: 1px solid var(--ta-border-subtle);
-  font-size: 11px;
-}
-.trajectory-atlas .ta-step-idx { color: var(--ta-fg-subtle); font-family: var(--font-mono, ui-monospace); font-size: 10px; }
-.trajectory-atlas .ta-step-bar { width: 4px; height: 16px; border-radius: 2px; }
-.trajectory-atlas .ta-step-cat { color: var(--ta-fg); }
-.trajectory-atlas .ta-step-tool { color: var(--ta-fg-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono, ui-monospace); }
-.trajectory-atlas .ta-step-meta { color: var(--ta-fg-subtle); font-size: 10px; font-family: var(--font-mono, ui-monospace); }
-.trajectory-atlas .ta-step-row.is-err .ta-step-tool { color: var(--chart-red); }
-
-.trajectory-atlas .ta-icon-btn {
-  width: 26px; height: 26px;
-  border: 1px solid var(--ta-border);
-  background: var(--ta-bg);
-  border-radius: 4px;
-  display: grid; place-items: center;
-  color: var(--ta-fg-muted);
-  cursor: pointer;
-}
-.trajectory-atlas .ta-icon-btn:hover { color: var(--ta-fg); }
+.ta-outcome-success { color: var(--chart-blue);   background: color-mix(in oklab, var(--chart-blue) 18%, transparent); }
+.ta-outcome-partial { color: var(--chart-orange); background: color-mix(in oklab, var(--chart-orange) 22%, transparent); }
+.ta-outcome-fail    { color: var(--chart-red);    background: color-mix(in oklab, var(--chart-red) 18%, transparent); }

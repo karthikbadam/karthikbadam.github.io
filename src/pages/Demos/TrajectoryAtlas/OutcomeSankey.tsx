@@ -48,7 +48,7 @@ const ORDERINGS = {
 
 export function OutcomeSankey() {
   const { coordinator, crossfilter } = useTrajectoryAtlas();
-  if (!coordinator) return <div className="ta-viz-root" />;
+  if (!coordinator) return null;
   return (
     <SankeyMosaicClient
       coordinator={coordinator}

@@ -7,6 +7,7 @@
 // declarative `<AnyTable spec>` because we need the `selection.onSelectionChange`
 // callback to drive the detail panel.
 
+import { Box, Text } from "@chakra-ui/react";
 import { useCallback, useMemo, useRef } from "react";
 import { MosaicProvider, Table, useTable, type ColumnDef } from "@any_table/react";
 import type { Selection as VgSelection } from "@uwdata/mosaic-core";
@@ -24,8 +25,8 @@ interface ColMeta {
 const COLUMNS: ColumnDef[] = [
   { key: "id", width: "9rem" },
   { key: "task", flex: 1, minWidth: "12rem" },
-  { key: "model", width: "10rem" },
-  { key: "step_count", width: "5rem" },
+  { key: "model", width: "11rem" },
+  { key: "step_count", width: "4.5rem" },
   { key: "steps", width: "13rem" },
   { key: "outcome", width: "6rem" },
   { key: "duration", width: "5.5rem" },
@@ -110,26 +111,28 @@ function TrajectoryTableInner() {
     filter: filter as VgSelection | undefined,
     containerRef,
     selection: { mode: "single", selected: selectedSet, onSelectionChange },
-    rowHeightConfig: { numLines: 1, padding: "6px" },
+    rowHeightConfig: { numLines: 1, padding: "8px" },
   });
 
   return (
-    <div
+    <Box
       ref={containerRef}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        overflow: "hidden",
-        background: "var(--ta-bg-subtle)",
-      }}
+      position="relative"
+      w="100%"
+      h="100%"
+      overflow="hidden"
+      bg="bg.panel"
+      borderRadius="md"
+      fontSize="sm"
+      color="fg"
+      pb={7}
     >
       <Table.Root {...table.rootProps}>
         <Table.Header
           style={{
-            height: "2rem",
-            background: "var(--ta-bg-subtle)",
-            borderBottom: "1px solid var(--ta-border)",
+            height: 32,
+            background: "var(--chakra-colors-bg-subtle)",
+            borderBottom: "1px solid var(--chakra-colors-gray-subtle)",
             flex: "0 0 auto",
           }}
         >
@@ -142,9 +145,9 @@ function TrajectoryTableInner() {
                   column={col.key}
                   style={{
                     fontWeight: 500,
-                    fontSize: "11px",
+                    fontSize: 12,
                     letterSpacing: "0.02em",
-                    color: "var(--ta-fg-muted)",
+                    color: "var(--chakra-colors-fg-muted)",
                     padding: "0 12px",
                     display: "flex",
                     alignItems: "center",
@@ -169,8 +172,8 @@ function TrajectoryTableInner() {
                 key={row.key}
                 row={row}
                 style={{
-                  borderBottom: "1px solid var(--ta-border-subtle)",
-                  fontSize: "13px",
+                  borderBottom: "1px solid var(--chakra-colors-bg-subtle)",
+                  fontSize: 13,
                   cursor: "pointer",
                 }}
               >
@@ -191,9 +194,11 @@ function TrajectoryTableInner() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: meta?.align === "right" ? "flex-end" : "flex-start",
-                          fontFamily: meta?.mono ? "var(--font-mono, ui-monospace)" : undefined,
+                          fontFamily: meta?.mono
+                            ? "var(--font-mono, ui-monospace)"
+                            : "var(--chakra-fonts-body, inherit)",
                           fontVariantNumeric: "tabular-nums",
-                          color: "var(--ta-fg)",
+                          color: "var(--chakra-colors-fg)",
                         }}
                       >
                         {renderCell(cell.column, cell.value)}
@@ -206,29 +211,27 @@ function TrajectoryTableInner() {
           }
         </Table.Viewport>
       </Table.Root>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 28,
-          padding: "4px 12px",
-          borderTop: "1px solid var(--ta-border-subtle)",
-          background: "var(--ta-bg)",
-          fontSize: "11px",
-          color: "var(--ta-fg-subtle)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
+      <Box
+        position="absolute"
+        bottom={0}
+        left={0}
+        right={0}
+        h={7}
+        px={3}
+        py={1}
+        borderTop="1px solid"
+        borderColor="bg.subtle"
+        bg="bg.panel"
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
       >
-        <span>
+        <Text fontSize="xs" color="fg.subtle">
           {table.data.totalRows.toLocaleString()} trajectories
           {table.data.isLoading ? " · loading…" : ""}
-        </span>
-      </div>
-    </div>
+        </Text>
+      </Box>
+    </Box>
   );
 }
 
@@ -236,22 +239,19 @@ function renderCell(column: string, value: unknown): React.ReactNode {
   if (value == null) return "";
   switch (column) {
     case "steps": {
-      const steps = Array.isArray(value)
-        ? (value as Step[])
-        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (value as any)?.toArray?.() ?? [];
+      const steps = asStepList(value);
       if (!steps.length) return null;
       const max = 16;
       const shown = steps.slice(0, max);
       const more = steps.length - shown.length;
       return (
         <div className="ta-step-path">
-          {shown.map((s: Step, i: number) => (
+          {shown.map((s, i) => (
             <span
               key={i}
               className="ta-step-dot"
-              title={`${i + 1}. ${s.tool} (${s.category})`}
-              style={{ background: CAT_COLOR[s.category as Category] ?? "var(--ta-fg-subtle)" }}
+              title={`${i + 1}. ${s.tool}${s.category ? ` (${s.category})` : ""}`}
+              style={{ background: CAT_COLOR[s.category as Category] ?? "var(--chakra-colors-fg-subtle)" }}
             />
           ))}
           {more > 0 && <span className="ta-step-more">+{more}</span>}
@@ -264,7 +264,7 @@ function renderCell(column: string, value: unknown): React.ReactNode {
     }
     case "duration": {
       const ms = Number(value ?? 0);
-      if (!Number.isFinite(ms) || ms <= 0) return <span style={{ color: "var(--ta-fg-subtle)" }}>—</span>;
+      if (!Number.isFinite(ms) || ms <= 0) return "—";
       if (ms < 1000) return `${ms}ms`;
       if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
       return `${Math.floor(ms / 60000)}m ${Math.round((ms % 60000) / 1000)}s`;
@@ -291,21 +291,40 @@ function asStringList(v: any): string[] {
   return [];
 }
 
+// Robustly normalize an Arrow vector / list-of-struct / plain JS array of
+// step records into a uniform `Step[]`. AnyTable+Mosaic occasionally hand
+// back Arrow Vectors with `.get(i)` accessors instead of plain objects; we
+// handle both.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function asStepList(v: any): Step[] {
+  if (v == null) return [];
   let arr: unknown[];
-  if (Array.isArray(v)) arr = v;
-  else if (v && typeof v.toArray === "function") arr = v.toArray();
-  else return [];
-  return arr.map((s) => {
-    const r = s as Record<string, unknown>;
-    return {
-      idx: Number(r.idx ?? 0),
-      category: String(r.category ?? "tool") as Category,
-      tool: String(r.tool ?? ""),
-      tokens: Number(r.tokens ?? 0),
-      duration: Number(r.duration ?? 0),
-      ok: Boolean(r.ok ?? true),
-    };
-  });
+  if (Array.isArray(v)) {
+    arr = v;
+  } else if (typeof v.toArray === "function") {
+    arr = v.toArray();
+  } else if (typeof v.length === "number" && typeof v.get === "function") {
+    // Arrow Vector — duck-typed
+    arr = [];
+    for (let i = 0; i < v.length; i++) arr.push(v.get(i));
+  } else {
+    return [];
+  }
+  return arr
+    .map((s) => {
+      if (s == null) return null;
+      const r = s as Record<string, unknown>;
+      // Arrow row proxies sometimes need explicit field access via `toJSON()`.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const o = (typeof (r as any).toJSON === "function" ? (r as any).toJSON() : r) as Record<string, unknown>;
+      return {
+        idx: Number(o.idx ?? 0),
+        category: String(o.category ?? "tool") as Category,
+        tool: String(o.tool ?? ""),
+        tokens: Number(o.tokens ?? 0),
+        duration: Number(o.duration ?? 0),
+        ok: o.ok == null ? true : Boolean(o.ok),
+      } satisfies Step;
+    })
+    .filter((s): s is Step => s !== null);
 }
