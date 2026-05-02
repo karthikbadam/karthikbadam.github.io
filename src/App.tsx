@@ -18,6 +18,7 @@ import { GravitationalLensingDashboard } from "./pages/Demos/GravitationalLensin
 import { StarCatalogExplorer } from "./pages/Demos/StarCatalog";
 import { TransformerViz } from "./pages/Demos/TransformerViz";
 import { LatentInsights } from "./pages/Demos/LatentInsights";
+import { TrajectoryAtlas } from "./pages/Demos/TrajectoryAtlas";
 
 function RouteTracker() {
   const location = useLocation();
@@ -52,6 +53,7 @@ function App() {
           <Route path="/transformer" element={<TransformerViz />} />
           <Route path="/latent-insights" element={<LatentInsights />} />
           <Route path="/latent-insights/:sessionId" element={<LatentInsights />} />
+          <Route path="/trajectory-atlas" element={<TrajectoryAtlas />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
         </Routes>
       </Router>
