@@ -18,19 +18,7 @@ export function Dashboard() {
     );
   }
 
-  if (state.status !== "ready") {
-    return (
-      <Box display="flex" alignItems="center" justifyContent="center" h="100%" gap={3}>
-        <Spinner size="md" />
-        <Text fontSize="sm" color="fg.muted">
-          {state.status === "initializing" && "Initializing DuckDB…"}
-          {state.status === "loading-parquet" && "Loading trajectories…"}
-          {state.status === "creating-tables" && "Building tables…"}
-          {state.status === "idle" && "Starting…"}
-        </Text>
-      </Box>
-    );
-  }
+  const ready = state.status === "ready";
 
   return (
     <div className="trajectory-atlas">
@@ -41,14 +29,14 @@ export function Dashboard() {
           title="Step Icicle"
           subtitle="→ Step depth (rows) · width = share of trajectories taking this path"
         >
-          <StepIcicle />
+          {ready ? <StepIcicle /> : <Loading state={state} />}
         </Panel>
         <Panel
           title="Outcome Sankey"
           sub="3 columns · click a ribbon"
           subtitle="→ Entry action → dominant action → outcome"
         >
-          <OutcomeSankey />
+          {ready ? <OutcomeSankey /> : <Loading state={state} />}
         </Panel>
       </div>
 
@@ -59,15 +47,35 @@ export function Dashboard() {
             <span className="ta-panel-sub"> • sort any column, click to inspect</span>
           </p>
         </div>
-        <div className="ta-table-host">
-          <TrajectoryTable />
-        </div>
+        <div className="ta-table-host">{ready ? <TrajectoryTable /> : <Loading state={state} />}</div>
       </div>
 
       {selectedTrajectory && (
         <DetailPanel traj={selectedTrajectory} onClose={() => setRowSelection(null)} />
       )}
     </div>
+  );
+}
+
+function Loading({ state }: { state: ReturnType<typeof useTrajectoryAtlas>["state"] }) {
+  return (
+    <Box
+      position="absolute"
+      inset="0"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      gap={3}
+    >
+      <Spinner size="sm" />
+      <Text fontSize="xs" color="fg.muted">
+        {state.status === "initializing" && "Initializing DuckDB…"}
+        {state.status === "loading-parquet" && "Loading trajectories…"}
+        {state.status === "creating-tables" && "Building tables…"}
+        {state.status === "updating-tables" && "Updating tables…"}
+        {state.status === "idle" && "Starting…"}
+      </Text>
+    </Box>
   );
 }
 
