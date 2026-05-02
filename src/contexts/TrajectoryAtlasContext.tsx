@@ -76,10 +76,6 @@ export interface TrajectoryAtlasContextValue {
   selectedTrajectory: Trajectory | null;
   setRowSelection: (t: Trajectory | null) => void;
 
-  /** Step names hidden from the icicle path tree. Toggle to add them back. */
-  hiddenStepNames: Set<string>;
-  toggleHiddenStep: (name: string) => void;
-
   stats: Stats;
   datasets: string[];
   models: string[];
@@ -109,9 +105,6 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
   const [datasetFilter, setDatasetFilter] = useState<string | "all">("all");
   const [modelFilter, setModelFilter] = useState<string | "all">("all");
   const [selectedTrajectory, setSelectedTrajectoryState] = useState<Trajectory | null>(null);
-  const [hiddenStepNames, setHiddenStepNames] = useState<Set<string>>(
-    () => new Set(["task", "thought", "observation"]),
-  );
 
   // Mosaic refs (kept stable across re-renders)
   const coordinatorRef = useRef<Coordinator | null>(null);
@@ -178,6 +171,7 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       try {
         setState({ status: "loading-parquet", message: SOURCES[source].label });
         // Drop existing tables before re-creating.
+        await coord.exec(`DROP TABLE IF EXISTS traj_summary`);
         await coord.exec(`DROP TABLE IF EXISTS steps`);
         await coord.exec(`DROP TABLE IF EXISTS trajectories`);
         await loadSource(coord, source);
@@ -231,6 +225,57 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
              s.duration AS duration,
              s.ok AS ok
       FROM trajectories t, UNNEST(t.steps) AS u(s)
+    `);
+
+    // Per-trajectory summary table — one row per id, with the entry tool and
+    // the top-2 dominant tools (by step count, ties broken by name) plus the
+    // outcome. Used by the sankey, which renders entry → dominant 1 → dominant 2
+    // → outcome and benefits from these being primitive columns rather than
+    // computed per-query.
+    setState({ status: "creating-tables", table: "traj_summary" });
+    await coord.exec(`DROP TABLE IF EXISTS traj_summary`);
+    // The dominant + entry computations exclude both meta steps (task /
+    // thought / observation) AND submit-class steps (final_answer / finish
+    // / submit / done). The latter is the terminator — it's the LAST step
+    // by definition and shouldn't appear in the entry/dominant columns
+    // (otherwise the sankey shows nonsensical flows like
+    // final_answer → python_interpreter → success).
+    await coord.exec(`
+      CREATE TABLE traj_summary AS
+      WITH tool_counts AS (
+        SELECT id, name, COUNT(*) AS cnt
+        FROM steps
+        WHERE name NOT IN ('task','thought','observation',
+                           'final_answer','finish','submit','done')
+        GROUP BY id, name
+      ),
+      ranked AS (
+        SELECT id, name, cnt,
+               ROW_NUMBER() OVER (PARTITION BY id ORDER BY cnt DESC, name) AS rk
+        FROM tool_counts
+      ),
+      dominant AS (
+        SELECT id,
+               MAX(name) FILTER (WHERE rk = 1) AS dominant_1,
+               MAX(name) FILTER (WHERE rk = 2) AS dominant_2
+        FROM ranked
+        GROUP BY id
+      ),
+      entry AS (
+        SELECT id, arg_min(name, step_idx) AS entry_tool
+        FROM steps
+        WHERE name NOT IN ('task','thought','observation',
+                           'final_answer','finish','submit','done')
+        GROUP BY id
+      )
+      SELECT t.id,
+             t.outcome,
+             e.entry_tool,
+             d.dominant_1,
+             d.dominant_2
+      FROM trajectories t
+      LEFT JOIN entry e USING (id)
+      LEFT JOIN dominant d USING (id)
     `);
   }
 
@@ -308,15 +353,6 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
     return parts.length ? parts.join(" AND ") : null;
   }
 
-  const toggleHiddenStep = useCallback((name: string) => {
-    setHiddenStepNames((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
-  }, []);
-
   const setRowSelection = useCallback((t: Trajectory | null) => {
     // The rowSelection vgplot Selection is intentionally *not* mutated here:
     // selecting a row should highlight (not filter) other panels, which
@@ -346,8 +382,6 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       setModelFilter,
       selectedTrajectory,
       setRowSelection,
-      hiddenStepNames,
-      toggleHiddenStep,
       stats,
       datasets,
       models,
@@ -364,8 +398,6 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       datasetFilter,
       modelFilter,
       selectedTrajectory,
-      hiddenStepNames,
-      toggleHiddenStep,
       stats,
       datasets,
       models,

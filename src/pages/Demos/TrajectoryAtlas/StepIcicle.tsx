@@ -1,14 +1,14 @@
 // Trajectory Atlas — StepIcicle. Thin wrapper around the generic
-// IcicleMosaicClient. Filters out meta-steps so each visible level is
-// the i-th tool call; the sankey owns the user-toggleable chip filter
-// because that's where label collisions actually hurt.
+// IcicleMosaicClient. Shows every message in the trajectory (task, thought,
+// observation, and every tool call) and every distinct tool name; deep
+// trajectories scroll within the panel. The sankey takes the role of
+// summarising entry → dominant → outcome because it can collapse the long
+// tail; the icicle's job is full fidelity.
 
 import { useColorMode } from "../../../components/ui/color-mode";
 import { IcicleMosaicClient } from "../../../components/IcicleMosaicClient";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { accentRamp } from "./taxonomy";
-
-const ICICLE_HIDDEN_STEPS = ["task", "thought", "observation"];
 
 export function StepIcicle() {
   const { coordinator, crossfilter, selectedTrajectory } = useTrajectoryAtlas();
@@ -28,9 +28,10 @@ export function StepIcicle() {
       levelCol="step_idx"
       categoryCol="name"
       selection={crossfilter}
-      filterStepNames={ICICLE_HIDDEN_STEPS}
-      maxNodesPerLevel={12}
-      minRowHeight={24}
+      // No filter, no top-K — render every message and every tool. Tiny
+      // cells skip their labels but remain hoverable, and the row height
+      // floor + container scroll keep deep trajectories readable.
+      minRowHeight={28}
       colorRamp={(level, maxLevel) =>
         accentRamp(level / Math.max(1, maxLevel - 1), colorMode === "dark")
       }

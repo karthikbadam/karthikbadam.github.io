@@ -31,6 +31,16 @@ import { Query, sql, column, verbatim } from "@uwdata/mosaic-sql";
 import type { Coordinator, MosaicClient, Selection as VgSelection } from "@uwdata/mosaic-core";
 import { Group } from "@visx/group";
 import { Bar } from "@visx/shape";
+import {
+  chartFg,
+  chartFgInverse,
+  chartLabelStyle,
+  chartValueStyle,
+  tooltipContainerStyle,
+  tooltipMetaStyle,
+  tooltipRowStyle,
+  tooltipTitleStyle,
+} from "./chartStyles";
 
 export type IcicleColorRamp = (level: number, maxLevel: number, dark: boolean) => string;
 
@@ -313,30 +323,24 @@ export function IcicleMosaicClient({
                   onMouseEnter={() => setHover(r)}
                   onMouseLeave={() => setHover(null)}
                 />
-                {r.w > 36 && r.h > 14 && (
+                {r.w > 50 && r.h > 16 && (
                   <text
-                    x={r.x + 6}
-                    y={r.y + r.h / 2 + 3}
-                    fontSize="10"
-                    fontWeight="500"
-                    fontFamily="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+                    x={r.x + 8}
+                    y={r.y + r.h / 2 + 4}
                     fill={
                       r.node.level > maxLevelInData * 0.55
-                        ? dark
-                          ? "#1a202c"
-                          : "#ffffff"
-                        : dark
-                        ? "#f7fafc"
-                        : "#1a202c"
+                        ? chartFgInverse(dark)
+                        : chartFg(dark)
                     }
                     pointerEvents="none"
-                    opacity={dimmed ? 0.35 : 0.95}
+                    opacity={dimmed ? 0.4 : 0.95}
+                    style={chartLabelStyle}
                   >
                     {r.node.isOther
                       ? `other (${r.node.otherCount})`
                       : labelFor(r.node.category)}
-                    {r.w > 110 && !r.node.isOther ? (
-                      <tspan opacity="0.6" dx="6" fontFamily="inherit">
+                    {r.w > 120 && !r.node.isOther ? (
+                      <tspan dx="8" style={chartValueStyle}>
                         {((r.node.n / totalN) * 100).toFixed(1)}%
                       </tspan>
                     ) : null}
@@ -350,47 +354,31 @@ export function IcicleMosaicClient({
       {hover && (
         <div
           style={{
-            position: "absolute",
+            ...tooltipContainerStyle(dark, 260),
             left: Math.min(hover.x + 8, Math.max(0, size.w - 280)),
             top: Math.max(0, hover.y - 6),
-            background: dark ? "#1a202c" : "#ffffff",
-            color: dark ? "#f7fafc" : "#1a202c",
-            border: `1px solid ${dark ? "#2d3748" : "#e2e8f0"}`,
-            borderRadius: 6,
-            boxShadow: "0 4px 12px rgba(0,0,0,.18)",
-            padding: "6px 10px",
-            fontSize: 11,
-            pointerEvents: "none",
-            width: 260,
-            maxWidth: 260,
-            zIndex: 5,
-            lineHeight: 1.5,
-            whiteSpace: "normal",
-            wordBreak: "break-all",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+          <div style={tooltipTitleStyle}>
             Step {hover.node.level + 1} ·{" "}
             {hover.node.isOther
               ? `other (${hover.node.otherCount})`
               : labelFor(hover.node.category)}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", color: dark ? "#cbd5e0" : "#4a5568" }}>
+          <div style={tooltipRowStyle(dark)}>
             <span>trajectories</span>
-            <b style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: "inherit", fontWeight: 500 }}>
+            <b style={{ color: "inherit", fontWeight: 500 }}>
               {hover.node.n.toLocaleString()}
             </b>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", color: dark ? "#cbd5e0" : "#4a5568" }}>
+          <div style={tooltipRowStyle(dark)}>
             <span>share of total</span>
-            <b style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: "inherit", fontWeight: 500 }}>
+            <b style={{ color: "inherit", fontWeight: 500 }}>
               {((hover.node.n / totalN) * 100).toFixed(1)}%
             </b>
           </div>
           {!hover.node.isOther && hover.node.path && (
-            <div style={{ marginTop: 6, fontSize: 10, color: dark ? "#a0aec0" : "#718096", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
-              {hover.node.path}
-            </div>
+            <div style={tooltipMetaStyle(dark)}>{hover.node.path}</div>
           )}
         </div>
       )}

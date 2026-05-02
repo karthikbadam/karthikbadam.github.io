@@ -1,13 +1,15 @@
-// Trajectory Atlas — OutcomeSankey. Thin wrapper around SankeyMosaicClient
-// that supplies the entry-tool / dominant-tool / outcome columns and the
-// Observable10 per-category palette resolved to concrete hex (avoids CSS-var
-// resolution flakiness inside the SVG render path).
+// Trajectory Atlas — OutcomeSankey. Pulls per-trajectory aggregates from the
+// `traj_summary` table the context built at load time:
+//   entry_tool   — first non-meta tool the trajectory invokes
+//   dominant_1   — most-used tool overall
+//   dominant_2   — second-most-used tool (null when the trajectory only ever
+//                  uses one tool)
+//   outcome      — success / partial / fail
 //
-// The user-controllable chip filter (rendered in the panel header by the
-// Dashboard) drives `hiddenStepNames` from the context; we forward it as
-// a SQL WHERE clause so the sankey ignores those step names entirely.
+// Each column's `expr` is `any_value(col)` because traj_summary is already
+// one-row-per-id; the aggregation is a no-op needed only to satisfy the
+// SankeyMosaicClient's GROUP BY id pipeline.
 
-import { useMemo } from "react";
 import { useColorMode } from "../../../components/ui/color-mode";
 import { SankeyMosaicClient, type SankeyColumnSpec } from "../../../components/SankeyMosaicClient";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
@@ -15,21 +17,10 @@ import { OUTCOME_ORDER, categoryFor, categoryHex, outcomeHex } from "./taxonomy"
 import type { Category, Outcome } from "./types";
 
 const COLUMNS: SankeyColumnSpec[] = [
-  {
-    name: "entry",
-    label: "Entry tool",
-    expr: "arg_min(name, step_idx)",
-  },
-  {
-    name: "dominant",
-    label: "Dominant tool",
-    expr: "mode(name)",
-  },
-  {
-    name: "outcome",
-    label: "Outcome",
-    expr: "any_value(outcome)",
-  },
+  { name: "entry", label: "Entry tool", expr: "any_value(entry_tool)" },
+  { name: "dominant_1", label: "1st dominant", expr: "any_value(dominant_1)" },
+  { name: "dominant_2", label: "2nd dominant", expr: "any_value(dominant_2)" },
+  { name: "outcome", label: "Outcome", expr: "any_value(outcome)" },
 ];
 
 const ORDERINGS = {
@@ -37,44 +28,29 @@ const ORDERINGS = {
 };
 
 export function OutcomeSankey() {
-  const { coordinator, crossfilter, hiddenStepNames } = useTrajectoryAtlas();
+  const { coordinator, crossfilter } = useTrajectoryAtlas();
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
 
-  // The list of names hidden from the sankey is whatever the user has chosen
-  // via the chip filter — defaults seeded by the context to task/thought/observation.
-  const hiddenList = Array.from(hiddenStepNames);
-  const whereExpr = useMemo(() => {
-    if (!hiddenList.length) return null;
-    const list = hiddenList.map((n) => `'${n.replace(/'/g, "''")}'`).join(",");
-    return `name NOT IN (${list})`;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hiddenList.join("|")]);
-
-  const palette = useMemo(
-    () =>
-      (column: string, value: string): string => {
-        if (column === "outcome") return outcomeHex(value as Outcome, dark);
-        const cat = categoryFor(value) as Category;
-        return categoryHex(cat, dark);
-      },
-    [dark],
-  );
-
   if (!coordinator) return null;
+
+  const palette = (column: string, value: string): string => {
+    if (column === "outcome") return outcomeHex(value as Outcome, dark);
+    const cat = categoryFor(value) as Category;
+    return categoryHex(cat, dark);
+  };
 
   return (
     <SankeyMosaicClient
       coordinator={coordinator}
-      table="steps"
+      table="traj_summary"
       idCol="id"
       columns={COLUMNS}
       selection={crossfilter}
-      whereExpr={whereExpr}
       palette={palette}
       orderings={ORDERINGS}
       dark={dark}
-      maxNodesPerColumn={10}
+      maxNodesPerColumn={11}
     />
   );
 }

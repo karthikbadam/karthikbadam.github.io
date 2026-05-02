@@ -18,6 +18,16 @@ import { clauseList } from "@uwdata/mosaic-core";
 import type { Coordinator, Selection as VgSelection } from "@uwdata/mosaic-core";
 import { Group } from "@visx/group";
 import { Bar } from "@visx/shape";
+import {
+  chartColumnHeaderStyle,
+  chartFg,
+  chartFgMuted,
+  chartLabelStyle,
+  chartValueStyle,
+  tooltipContainerStyle,
+  tooltipRowStyle,
+  tooltipTitleStyle,
+} from "./chartStyles";
 
 export interface SankeyColumnSpec {
   /** Unique column name used as a node-set key. */
@@ -295,17 +305,15 @@ export function SankeyMosaicClient({
                 {showLabel && (
                   <text
                     x={n.col === columns.length - 1 ? n.x - 6 : n.x + n.w + 6}
-                    y={n.y + n.h / 2 + 3}
-                    fontSize="11"
-                    fontWeight="500"
-                    fontFamily="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-                    fill={dark ? "#f7fafc" : "#1a202c"}
+                    y={n.y + n.h / 2 + 4}
+                    fill={chartFg(dark)}
                     textAnchor={n.col === columns.length - 1 ? "end" : "start"}
                     pointerEvents="none"
+                    style={chartLabelStyle}
                   >
                     {n.label}
                     {n.h >= 14 && (
-                      <tspan opacity="0.6" dx="6" fontSize="10" fontFamily="inherit">
+                      <tspan dx="6" style={chartValueStyle}>
                         {n.count.toLocaleString()}
                       </tspan>
                     )}
@@ -334,12 +342,9 @@ export function SankeyMosaicClient({
                 key={`h-${i}`}
                 x={x}
                 y={12}
-                fontSize="10"
-                fontWeight="600"
-                letterSpacing="0.06em"
-                fill={dark ? "#a0aec0" : "#718096"}
+                fill={chartFgMuted(dark)}
                 textAnchor={anchor}
-                style={{ textTransform: "uppercase" }}
+                style={chartColumnHeaderStyle}
               >
                 {labelText}
               </text>
@@ -350,35 +355,19 @@ export function SankeyMosaicClient({
       {hover && (
         <div
           style={{
-            position: "absolute",
+            ...tooltipContainerStyle(dark, 220),
             left: Math.min((hover.x0 + hover.x1) / 2, Math.max(0, size.w - 240)),
             top: Math.max(0, Math.min((hover.y0 + hover.y1) / 2 - 10, size.h - 80)),
-            background: dark ? "#1a202c" : "#ffffff",
-            color: dark ? "#f7fafc" : "#1a202c",
-            border: `1px solid ${dark ? "#2d3748" : "#e2e8f0"}`,
-            borderRadius: 6,
-            boxShadow: "0 4px 12px rgba(0,0,0,.18)",
-            padding: "6px 10px",
-            fontSize: 11,
-            pointerEvents: "none",
-            width: 220,
-            maxWidth: 220,
-            zIndex: 5,
-            lineHeight: 1.5,
-            whiteSpace: "normal",
-            wordBreak: "break-all",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+          <div style={tooltipTitleStyle}>
             {hover.from === OTHER_KEY ? "other" : hover.from}
             {" → "}
             {hover.to === OTHER_KEY ? "other" : hover.to}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", color: dark ? "#cbd5e0" : "#4a5568" }}>
+          <div style={tooltipRowStyle(dark)}>
             <span>trajectories</span>
-            <b style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: "inherit", fontWeight: 500 }}>
-              {hover.count.toLocaleString()}
-            </b>
+            <b style={{ color: "inherit", fontWeight: 500 }}>{hover.count.toLocaleString()}</b>
           </div>
         </div>
       )}
@@ -439,10 +428,10 @@ function layoutSankey(
 ): { nodes: NodeLayout[]; links: LinkLayout[] } {
   if (!nodeRows.length || !columns.length) return { nodes: [], links: [] };
   const colW = 14;
-  // Reserve room for the labels that hang OFF the column rectangles —
-  // headers row at the top, label text on the right of the last column.
+  // Outcome / last-column labels are anchored to the LEFT of their rect
+  // (textAnchor='end' with x=n.x - 6) so we don't need extra right margin.
   const padLeft = 8;
-  const padRight = 88; // ~80px reserved for outcome labels + their counts
+  const padRight = 8;
   const padTop = 22;
   const padBottom = 8;
   const innerW = Math.max(0, width - padLeft - padRight);
@@ -531,7 +520,12 @@ function layoutSankey(
       y1: dst.y + dstOff,
       t0: srcThickness,
       t1: dstThickness,
-      color: palette(columns[lk.fromCol].name, lk.from),
+      // Color the ribbon by its DESTINATION node's colour. This makes the
+      // sankey read as "where did this lead?" — outcomes (success/fail/partial)
+      // get strong distinct colours flowing INTO them; intermediate columns
+      // inherit the next-step's tool colour. Falls back to the destination's
+      // resolved node colour when the dst was collapsed into "other".
+      color: dst.color,
     });
     fromOff.set(srcKey, srcOff + srcThickness);
     toOff.set(dstKey, dstOff + dstThickness);
