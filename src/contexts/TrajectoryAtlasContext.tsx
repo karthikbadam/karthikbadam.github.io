@@ -76,6 +76,10 @@ export interface TrajectoryAtlasContextValue {
   selectedTrajectory: Trajectory | null;
   setRowSelection: (t: Trajectory | null) => void;
 
+  /** Step names hidden from the icicle path tree. Toggle to add them back. */
+  hiddenStepNames: Set<string>;
+  toggleHiddenStep: (name: string) => void;
+
   stats: Stats;
   datasets: string[];
   models: string[];
@@ -105,6 +109,9 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
   const [datasetFilter, setDatasetFilter] = useState<string | "all">("all");
   const [modelFilter, setModelFilter] = useState<string | "all">("all");
   const [selectedTrajectory, setSelectedTrajectoryState] = useState<Trajectory | null>(null);
+  const [hiddenStepNames, setHiddenStepNames] = useState<Set<string>>(
+    () => new Set(["task", "thought", "observation"]),
+  );
 
   // Mosaic refs (kept stable across re-renders)
   const coordinatorRef = useRef<Coordinator | null>(null);
@@ -298,6 +305,15 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
     return parts.length ? parts.join(" AND ") : null;
   }
 
+  const toggleHiddenStep = useCallback((name: string) => {
+    setHiddenStepNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }, []);
+
   const setRowSelection = useCallback((t: Trajectory | null) => {
     // The rowSelection vgplot Selection is intentionally *not* mutated here:
     // selecting a row should highlight (not filter) other panels, which
@@ -327,6 +343,8 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       setModelFilter,
       selectedTrajectory,
       setRowSelection,
+      hiddenStepNames,
+      toggleHiddenStep,
       stats,
       datasets,
       models,
@@ -343,6 +361,8 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       datasetFilter,
       modelFilter,
       selectedTrajectory,
+      hiddenStepNames,
+      toggleHiddenStep,
       stats,
       datasets,
       models,
