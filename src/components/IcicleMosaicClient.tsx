@@ -10,12 +10,24 @@
  * The component is a real `MosaicClient` (via `makeClient`): it binds to a
  * crossfilter `Selection`, re-queries DuckDB whenever upstream clauses change,
  * and writes its own clause when a cell is clicked.
+ *
+ * Selection is **path-based**: clicking a node highlights only nodes that
+ * share the clicked path's prefix or extension (i.e. ancestors and
+ * descendants in the SAME branch). Sibling nodes that happen to carry the
+ * same label at the same level are dimmed, not highlighted.
+ *
+ * The optional `filterStepNames` prop drops the listed step values from the
+ * tree entirely (used for hiding meta-steps like "task"/"thought"/"observation"
+ * so each level represents the i-th tool call rather than the i-th message).
+ *
+ * The optional `maxNodesPerLevel` prop caps each tree level at K-1 children
+ * plus a synthetic `other (M)` node aggregating the long tail.
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { makeClient } from "@uwdata/mosaic-core";
 import { clauseList } from "@uwdata/mosaic-core";
-import { Query, sql, column } from "@uwdata/mosaic-sql";
+import { Query, sql, column, verbatim } from "@uwdata/mosaic-sql";
 import type { Coordinator, MosaicClient, Selection as VgSelection } from "@uwdata/mosaic-core";
 import { Group } from "@visx/group";
 import { Bar } from "@visx/shape";
@@ -24,27 +36,20 @@ export type IcicleColorRamp = (level: number, maxLevel: number, dark: boolean) =
 
 export interface IcicleMosaicClientProps {
   coordinator: Coordinator;
-  /** Source table; rows are individual steps. */
   table: string;
-  /** Unique trajectory id column. Used to compute click-filter clauses. */
   idCol: string;
-  /** Step-index column (numeric, 0-based). */
   levelCol: string;
-  /** Category column (string label). */
   categoryCol: string;
-  /** Optional crossfilter the icicle reads (and writes click clauses to). */
   selection?: VgSelection | null;
-  /** Optional perf cap. Undefined renders every level present in the data. */
   maxLevels?: number;
-  /** Color of each rect; defaults to a sequential blue ramp (light) / sand (dark). */
+  /** Step values to exclude from the tree (e.g. ["task","thought","observation"]). */
+  filterStepNames?: string[];
+  /** Cap on children per tree level. Excess collapsed into "other (N)". */
+  maxNodesPerLevel?: number;
   colorRamp?: IcicleColorRamp;
-  /** Label resolver for category names. Defaults to identity. */
   labelFor?: (category: string) => string;
-  /** Whether to use the dark color ramp. The site's theme provider supplies this. */
   dark?: boolean;
-  /** Trajectory ids to highlight (e.g. selected row). */
   highlightedTrajIds?: Set<string> | null;
-  /** Optional fired-after-Selection-write callback. */
   onCellClick?: (level: number, category: string, trajIds: Set<string>) => void;
 }
 
@@ -63,6 +68,8 @@ interface TreeNode {
   n: number;
   trajIds: Set<string>;
   children: TreeNode[];
+  isOther?: boolean;
+  otherCount?: number;
 }
 
 interface LayoutRect {
@@ -92,6 +99,8 @@ export function IcicleMosaicClient({
   categoryCol,
   selection,
   maxLevels,
+  filterStepNames,
+  maxNodesPerLevel,
   colorRamp = DEFAULT_RAMP,
   labelFor = (s) => s,
   dark = false,
@@ -102,12 +111,10 @@ export function IcicleMosaicClient({
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [rows, setRows] = useState<PathRow[]>([]);
   const [hover, setHover] = useState<LayoutRect | null>(null);
-  const [localSelection, setLocalSelection] = useState<{ level: number; category: string } | null>(
-    null,
-  );
+  // Selection is path-based: we remember the unique path of the clicked node.
+  const [localSelection, setLocalSelection] = useState<string | null>(null);
   const clientRef = useRef<MosaicClient | null>(null);
 
-  // ResizeObserver — drives the SVG layout responsively.
   useLayoutEffect(() => {
     if (!containerRef.current) return;
     const ro = new ResizeObserver((entries) => {
@@ -118,9 +125,14 @@ export function IcicleMosaicClient({
     return () => ro.disconnect();
   }, []);
 
-  // Build the path-tree query. Group by (step_idx, running prefix) so each
-  // (level, prefix) is one icicle node. The CTE concatenates the running
-  // category path per trajectory.
+  // Build the path-tree query. We layer two CTEs:
+  //   filtered  — drops blacklisted step names and re-indexes step_idx via
+  //               ROW_NUMBER so each visible step is contiguous.
+  //   ranked    — adds the running STRING_AGG path per trajectory.
+  //
+  // The outer SELECT groups by (step_idx, category, path) to produce one row
+  // per icicle node and writes the matching trajectory ids back so a click
+  // can write a `traj_id IN (...)` clause to the upstream selection.
   const buildQuery = useMemo(
     () =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,38 +140,43 @@ export function IcicleMosaicClient({
         const id = column(idCol);
         const lvl = column(levelCol);
         const cat = column(categoryCol);
-        const cap =
-          typeof maxLevels === "number"
-            ? sql`${lvl} < ${maxLevels}`
-            : sql`true`;
 
-        // For the inner ranked CTE, we need the predicate AND the level cap.
-        const rankedQuery = Query.from(table)
-          .select({
-            traj_id: id,
-            step_idx: lvl,
-            category: cat,
-            path: sql`STRING_AGG(${cat}, '>') OVER (PARTITION BY ${id} ORDER BY ${lvl} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)`,
-          })
-          .where(cap);
-        if (predicate) rankedQuery.where(predicate);
+        const filtered = Query.from(table).select({
+          traj_id: id,
+          step_idx: sql`ROW_NUMBER() OVER (PARTITION BY ${id} ORDER BY ${lvl}) - 1`,
+          category: cat,
+        });
+        if (filterStepNames && filterStepNames.length) {
+          const list = filterStepNames
+            .map((n) => `'${n.replace(/'/g, "''")}'`)
+            .join(",");
+          filtered.where(sql`${cat} NOT IN (${verbatim(list)})`);
+        }
 
-        return Query.with({ ranked: rankedQuery })
-          .from("ranked")
-          .select({
-            step_idx: column("step_idx"),
-            category: column("category"),
-            path: column("path"),
-            n: sql`COUNT(DISTINCT traj_id)`,
-            traj_ids: sql`ARRAY_AGG(DISTINCT traj_id)`,
-          })
-          .groupby("step_idx", "category", "path")
+        const ranked = Query.with({ filtered }).from("filtered").select({
+          traj_id: column("traj_id"),
+          step_idx: column("step_idx"),
+          category: column("category"),
+          path: sql`STRING_AGG(category, '>') OVER (PARTITION BY traj_id ORDER BY step_idx ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)`,
+        });
+
+        if (typeof maxLevels === "number") {
+          ranked.where(sql`step_idx < ${maxLevels}`);
+        }
+        if (predicate) ranked.where(predicate);
+
+        return Query.with({ ranked }).from("ranked").select({
+          step_idx: column("step_idx"),
+          category: column("category"),
+          path: column("path"),
+          n: sql`COUNT(DISTINCT traj_id)`,
+          traj_ids: sql`ARRAY_AGG(DISTINCT traj_id)`,
+        }).groupby("step_idx", "category", "path")
           .orderby(column("step_idx"), sql`COUNT(DISTINCT traj_id) DESC`);
       },
-    [table, idCol, levelCol, categoryCol, maxLevels],
+    [table, idCol, levelCol, categoryCol, maxLevels, filterStepNames],
   );
 
-  // Mosaic client lifecycle.
   useEffect(() => {
     if (!coordinator) return;
     const client = makeClient({
@@ -192,32 +209,38 @@ export function IcicleMosaicClient({
     };
   }, [coordinator, selection, buildQuery]);
 
-  // Build hierarchy from path rows + lay out.
   const { rects, totalN, maxLevelInData } = useMemo(() => {
     const tree = buildTree(rows);
+    if (maxNodesPerLevel && maxNodesPerLevel > 1) {
+      collapseTail(tree, maxNodesPerLevel);
+    }
     const totalN = tree.children.reduce((a, c) => a + c.n, 0) || 1;
-    const maxLevelInData =
-      rows.reduce((m, r) => Math.max(m, r.level), -1) + 1; // +1 because levels are 0-based
+    const maxLevelInData = rows.reduce((m, r) => Math.max(m, r.level), -1) + 1;
     const levels = maxLevels ?? Math.max(1, maxLevelInData);
     return {
       rects: layoutTree(tree, size.w || 1, size.h || 1, levels),
       totalN,
       maxLevelInData: levels,
     };
-  }, [rows, size.w, size.h, maxLevels]);
+  }, [rows, size.w, size.h, maxLevels, maxNodesPerLevel]);
 
   function isSelected(rect: LayoutRect): boolean {
-    return (
-      localSelection !== null &&
-      localSelection.level === rect.node.level &&
-      localSelection.category === rect.node.category
-    );
+    return localSelection !== null && rect.node.path === localSelection;
+  }
+
+  function pathRelatedToSelection(rect: LayoutRect): boolean {
+    if (localSelection === null) return true;
+    const a = rect.node.path;
+    const b = localSelection;
+    if (!a || !b) return false;
+    if (a === b) return true;
+    // Prefix match means rect is an ancestor (b is longer) or descendant (a is longer).
+    if (a.length < b.length) return b.startsWith(a + ">");
+    return a.startsWith(b + ">");
   }
 
   function handleClick(rect: LayoutRect) {
-    const next = isSelected(rect)
-      ? null
-      : { level: rect.node.level, category: rect.node.category };
+    const next = isSelected(rect) ? null : rect.node.path;
     setLocalSelection(next);
 
     if (selection && clientRef.current) {
@@ -246,8 +269,7 @@ export function IcicleMosaicClient({
         <Group>
           {rects.map((r, i) => {
             const sel = isSelected(r);
-            const dimmed =
-              localSelection !== null && !sel && !pathContainsSelection(r, localSelection);
+            const dimmed = localSelection !== null && !pathRelatedToSelection(r);
             const hi = highlightedTrajIds && setIntersects(r.node.trajIds, highlightedTrajIds);
             return (
               <Group key={i}>
@@ -265,7 +287,7 @@ export function IcicleMosaicClient({
                       : "var(--chakra-colors-bg-panel)"
                   }
                   strokeWidth={sel ? 2 : hi ? 1.5 : 1}
-                  opacity={dimmed ? 0.25 : 1}
+                  opacity={dimmed ? 0.2 : 1}
                   rx={2}
                   style={{ cursor: "pointer", transition: "opacity .2s" }}
                   onClick={() => handleClick(r)}
@@ -291,8 +313,10 @@ export function IcicleMosaicClient({
                     pointerEvents="none"
                     opacity={dimmed ? 0.35 : 0.95}
                   >
-                    {labelFor(r.node.category)}
-                    {r.w > 110 ? (
+                    {r.node.isOther
+                      ? `other (${r.node.otherCount})`
+                      : labelFor(r.node.category)}
+                    {r.w > 110 && !r.node.isOther ? (
                       <tspan opacity="0.6" dx="6" fontFamily="inherit">
                         {((r.node.n / totalN) * 100).toFixed(1)}%
                       </tspan>
@@ -308,7 +332,7 @@ export function IcicleMosaicClient({
         <div
           style={{
             position: "absolute",
-            left: Math.min(hover.x + 8, size.w - 220),
+            left: Math.min(hover.x + 8, Math.max(0, size.w - 280)),
             top: Math.max(0, hover.y - 6),
             background: dark ? "#1a202c" : "#ffffff",
             color: dark ? "#f7fafc" : "#1a202c",
@@ -318,13 +342,19 @@ export function IcicleMosaicClient({
             padding: "6px 10px",
             fontSize: 11,
             pointerEvents: "none",
-            minWidth: 180,
+            width: 260,
+            maxWidth: 260,
             zIndex: 5,
             lineHeight: 1.5,
+            whiteSpace: "normal",
+            wordBreak: "break-all",
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: 4 }}>
-            Step {hover.node.level + 1} · {labelFor(hover.node.category)}
+            Step {hover.node.level + 1} ·{" "}
+            {hover.node.isOther
+              ? `other (${hover.node.otherCount})`
+              : labelFor(hover.node.category)}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", color: dark ? "#cbd5e0" : "#4a5568" }}>
             <span>trajectories</span>
@@ -338,9 +368,11 @@ export function IcicleMosaicClient({
               {((hover.node.n / totalN) * 100).toFixed(1)}%
             </b>
           </div>
-          <div style={{ marginTop: 6, fontSize: 10, color: dark ? "#a0aec0" : "#718096", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
-            {hover.node.path}
-          </div>
+          {!hover.node.isOther && hover.node.path && (
+            <div style={{ marginTop: 6, fontSize: 10, color: dark ? "#a0aec0" : "#718096", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+              {hover.node.path}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -366,11 +398,9 @@ function buildTree(rows: PathRow[]): TreeNode {
     trajIds: new Set(),
     children: [],
   };
-  // Index by (level, path) for quick parent lookup.
   const byPath = new Map<string, TreeNode>();
   byPath.set("", root);
 
-  // Sort rows by level so parents are inserted before children.
   const sorted = rows.slice().sort((a, b) => a.level - b.level);
   for (const r of sorted) {
     const node: TreeNode = {
@@ -386,7 +416,6 @@ function buildTree(rows: PathRow[]): TreeNode {
     const parent = byPath.get(parentPath) ?? root;
     parent.children.push(node);
   }
-  // Sort siblings by count desc (stable on category for tie-break).
   const sortChildren = (n: TreeNode) => {
     n.children.sort((a, b) => b.n - a.n || a.category.localeCompare(b.category));
     n.children.forEach(sortChildren);
@@ -400,15 +429,42 @@ function parentOf(path: string): string {
   return i < 0 ? "" : path.slice(0, i);
 }
 
+/**
+ * Cap each tree level at `maxNodesPerLevel` children. The (K-1) heaviest are
+ * kept; the rest collapse into a synthetic `other (M)` node that takes their
+ * combined `n` and `trajIds`. Recursion is pruned at the synthetic node.
+ */
+function collapseTail(node: TreeNode, k: number) {
+  if (!node.children.length) return;
+  if (node.children.length > k) {
+    const keep = node.children.slice(0, k - 1);
+    const tail = node.children.slice(k - 1);
+    const tailN = tail.reduce((a, c) => a + c.n, 0);
+    const tailIds = new Set<string>();
+    for (const t of tail) t.trajIds.forEach((id) => tailIds.add(id));
+    const otherNode: TreeNode = {
+      level: tail[0].level,
+      category: "_other",
+      path: `${node.path ? node.path + ">" : ""}_other`,
+      n: tailN,
+      trajIds: tailIds,
+      children: [],
+      isOther: true,
+      otherCount: tail.length,
+    };
+    node.children = [...keep, otherNode];
+  }
+  for (const c of node.children) {
+    if (!c.isOther) collapseTail(c, k);
+  }
+}
+
 function layoutTree(root: TreeNode, width: number, height: number, levels: number): LayoutRect[] {
   const rects: LayoutRect[] = [];
   const levelHeight = height / Math.max(1, levels);
   const total = root.children.reduce((a, c) => a + c.n, 0) || 1;
 
   function recurse(node: TreeNode, x: number, w: number, parentTotal: number) {
-    if (node.level >= levels - 1 + 0) {
-      // we already placed this node; recursion handles children.
-    }
     let cursorX = x;
     for (const child of node.children) {
       const childW = (child.n / parentTotal) * w;
@@ -419,7 +475,7 @@ function layoutTree(root: TreeNode, width: number, height: number, levels: numbe
         w: childW,
         h: levelHeight,
       });
-      if (child.level < levels - 1) {
+      if (child.level < levels - 1 && !child.isOther) {
         recurse(child, cursorX, childW, child.n);
       }
       cursorX += childW;
@@ -427,18 +483,6 @@ function layoutTree(root: TreeNode, width: number, height: number, levels: numbe
   }
   recurse(root, 0, width, total);
   return rects;
-}
-
-function pathContainsSelection(
-  rect: LayoutRect,
-  sel: { level: number; category: string },
-): boolean {
-  // An ancestor or descendant of the selected node should stay highlighted.
-  const tokens = rect.node.path.split(">");
-  if (rect.node.level === sel.level && rect.node.category === sel.category) return true;
-  // Descendant: the selection's category must be at index sel.level in this node's path.
-  if (rect.node.level > sel.level && tokens[sel.level] === sel.category) return true;
-  return false;
 }
 
 function setIntersects(a: Set<string>, b: Set<string>): boolean {
