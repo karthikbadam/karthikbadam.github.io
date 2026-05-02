@@ -36,6 +36,10 @@ export function OutcomeSankey() {
 
   const palette = (column: string, value: string): string => {
     if (column === "outcome") return outcomeHex(value as Outcome, dark);
+    // Surface synthetic placeholder nodes (e.g. "(none)" when a trajectory
+    // had no 2nd dominant tool) as neutral grey so they read as a default
+    // bucket rather than a coloured tool.
+    if (value === "(none)") return dark ? "#4a5568" : "#a0aec0";
     const cat = categoryFor(value) as Category;
     return categoryHex(cat, dark);
   };
