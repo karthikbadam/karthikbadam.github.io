@@ -1,12 +1,4 @@
-import {
-  Box,
-  Container,
-  Grid,
-  GridItem,
-  Heading,
-  HStack,
-  Text,
-} from "@chakra-ui/react";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { TrajectoryStatsPanel } from "./TrajectoryStatsPanel";
@@ -24,67 +16,58 @@ export function Dashboard() {
   }
 
   return (
-    <Box
-      h={{ base: "auto", md: "100%" }}
-      overflow="hidden"
-      display="flex"
-      flexDirection="column"
-      bg="bg.muted"
-      pb={2}
-    >
-      <Container maxW="85ch" px={4} py={4} mx="auto">
-        <Box mb={2}>
-          <Heading as="h1" size="lg" color="accent" mb={1}>
+    <Flex direction="column" h={{ base: "auto", md: "100%" }} bg="bg.muted" overflow="hidden">
+      <Box px={4} pt={3} pb={2}>
+        <Flex align="baseline" gap={3} flexWrap="wrap" mb={2}>
+          <Heading as="h1" size="md" color="accent" fontWeight="semibold">
             Visualizing Agent Trajectories
           </Heading>
-          <HStack gap={2} alignItems="baseline" flexWrap="wrap">
-            <Text fontSize="sm" color="gray.fg">
-              Step icicle reveals the most-traveled paths; outcome sankey traces
-              entry actions through dominant tools to outcomes; the table cross-filters with both.
-            </Text>
-          </HStack>
-        </Box>
+          <Text fontSize="sm" color="gray.fg" maxW="80ch">
+            Each step is one message in the agent's run — a user task, a tool call, an
+            observation, or an assistant thought. Click any node or row to cross-filter.
+          </Text>
+        </Flex>
         <TrajectoryStatsPanel />
-      </Container>
+      </Box>
 
-      <Grid
-        templateColumns={{ base: "1fr", md: "1fr 1fr" }}
-        templateRows={{ base: "auto auto auto", md: "1fr 1fr" }}
+      <Flex
+        direction={{ base: "column", md: "row" }}
+        flex={2}
+        minH={0}
         gap={2}
-        flex={1}
         px={4}
         overflow="hidden"
       >
-        <GridItem overflow="hidden">
+        <Box flex={1.05} minW={0} minH={0}>
           <TrajectoryPanel
             title="Step Icicle"
-            subtitle="Step depth (rows) · width = share of trajectories taking this path"
+            subtitle="step depth (rows) · width = share of trajectories taking this path"
           >
             <StepIcicle />
           </TrajectoryPanel>
-        </GridItem>
-        <GridItem overflow="hidden">
+        </Box>
+        <Box flex={1} minW={0} minH={0}>
           <TrajectoryPanel
             title="Outcome Sankey"
-            subtitle="Entry action → dominant action → outcome · click a ribbon"
+            subtitle="entry tool → dominant tool → outcome · click a ribbon"
           >
             <OutcomeSankey />
           </TrajectoryPanel>
-        </GridItem>
+        </Box>
+      </Flex>
 
-        <GridItem colSpan={{ base: 1, md: 2 }} overflow="hidden">
-          <TrajectoryPanel
-            title="Trajectories"
-            subtitle="sort any column, click to inspect"
-          >
-            <TrajectoryTable />
-          </TrajectoryPanel>
-        </GridItem>
-      </Grid>
+      <Box flex={1.4} minH={0} px={4} pb={2} pt={2} overflow="hidden">
+        <TrajectoryPanel
+          title="Trajectories"
+          subtitle="sort any column, click to inspect"
+        >
+          <TrajectoryTable />
+        </TrajectoryPanel>
+      </Box>
 
       {selectedTrajectory && (
         <DetailPanel traj={selectedTrajectory} onClose={() => setRowSelection(null)} />
       )}
-    </Box>
+    </Flex>
   );
 }

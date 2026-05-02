@@ -213,8 +213,10 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
              t.dataset AS dataset,
              t.model AS model,
              s.idx AS step_idx,
+             s.name AS name,
              s.category AS category,
              s.tool AS tool,
+             s.role AS role,
              s.tokens AS tokens,
              s.duration AS duration,
              s.ok AS ok

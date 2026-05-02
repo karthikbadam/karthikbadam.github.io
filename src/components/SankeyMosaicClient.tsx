@@ -44,6 +44,8 @@ export interface SankeyMosaicClientProps {
   palette?: (column: string, value: string) => string;
   /** Per-column ordering override; values not listed appear after, sorted by count desc. */
   orderings?: Record<string, string[]>;
+  /** Whether to render light or dark mode chrome (tooltip). */
+  dark?: boolean;
   /** Optional fired-after-Selection-write callback. */
   onLinkClick?: (col: number, from: string, to: string, ids: string[]) => void;
 }
@@ -93,6 +95,7 @@ export function SankeyMosaicClient({
   whereExpr,
   palette = DEFAULT_PALETTE,
   orderings,
+  dark = false,
   onLinkClick,
 }: SankeyMosaicClientProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -276,17 +279,18 @@ export function SankeyMosaicClient({
                 opacity={0.95}
               />
               <text
-                x={n.col === columns.length - 1 ? n.x - 8 : n.x + n.w + 8}
-                y={n.y + n.h / 2 + 4}
-                fontSize="13"
+                x={n.col === columns.length - 1 ? n.x - 6 : n.x + n.w + 6}
+                y={n.y + n.h / 2 + 3}
+                fontSize="11"
                 fontWeight="500"
-                fill="var(--chakra-colors-fg)"
+                fontFamily="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+                fill={dark ? "#f7fafc" : "#1a202c"}
                 textAnchor={n.col === columns.length - 1 ? "end" : "start"}
                 pointerEvents="none"
               >
                 {n.label}
-                {n.h > 16 && (
-                  <tspan opacity="0.6" dx="6" fontSize="11">
+                {n.h > 14 && (
+                  <tspan opacity="0.6" dx="6" fontSize="10" fontFamily="inherit">
                     {n.count.toLocaleString()}
                   </tspan>
                 )}
@@ -306,11 +310,11 @@ export function SankeyMosaicClient({
               <text
                 key={`h-${i}`}
                 x={x}
-                y={12}
-                fontSize="11"
+                y={10}
+                fontSize="9"
                 fontWeight="600"
-                letterSpacing="0.04em"
-                fill="var(--chakra-colors-fg-muted)"
+                letterSpacing="0.06em"
+                fill={dark ? "#a0aec0" : "#718096"}
                 textAnchor={anchor}
                 style={{ textTransform: "uppercase" }}
               >
@@ -322,18 +326,31 @@ export function SankeyMosaicClient({
       </svg>
       {hover && (
         <div
-          className="ta-tooltip"
           style={{
+            position: "absolute",
             left: Math.min((hover.x0 + hover.x1) / 2, size.w - 220),
             top: Math.max(0, Math.min((hover.y0 + hover.y1) / 2 - 10, size.h - 80)),
+            background: dark ? "#1a202c" : "#ffffff",
+            color: dark ? "#f7fafc" : "#1a202c",
+            border: `1px solid ${dark ? "#2d3748" : "#e2e8f0"}`,
+            borderRadius: 6,
+            boxShadow: "0 4px 12px rgba(0,0,0,.18)",
+            padding: "6px 10px",
+            fontSize: 11,
+            pointerEvents: "none",
+            minWidth: 180,
+            zIndex: 5,
+            lineHeight: 1.5,
           }}
         >
-          <div className="ta-t-title">
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>
             {hover.from} → {hover.to}
           </div>
-          <div className="ta-t-row">
+          <div style={{ display: "flex", justifyContent: "space-between", color: dark ? "#cbd5e0" : "#4a5568" }}>
             <span>trajectories</span>
-            <b>{hover.count.toLocaleString()}</b>
+            <b style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: "inherit", fontWeight: 500 }}>
+              {hover.count.toLocaleString()}
+            </b>
           </div>
         </div>
       )}

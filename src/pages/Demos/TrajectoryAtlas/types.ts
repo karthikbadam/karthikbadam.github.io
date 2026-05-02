@@ -1,6 +1,9 @@
 // Trajectory Atlas — shared types.
 
 export type Category =
+  | "task"
+  | "thought"
+  | "observation"
   | "plan"
   | "search"
   | "read"
@@ -15,8 +18,10 @@ export type Outcome = "success" | "partial" | "fail";
 
 export interface Step {
   idx: number;
+  name: string;             // tool name OR "task" / "thought" / "observation"
   category: Category;
-  tool: string;
+  tool: string;             // alias of `name` kept for back-compat
+  role: string;             // user / assistant / tool
   tokens: number;
   duration: number;
   ok: boolean;
@@ -34,31 +39,10 @@ export interface Trajectory {
   reward: number;
   cost: number;
   tools_used: string[];
+  step_tools: string[];        // flat per-step tool name (matches steps[].name)
+  step_categories: string[];   // flat per-step category for fast colour resolution
   steps: Step[];
 }
-
-export type IcicleSelection = {
-  kind: "icicle";
-  level: number;
-  category: Category;
-  trajIds: Set<string>;
-};
-
-export type SankeySelection = {
-  kind: "sankey";
-  fromCol: number;
-  from: string;
-  to: string;
-  trajIds: Set<string>;
-};
-
-export type RowSelection = {
-  kind: "row";
-  trajId: string;
-  traj: Trajectory;
-};
-
-export type Selection = IcicleSelection | SankeySelection | RowSelection;
 
 export type SourceKey = "qwen" | "deepswe";
 

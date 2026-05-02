@@ -34,13 +34,13 @@ export function TrajectoryStatsPanel() {
 
   const passRate = stats.n ? `${((stats.pass / stats.n) * 100).toFixed(1)}%` : "—";
   const avgSteps = stats.avgSteps ? stats.avgSteps.toFixed(1) : "—";
-  const avgCost = formatCost(stats.avgCost);
+  const avgTokens = stats.avgTokens ? formatTokens(stats.avgTokens) : "—";
 
   const items = [
     { label: "Trajectories", value: stats.n.toLocaleString() },
     { label: "Pass rate", value: passRate, accent: true },
     { label: "Avg steps", value: avgSteps },
-    { label: "Avg cost", value: avgCost },
+    { label: "Avg tokens", value: avgTokens },
   ];
 
   return (
@@ -174,10 +174,9 @@ export function TrajectoryStatsPanel() {
   );
 }
 
-function formatCost(v: number): string {
-  if (!Number.isFinite(v) || v <= 0) return "—";
-  if (v >= 1) return `$${v.toFixed(2)}`;
-  if (v >= 0.01) return `$${v.toFixed(3)}`;
-  if (v >= 0.0001) return `$${v.toFixed(4)}`;
-  return `$${v.toExponential(2)}`;
+function formatTokens(t: number): string {
+  if (!Number.isFinite(t) || t <= 0) return "—";
+  if (t < 1000) return Math.round(t).toString();
+  if (t < 1_000_000) return `${(t / 1000).toFixed(1)}k`;
+  return `${(t / 1_000_000).toFixed(2)}M`;
 }

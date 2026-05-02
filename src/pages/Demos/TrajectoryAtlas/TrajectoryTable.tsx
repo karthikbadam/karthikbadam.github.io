@@ -12,7 +12,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { MosaicProvider, Table, useTable, type ColumnDef } from "@any_table/react";
 import type { Selection as VgSelection } from "@uwdata/mosaic-core";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
-import { CAT_COLOR } from "./taxonomy";
+import { CAT_COLOR, categoryFor } from "./taxonomy";
 import type { Category, Outcome, Step, Trajectory } from "./types";
 
 interface ColMeta {
@@ -23,13 +23,12 @@ interface ColMeta {
 }
 
 const COLUMNS: ColumnDef[] = [
-  { key: "id", width: "9rem" },
+  { key: "id", width: "8.5rem" },
   { key: "task", flex: 1, minWidth: "12rem" },
   { key: "model", width: "11rem" },
   { key: "step_count", width: "4.5rem" },
-  { key: "steps", width: "13rem" },
+  { key: "step_tools", width: "16rem" },
   { key: "outcome", width: "6rem" },
-  { key: "duration", width: "5.5rem" },
   { key: "tokens", width: "5rem" },
   { key: "reward", width: "5rem" },
 ];
@@ -39,9 +38,8 @@ const COL_META: Record<string, ColMeta> = {
   task: { key: "task", label: "Task" },
   model: { key: "model", label: "Model", mono: true },
   step_count: { key: "step_count", label: "Steps", align: "right", mono: true },
-  steps: { key: "steps", label: "Path" },
+  step_tools: { key: "step_tools", label: "Path" },
   outcome: { key: "outcome", label: "Outcome" },
-  duration: { key: "duration", label: "Duration", align: "right", mono: true },
   tokens: { key: "tokens", label: "Tokens", align: "right", mono: true },
   reward: { key: "reward", label: "Reward", align: "right", mono: true },
 };
@@ -90,6 +88,8 @@ function TrajectoryTableInner() {
             reward: Number(row.reward ?? 0),
             cost: Number(row.cost ?? 0),
             tools_used: asStringList(row.tools_used),
+            step_tools: asStringList(row.step_tools),
+            step_categories: asStringList(row.step_categories),
             steps: asStepList(row.steps),
           };
           setRowSelection(traj);
@@ -195,8 +195,8 @@ function TrajectoryTableInner() {
                           alignItems: "center",
                           justifyContent: meta?.align === "right" ? "flex-end" : "flex-start",
                           fontFamily: meta?.mono
-                            ? "var(--font-mono, ui-monospace)"
-                            : "var(--chakra-fonts-body, inherit)",
+                            ? "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+                            : "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                           fontVariantNumeric: "tabular-nums",
                           color: "var(--chakra-colors-fg)",
                         }}
@@ -238,10 +238,33 @@ function TrajectoryTableInner() {
 function renderCell(column: string, value: unknown): React.ReactNode {
   if (value == null) return "";
   switch (column) {
+    case "step_tools": {
+      const names = asStringList(value);
+      if (!names.length) return null;
+      const max = 24;
+      const shown = names.slice(0, max);
+      const more = names.length - shown.length;
+      return (
+        <div className="ta-step-path">
+          {shown.map((name, i) => {
+            const cat = categoryFor(name);
+            return (
+              <span
+                key={i}
+                className="ta-step-dot"
+                title={`${i + 1}. ${name}`}
+                style={{ background: CAT_COLOR[cat as Category] ?? "var(--chakra-colors-fg-subtle)" }}
+              />
+            );
+          })}
+          {more > 0 && <span className="ta-step-more">+{more}</span>}
+        </div>
+      );
+    }
     case "steps": {
       const steps = asStepList(value);
       if (!steps.length) return null;
-      const max = 16;
+      const max = 24;
       const shown = steps.slice(0, max);
       const more = steps.length - shown.length;
       return (
@@ -250,7 +273,7 @@ function renderCell(column: string, value: unknown): React.ReactNode {
             <span
               key={i}
               className="ta-step-dot"
-              title={`${i + 1}. ${s.tool}${s.category ? ` (${s.category})` : ""}`}
+              title={`${i + 1}. ${s.name || s.tool}`}
               style={{ background: CAT_COLOR[s.category as Category] ?? "var(--chakra-colors-fg-subtle)" }}
             />
           ))}
@@ -261,13 +284,6 @@ function renderCell(column: string, value: unknown): React.ReactNode {
     case "outcome": {
       const o = String(value ?? "") as Outcome;
       return <span className={`ta-outcome-badge ta-outcome-${o}`}>{o}</span>;
-    }
-    case "duration": {
-      const ms = Number(value ?? 0);
-      if (!Number.isFinite(ms) || ms <= 0) return "—";
-      if (ms < 1000) return `${ms}ms`;
-      if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-      return `${Math.floor(ms / 60000)}m ${Math.round((ms % 60000) / 1000)}s`;
     }
     case "tokens": {
       const t = Number(value ?? 0);
@@ -286,8 +302,19 @@ function renderCell(column: string, value: unknown): React.ReactNode {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function asStringList(v: any): string[] {
-  if (Array.isArray(v)) return v.map(String);
-  if (v && typeof v.toArray === "function") return v.toArray().map(String);
+  if (v == null) return [];
+  if (Array.isArray(v)) return v.map((x) => (x == null ? "" : String(x)));
+  if (typeof v.toArray === "function") {
+    return v.toArray().map((x: unknown) => (x == null ? "" : String(x)));
+  }
+  if (typeof v.length === "number" && typeof v.get === "function") {
+    const out: string[] = [];
+    for (let i = 0; i < v.length; i++) {
+      const x = v.get(i);
+      out.push(x == null ? "" : String(x));
+    }
+    return out;
+  }
   return [];
 }
 
@@ -317,10 +344,13 @@ function asStepList(v: any): Step[] {
       // Arrow row proxies sometimes need explicit field access via `toJSON()`.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const o = (typeof (r as any).toJSON === "function" ? (r as any).toJSON() : r) as Record<string, unknown>;
+      const name = String(o.name ?? o.tool ?? "");
       return {
         idx: Number(o.idx ?? 0),
+        name,
         category: String(o.category ?? "tool") as Category,
-        tool: String(o.tool ?? ""),
+        tool: name,
+        role: String(o.role ?? ""),
         tokens: Number(o.tokens ?? 0),
         duration: Number(o.duration ?? 0),
         ok: o.ok == null ? true : Boolean(o.ok),

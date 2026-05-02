@@ -25,7 +25,7 @@ export function StepIcicle() {
       table="steps"
       idCol="traj_id"
       levelCol="step_idx"
-      categoryCol="tool"
+      categoryCol="name"
       selection={crossfilter}
       colorRamp={(level, maxLevel) =>
         accentRamp(level / Math.max(1, maxLevel - 1), colorMode === "dark")

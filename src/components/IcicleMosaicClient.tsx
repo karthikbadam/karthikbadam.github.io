@@ -238,7 +238,10 @@ export function IcicleMosaicClient({
   }
 
   return (
-    <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div
+      ref={containerRef}
+      style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}
+    >
       <svg width={size.w} height={size.h} style={{ display: "block" }}>
         <Group>
           {rects.map((r, i) => {
@@ -269,23 +272,27 @@ export function IcicleMosaicClient({
                   onMouseEnter={() => setHover(r)}
                   onMouseLeave={() => setHover(null)}
                 />
-                {r.w > 60 && r.h > 16 && (
+                {r.w > 36 && r.h > 14 && (
                   <text
-                    x={r.x + 8}
-                    y={r.y + r.h / 2 + 4}
-                    fontSize="12"
+                    x={r.x + 6}
+                    y={r.y + r.h / 2 + 3}
+                    fontSize="10"
                     fontWeight="500"
-                    fontFamily="var(--font-mono, ui-monospace)"
+                    fontFamily="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
                     fill={
                       r.node.level > maxLevelInData * 0.55
-                        ? "var(--chakra-colors-bg-panel)"
-                        : "var(--chakra-colors-fg)"
+                        ? dark
+                          ? "#1a202c"
+                          : "#ffffff"
+                        : dark
+                        ? "#f7fafc"
+                        : "#1a202c"
                     }
                     pointerEvents="none"
                     opacity={dimmed ? 0.35 : 0.95}
                   >
                     {labelFor(r.node.category)}
-                    {r.w > 140 ? (
+                    {r.w > 110 ? (
                       <tspan opacity="0.6" dx="6" fontFamily="inherit">
                         {((r.node.n / totalN) * 100).toFixed(1)}%
                       </tspan>
@@ -299,22 +306,40 @@ export function IcicleMosaicClient({
       </svg>
       {hover && (
         <div
-          className="ta-tooltip"
           style={{
-            left: Math.min(hover.x + 8, size.w - 200),
+            position: "absolute",
+            left: Math.min(hover.x + 8, size.w - 220),
             top: Math.max(0, hover.y - 6),
+            background: dark ? "#1a202c" : "#ffffff",
+            color: dark ? "#f7fafc" : "#1a202c",
+            border: `1px solid ${dark ? "#2d3748" : "#e2e8f0"}`,
+            borderRadius: 6,
+            boxShadow: "0 4px 12px rgba(0,0,0,.18)",
+            padding: "6px 10px",
+            fontSize: 11,
+            pointerEvents: "none",
+            minWidth: 180,
+            zIndex: 5,
+            lineHeight: 1.5,
           }}
         >
-          <div className="ta-t-title">
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>
             Step {hover.node.level + 1} · {labelFor(hover.node.category)}
           </div>
-          <div className="ta-t-row">
+          <div style={{ display: "flex", justifyContent: "space-between", color: dark ? "#cbd5e0" : "#4a5568" }}>
             <span>trajectories</span>
-            <b>{hover.node.n.toLocaleString()}</b>
+            <b style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: "inherit", fontWeight: 500 }}>
+              {hover.node.n.toLocaleString()}
+            </b>
           </div>
-          <div className="ta-t-row">
+          <div style={{ display: "flex", justifyContent: "space-between", color: dark ? "#cbd5e0" : "#4a5568" }}>
             <span>share of total</span>
-            <b>{((hover.node.n / totalN) * 100).toFixed(1)}%</b>
+            <b style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: "inherit", fontWeight: 500 }}>
+              {((hover.node.n / totalN) * 100).toFixed(1)}%
+            </b>
+          </div>
+          <div style={{ marginTop: 6, fontSize: 10, color: dark ? "#a0aec0" : "#718096", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+            {hover.node.path}
           </div>
         </div>
       )}
