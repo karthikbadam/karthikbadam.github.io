@@ -46,6 +46,10 @@ export interface IcicleMosaicClientProps {
   filterStepNames?: string[];
   /** Cap on children per tree level. Excess collapsed into "other (N)". */
   maxNodesPerLevel?: number;
+  /** Minimum row height in CSS pixels. The container scrolls vertically if
+   * `levels * minRowHeight` exceeds available height, so deep trajectories
+   * stay readable. */
+  minRowHeight?: number;
   colorRamp?: IcicleColorRamp;
   labelFor?: (category: string) => string;
   dark?: boolean;
@@ -101,6 +105,7 @@ export function IcicleMosaicClient({
   maxLevels,
   filterStepNames,
   maxNodesPerLevel,
+  minRowHeight = 0,
   colorRamp = DEFAULT_RAMP,
   labelFor = (s) => s,
   dark = false,
@@ -209,7 +214,7 @@ export function IcicleMosaicClient({
     };
   }, [coordinator, selection, buildQuery]);
 
-  const { rects, totalN, maxLevelInData } = useMemo(() => {
+  const { rects, totalN, maxLevelInData, svgHeight } = useMemo(() => {
     const tree = buildTree(rows);
     if (maxNodesPerLevel && maxNodesPerLevel > 1) {
       collapseTail(tree, maxNodesPerLevel);
@@ -217,12 +222,17 @@ export function IcicleMosaicClient({
     const totalN = tree.children.reduce((a, c) => a + c.n, 0) || 1;
     const maxLevelInData = rows.reduce((m, r) => Math.max(m, r.level), -1) + 1;
     const levels = maxLevels ?? Math.max(1, maxLevelInData);
+    const containerH = size.h || 1;
+    const naturalRowH = containerH / Math.max(1, levels);
+    const rowH = Math.max(naturalRowH, minRowHeight);
+    const svgH = Math.max(containerH, rowH * levels);
     return {
-      rects: layoutTree(tree, size.w || 1, size.h || 1, levels),
+      rects: layoutTree(tree, size.w || 1, svgH, levels),
       totalN,
       maxLevelInData: levels,
+      svgHeight: svgH,
     };
-  }, [rows, size.w, size.h, maxLevels, maxNodesPerLevel]);
+  }, [rows, size.w, size.h, maxLevels, maxNodesPerLevel, minRowHeight]);
 
   function isSelected(rect: LayoutRect): boolean {
     return localSelection !== null && rect.node.path === localSelection;
@@ -246,8 +256,11 @@ export function IcicleMosaicClient({
     if (selection && clientRef.current) {
       const client = clientRef.current;
       if (next === null) {
+        // Pass `undefined` (not null) — clauseList encodes null as
+        // list_has_any(field, NULL) which DuckDB rejects. undefined yields
+        // a null predicate that Mosaic interprets as clearing this source.
         selection.update(
-          clauseList(idCol, null, { source: client, clients: new Set([client]) }),
+          clauseList(idCol, undefined, { source: client, clients: new Set([client]) }),
         );
       } else {
         const ids = Array.from(rect.node.trajIds);
@@ -263,9 +276,15 @@ export function IcicleMosaicClient({
   return (
     <div
       ref={containerRef}
-      style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}
+      style={{
+        width: "100%",
+        height: "100%",
+        position: "relative",
+        overflowY: "auto",
+        overflowX: "hidden",
+      }}
     >
-      <svg width={size.w} height={size.h} style={{ display: "block" }}>
+      <svg width={size.w} height={svgHeight} style={{ display: "block" }}>
         <Group>
           {rects.map((r, i) => {
             const sel = isSelected(r);

@@ -7,7 +7,7 @@ import { OutcomeSankey } from "./OutcomeSankey";
 import { TrajectoryTable } from "./TrajectoryTable";
 import { DetailPanel } from "./DetailPanel";
 import { TrajectoryPanel } from "./TrajectoryPanel";
-import { IcicleStepFilter } from "./IcicleStepFilter";
+import { SankeyStepFilter } from "./SankeyStepFilter";
 
 export function Dashboard() {
   const { state, selectedTrajectory, setRowSelection } = useTrajectoryAtlas();
@@ -49,7 +49,6 @@ export function Dashboard() {
           <TrajectoryPanel
             title="Step Icicle"
             subtitle="step depth (rows) · width = share of trajectories taking this path"
-            right={<IcicleStepFilter />}
           >
             <StepIcicle />
           </TrajectoryPanel>
@@ -58,6 +57,7 @@ export function Dashboard() {
           <TrajectoryPanel
             title="Outcome Sankey"
             subtitle="entry tool → dominant tool → outcome · click a ribbon"
+            right={<SankeyStepFilter />}
           >
             <OutcomeSankey />
           </TrajectoryPanel>

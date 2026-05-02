@@ -245,7 +245,7 @@ export function SankeyMosaicClient({
     if (selection) {
       if (next === null) {
         selection.update(
-          clauseList(idCol, null, { source: sourceRef.current, clients: new Set() }),
+          clauseList(idCol, undefined, { source: sourceRef.current, clients: new Set() }),
         );
       } else {
         const ids = Array.from(lk.trajIds);
@@ -277,51 +277,64 @@ export function SankeyMosaicClient({
               />
             );
           })}
-          {layout.nodes.map((n, i) => (
-            <Group key={`n-${i}`}>
-              <Bar
-                x={n.x}
-                y={n.y}
-                width={n.w}
-                height={Math.max(1, n.h)}
-                fill={n.color}
-                rx={2}
-                opacity={0.95}
-              />
-              <text
-                x={n.col === columns.length - 1 ? n.x - 6 : n.x + n.w + 6}
-                y={n.y + n.h / 2 + 3}
-                fontSize="11"
-                fontWeight="500"
-                fontFamily="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-                fill={dark ? "#f7fafc" : "#1a202c"}
-                textAnchor={n.col === columns.length - 1 ? "end" : "start"}
-                pointerEvents="none"
-              >
-                {n.label}
-                {n.h > 14 && (
-                  <tspan opacity="0.6" dx="6" fontSize="10" fontFamily="inherit">
-                    {n.count.toLocaleString()}
-                  </tspan>
+          {layout.nodes.map((n, i) => {
+            // Drop labels on rectangles too short to fit the text — they
+            // collide otherwise. The "other" node is small but always shown.
+            const showLabel = n.h >= 11 || n.key === OTHER_KEY;
+            return (
+              <Group key={`n-${i}`}>
+                <Bar
+                  x={n.x}
+                  y={n.y}
+                  width={n.w}
+                  height={Math.max(1, n.h)}
+                  fill={n.color}
+                  rx={2}
+                  opacity={0.95}
+                />
+                {showLabel && (
+                  <text
+                    x={n.col === columns.length - 1 ? n.x - 6 : n.x + n.w + 6}
+                    y={n.y + n.h / 2 + 3}
+                    fontSize="11"
+                    fontWeight="500"
+                    fontFamily="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+                    fill={dark ? "#f7fafc" : "#1a202c"}
+                    textAnchor={n.col === columns.length - 1 ? "end" : "start"}
+                    pointerEvents="none"
+                  >
+                    {n.label}
+                    {n.h >= 14 && (
+                      <tspan opacity="0.6" dx="6" fontSize="10" fontFamily="inherit">
+                        {n.count.toLocaleString()}
+                      </tspan>
+                    )}
+                  </text>
                 )}
-              </text>
-            </Group>
-          ))}
+              </Group>
+            );
+          })}
           {columns.map((c, i) => {
             const labelText = c.label ?? c.name;
-            const x =
-              i === 0
-                ? 0
-                : i === columns.length - 1
-                ? size.w
-                : (size.w * i) / Math.max(1, columns.length - 1);
-            const anchor = i === 0 ? "start" : i === columns.length - 1 ? "end" : "middle";
+            // Anchor each header above its column by reading the first node
+            // we placed in that column. Falls back to size endpoints if a
+            // column is empty.
+            const firstNode = layout.nodes.find((n) => n.col === i);
+            const lastCol = i === columns.length - 1;
+            const x = firstNode
+              ? lastCol
+                ? firstNode.x + firstNode.w
+                : firstNode.x
+              : lastCol
+              ? size.w - 8
+              : 8;
+            const anchor = lastCol ? "end" : "start";
             return (
               <text
                 key={`h-${i}`}
                 x={x}
-                y={10}
-                fontSize="9"
+                y={12}
+                fontSize="10"
                 fontWeight="600"
                 letterSpacing="0.06em"
                 fill={dark ? "#a0aec0" : "#718096"}
@@ -425,11 +438,15 @@ function layoutSankey(
   palette: (column: string, value: string) => string,
 ): { nodes: NodeLayout[]; links: LinkLayout[] } {
   if (!nodeRows.length || !columns.length) return { nodes: [], links: [] };
-  const colW = 16;
-  const padX = 4;
-  const padY = 18; // leave room for the column header text
-  const innerW = Math.max(0, width - 2 * padX);
-  const innerH = Math.max(0, height - padY - 8);
+  const colW = 14;
+  // Reserve room for the labels that hang OFF the column rectangles —
+  // headers row at the top, label text on the right of the last column.
+  const padLeft = 8;
+  const padRight = 88; // ~80px reserved for outcome labels + their counts
+  const padTop = 22;
+  const padBottom = 8;
+  const innerW = Math.max(0, width - padLeft - padRight);
+  const innerH = Math.max(0, height - padTop - padBottom);
   const nCols = columns.length;
   const gapX = nCols > 1 ? (innerW - nCols * colW) / (nCols - 1) : 0;
 
@@ -459,10 +476,10 @@ function layoutSankey(
     const gapY = 6;
     const totalCount = list.reduce((a, n) => a + n.count, 0) || 1;
     const usableH = Math.max(0, innerH - nGaps * gapY);
-    let y = padY;
+    let y = padTop;
     for (const n of list) {
       const h = (n.count / totalCount) * usableH;
-      const x = padX + ci * (colW + gapX);
+      const x = padLeft + ci * (colW + gapX);
       const layout: NodeLayout = {
         ...n,
         x,
@@ -470,9 +487,7 @@ function layoutSankey(
         w: colW,
         h,
         label: n.key === OTHER_KEY ? "other" : n.key,
-        color: n.key === OTHER_KEY
-          ? "var(--chart-gray)"
-          : palette(col.name, n.key),
+        color: n.key === OTHER_KEY ? "#9498A0" : palette(col.name, n.key),
       };
       orderedNodes.push(layout);
       nodeIndex.set(`${ci}|${n.key}`, layout);

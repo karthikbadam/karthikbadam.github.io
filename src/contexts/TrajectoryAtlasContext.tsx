@@ -213,9 +213,12 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
     `);
     setState({ status: "creating-tables", table: "steps" });
     // UNNEST the per-trajectory steps so icicle/sankey can query directly.
+    // Keep the trajectory id under the same name (`id`) as the parent table
+    // so cross-filter clauses written by either chart match both tables —
+    // AnyTable fetches from `trajectories` and re-uses the same Selection.
     await coord.exec(`
       CREATE TABLE steps AS
-      SELECT t.id AS traj_id,
+      SELECT t.id AS id,
              t.outcome AS outcome,
              t.dataset AS dataset,
              t.model AS model,
