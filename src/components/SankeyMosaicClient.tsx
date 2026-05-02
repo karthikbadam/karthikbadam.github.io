@@ -276,17 +276,17 @@ export function SankeyMosaicClient({
                 opacity={0.95}
               />
               <text
-                x={n.col === columns.length - 1 ? n.x - 6 : n.x + n.w + 6}
+                x={n.col === columns.length - 1 ? n.x - 8 : n.x + n.w + 8}
                 y={n.y + n.h / 2 + 4}
-                fontSize="11"
+                fontSize="13"
                 fontWeight="500"
-                fill="var(--ta-fg)"
+                fill="var(--chakra-colors-fg)"
                 textAnchor={n.col === columns.length - 1 ? "end" : "start"}
                 pointerEvents="none"
               >
                 {n.label}
-                {n.h > 14 && (
-                  <tspan opacity="0.55" dx="6" fontSize="10">
+                {n.h > 16 && (
+                  <tspan opacity="0.6" dx="6" fontSize="11">
                     {n.count.toLocaleString()}
                   </tspan>
                 )}
@@ -307,10 +307,10 @@ export function SankeyMosaicClient({
                 key={`h-${i}`}
                 x={x}
                 y={12}
-                fontSize="10"
+                fontSize="11"
                 fontWeight="600"
                 letterSpacing="0.04em"
-                fill="var(--ta-fg-subtle)"
+                fill="var(--chakra-colors-fg-muted)"
                 textAnchor={anchor}
                 style={{ textTransform: "uppercase" }}
               >

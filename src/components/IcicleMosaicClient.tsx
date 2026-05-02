@@ -254,7 +254,13 @@ export function IcicleMosaicClient({
                   width={Math.max(0, r.w - 2)}
                   height={Math.max(0, r.h - 2)}
                   fill={colorRamp(r.node.level, maxLevelInData, dark)}
-                  stroke={sel ? "var(--ta-accent)" : hi ? "var(--ta-accent)" : "var(--ta-bg)"}
+                  stroke={
+                    sel
+                      ? "var(--chakra-colors-accent)"
+                      : hi
+                      ? "var(--chakra-colors-accent)"
+                      : "var(--chakra-colors-bg-panel)"
+                  }
                   strokeWidth={sel ? 2 : hi ? 1.5 : 1}
                   opacity={dimmed ? 0.25 : 1}
                   rx={2}
@@ -263,24 +269,24 @@ export function IcicleMosaicClient({
                   onMouseEnter={() => setHover(r)}
                   onMouseLeave={() => setHover(null)}
                 />
-                {r.w > 42 && r.h > 14 && (
+                {r.w > 60 && r.h > 16 && (
                   <text
-                    x={r.x + 6}
+                    x={r.x + 8}
                     y={r.y + r.h / 2 + 4}
-                    fontSize="10"
+                    fontSize="12"
                     fontWeight="500"
+                    fontFamily="var(--font-mono, ui-monospace)"
                     fill={
                       r.node.level > maxLevelInData * 0.55
-                        ? "var(--ta-bg)"
-                        : "var(--ta-fg)"
+                        ? "var(--chakra-colors-bg-panel)"
+                        : "var(--chakra-colors-fg)"
                     }
                     pointerEvents="none"
-                    opacity={dimmed ? 0.3 : 0.95}
+                    opacity={dimmed ? 0.35 : 0.95}
                   >
                     {labelFor(r.node.category)}
-                    {r.w > 96 ? (
-                      <tspan opacity="0.6">
-                        {" "}
+                    {r.w > 140 ? (
+                      <tspan opacity="0.6" dx="6" fontFamily="inherit">
                         {((r.node.n / totalN) * 100).toFixed(1)}%
                       </tspan>
                     ) : null}
