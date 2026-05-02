@@ -11,6 +11,16 @@ The script handles two distinct trajectory formats:
    ``messages`` list where tool calls are embedded as inline XML blocks
    (``<function=name>...</function>``) inside assistant ``content``.
 
+Each STEP in the output corresponds to exactly one message in the source —
+modelling the actual conversation trajectory rather than collapsing pairs:
+
+  user (task)        first user message    → step name "task"
+  user (observation) subsequent user msgs  → step name "observation"
+  assistant          pure reasoning        → step name "thought"
+  assistant w/ tool  tool-call message     → step name = tool function name
+                                              (e.g. "web_search", "final_answer",
+                                              "execute_bash", "file_editor")
+
 Every column path is exposed as a CLI flag, so new trajectory schemas can
 be processed without code edits.
 
@@ -33,6 +43,7 @@ Usage examples:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import sys
@@ -46,7 +57,6 @@ import pyarrow.parquet as pq
 
 # ---------------------------------------------------------------------------
 # JSONPath-lite resolver
-# Supports the subset we need: $.a.b.c and $.a[0].b
 # ---------------------------------------------------------------------------
 
 _JSONPATH_TOKEN = re.compile(r"\.([A-Za-z_][\w-]*)|\[(\d+)\]")
@@ -60,8 +70,6 @@ def jsonpath_get(obj: Any, path: str | None, default: Any = None) -> Any:
     cursor = obj
     for m in _JSONPATH_TOKEN.finditer(path):
         key, idx = m.group(1), m.group(2)
-        # Auto-decode JSON-encoded string nodes when descending further (some
-        # smolagents exports stash log_data as a JSON string rather than a dict).
         if isinstance(cursor, str) and (key is not None or idx is not None):
             try:
                 cursor = json.loads(cursor)
@@ -83,24 +91,31 @@ def jsonpath_get(obj: Any, path: str | None, default: Any = None) -> Any:
 # Defaults
 # ---------------------------------------------------------------------------
 
+# Maps an extracted function name (or pseudo-name like "task") to a category
+# colour bucket. Used by the demo to colour sankey ribbons + step dots.
 DEFAULT_CATEGORY_RULES = [
-    # (regex, category) – first match wins; applied to extracted code/command
-    (re.compile(r"^\s*final_answer\s*\("), "submit"),
-    (re.compile(r"^\s*(submit|finish|done)\b"), "submit"),
-    (re.compile(r"\bweb_search\s*\("), "search"),
-    (re.compile(r"\bgoogle_search\s*\("), "search"),
-    (re.compile(r"\bvisit_webpage\s*\("), "read"),
-    (re.compile(r"\b(grep_search|codebase_search|find_file|grep)\b"), "search"),
-    (re.compile(r"\bfile_editor\b.*\b(view|open)\b"), "read"),
-    (re.compile(r"\bfile_editor\b.*\b(str_replace|create|insert|write)\b"), "edit"),
-    (re.compile(r"\b(read_file|open_url|view_image)\s*\("), "read"),
-    (re.compile(r"\b(write_file|str_replace|patch|edit)\s*\("), "edit"),
-    (re.compile(r"\bexecute_bash\b"), "exec"),
-    (re.compile(r"\b(bash|run_tests|pytest)\b"), "exec"),
-    (re.compile(r"\b(solve|simplify|symbols|Rational|Fraction|Eq|integrate|limit|factor|factorial|comb|sqrt|sin|cos|tan|log)\s*\("), "exec"),
-    (re.compile(r"\b(api_call|sql_query|calculator|requests\.get|httpx)\b"), "tool"),
-    (re.compile(r"\b(assert|diff_check|lint)\s*\("), "verify"),
+    (re.compile(r"^(task|user_task)$"), "task"),
+    (re.compile(r"^(observation|user_observation|tool_response)$"), "observation"),
+    (re.compile(r"^thought$"), "thought"),
+    (re.compile(r"^final_answer$"), "submit"),
+    (re.compile(r"^(submit|finish|done)$"), "submit"),
+    (re.compile(r"^(web_search|google_search|bing_search|duckduckgo_search)$"), "search"),
+    (re.compile(r"^(grep_search|codebase_search|find_file|grep|search)$"), "search"),
+    (re.compile(r"^(visit_webpage|read_file|open_url|view_image)$"), "read"),
+    (re.compile(r"^(file_editor)$"), "edit"),  # generic; subcommand decides view vs edit
+    (re.compile(r"^(write_file|str_replace|patch|edit|create_file|append_file)$"), "edit"),
+    (re.compile(r"^(execute_bash|bash|python|run_tests|pytest|run_code|shell)$"), "exec"),
+    (re.compile(r"^(solve|simplify|symbols|Rational|Fraction|Eq|integrate|limit|factor|factorial|comb|sqrt|sin|cos|tan|log|exp|sympify)$"), "exec"),
+    (re.compile(r"^(api_call|sql_query|calculator|requests|httpx|fetch)$"), "tool"),
+    (re.compile(r"^(assert|diff_check|lint|verify)$"), "verify"),
 ]
+
+
+def category_for(name: str) -> str:
+    for pat, cat in DEFAULT_CATEGORY_RULES:
+        if pat.search(name):
+            return cat
+    return "tool"
 
 
 FORMAT_PRESETS = {
@@ -118,7 +133,7 @@ FORMAT_PRESETS = {
     },
     "raw_messages": {
         "messages_path": "$.messages",
-        "task_path": None,            # fall back to first user message
+        "task_path": None,
         "model_path": None,
         "dataset_path": None,
         "score_path": None,
@@ -128,19 +143,6 @@ FORMAT_PRESETS = {
         "tool_call_mode": "inline_xml",
         "outcome_mode": "terminal-tool",
     },
-}
-
-
-CATEGORY_LABELS = {
-    "plan": "Plan",
-    "search": "Search",
-    "read": "Read",
-    "edit": "Edit",
-    "exec": "Execute",
-    "tool": "API",
-    "verify": "Verify",
-    "submit": "Submit",
-    "error": "Error",
 }
 
 
@@ -177,7 +179,6 @@ def loose_match(pred: str, gold: str) -> bool:
         return False
     if p == g or p in g or g in p:
         return True
-    # Try numeric equivalence if both look like numbers / fractions
     try:
         from fractions import Fraction
 
@@ -194,8 +195,25 @@ def loose_match(pred: str, gold: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Step extraction
+# Tool-name extraction
 # ---------------------------------------------------------------------------
+
+# Builtins / control-flow we shouldn't surface as the "tool" of a step.
+_BUILTIN_NAMES = {
+    "print", "len", "range", "str", "int", "float", "list", "dict", "set",
+    "tuple", "bool", "sum", "min", "max", "abs", "round", "type", "id",
+    "isinstance", "enumerate", "zip", "map", "filter", "sorted", "reversed",
+    "any", "all", "open", "input", "format", "iter", "next", "hasattr",
+    "getattr", "setattr", "vars", "dir", "globals", "locals", "repr",
+    "hash", "ord", "chr", "bin", "hex", "oct",
+    "if", "for", "while", "with", "try", "except", "raise", "import",
+    "from", "as", "return", "lambda",
+    "slice", "complex", "frozenset", "bytes", "bytearray", "object",
+    "Calling",
+}
+
+# Function-call regex used as a fallback when AST parsing fails.
+_CALL_RE = re.compile(r"\b([a-zA-Z_][\w]*)\s*\(")
 
 
 def _msg_text(content: Any) -> str:
@@ -214,170 +232,163 @@ def _msg_text(content: Any) -> str:
     return str(content)
 
 
-def _classify(code: str, rules: list[tuple[re.Pattern, str]]) -> tuple[str, str]:
-    """Return (category, tool_name). tool_name is the leading function name."""
-    code = code.strip()
+def _first_tool_call_in_code(code: str) -> str:
+    """Find the first non-builtin function call in a Python code blob."""
+    code = (code or "").strip()
     if not code:
-        return "plan", ""
-    tool_match = re.match(r"\s*([A-Za-z_][\w]*)", code)
-    tool = tool_match.group(1) if tool_match else ""
-    for pat, cat in rules:
-        if pat.search(code):
-            return cat, tool
-    return "tool", tool
+        return ""
+    # Prefer AST — robust to nested calls.
+    try:
+        tree = ast.parse(code)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                func = node.func
+                name = ""
+                if isinstance(func, ast.Name):
+                    name = func.id
+                elif isinstance(func, ast.Attribute):
+                    name = func.attr
+                if name and name not in _BUILTIN_NAMES:
+                    return name
+    except SyntaxError:
+        pass
+    # Regex fallback — scan in textual order.
+    for m in _CALL_RE.finditer(code):
+        name = m.group(1)
+        if name not in _BUILTIN_NAMES:
+            return name
+    return ""
 
 
-def _est_tokens(text: str) -> int:
-    return max(1, len(text) // 4)
+def _parse_smolagents_tool_call(content: Any) -> tuple[str, str]:
+    """Return (wrapper_function_name, code_string)."""
+    text = _msg_text(content)
+    if not text:
+        return "", ""
+    # Strip the "Calling tools:\n" prefix some exporters include.
+    body = re.sub(r"^\s*Calling tools:\s*", "", text)
+    # The remainder is a Python literal list of dicts.
+    try:
+        parsed = ast.literal_eval(body)
+    except (ValueError, SyntaxError):
+        return "", text
+    if not isinstance(parsed, list) or not parsed:
+        return "", text
+    first = parsed[0]
+    if not isinstance(first, dict):
+        return "", text
+    fn = first.get("function") or {}
+    wrapper = str(fn.get("name", ""))
+    code = str(fn.get("arguments", "") or "")
+    return wrapper, code
 
 
-def _est_duration_ms(tokens: int) -> int:
-    return tokens * 50
+# ---------------------------------------------------------------------------
+# Per-message step extraction
+# ---------------------------------------------------------------------------
 
 
-def extract_steps_smolagents(
-    messages: list[dict],
-    rules: list[tuple[re.Pattern, str]],
-    code_arg_key: str = "arguments",
-) -> list[dict]:
-    """Pair assistant Thought messages with the following tool-call + tool-response."""
+def extract_steps_smolagents(messages: list[dict]) -> list[dict]:
     steps: list[dict] = []
-    pending_assistant: dict | None = None
+    seen_user = False
     pending_tool_call: dict | None = None
-    step_idx = 0
-
-    def _flush():
-        nonlocal pending_assistant, pending_tool_call, step_idx
-        if pending_assistant is None and pending_tool_call is None:
-            return
-        # First step is always plan; subsequent steps classified by tool call code
-        code = ""
-        tool = ""
-        ok = True
-        if pending_tool_call is not None:
-            tc_text = _msg_text(pending_tool_call.get("content"))
-            # Look for tool calls list inline
-            try:
-                # The text is a Python literal-looking string; search for arguments.
-                m = re.search(
-                    rf"'name':\s*'([^']+)'\s*,\s*'arguments':\s*'(.*?)(?<!\\)'\s*\}}",
-                    tc_text,
-                    flags=re.DOTALL,
-                )
-                if m:
-                    tool = m.group(1)
-                    code = bytes(m.group(2), "utf-8").decode("unicode_escape", errors="replace")
-                else:
-                    code = tc_text
-            except Exception:
-                code = tc_text
-        cat, code_tool = _classify(code, rules) if code else ("plan", "")
-        tool = tool or code_tool or "thought"
-        if step_idx == 0 and not code:
-            cat = "plan"
-        # Token + duration estimates from concatenated assistant + tool response text
-        text_blob = ""
-        if pending_assistant is not None:
-            text_blob += _msg_text(pending_assistant.get("content"))
-        # Note: response is consumed in main loop; we estimate from code length here.
-        text_blob += "\n" + code
-        toks = _est_tokens(text_blob)
-        dur = _est_duration_ms(toks)
-        steps.append(
-            {
-                "idx": step_idx,
-                "category": cat,
-                "tool": tool,
-                "tokens": toks,
-                "duration": dur,
-                "ok": ok,
-            }
-        )
-        step_idx += 1
-        pending_assistant = None
-        pending_tool_call = None
 
     for m in messages:
         role = m.get("role")
-        if role == "assistant":
-            if pending_assistant is not None:
-                _flush()
-            pending_assistant = m
-        elif role in ("tool-call", "tool_call", "tool"):
-            pending_tool_call = m
-        elif role in ("tool-response", "tool_response"):
-            # Mark step ok=False if response contains error markers
-            resp_text = _msg_text(m.get("content"))
-            ok = not bool(re.search(r"\b(Error|Traceback|exception)\b", resp_text, re.IGNORECASE))
-            _flush()
-            if steps:
-                steps[-1]["ok"] = steps[-1]["ok"] and ok
-                # Add response tokens to the last step
-                extra_tokens = _est_tokens(resp_text)
-                steps[-1]["tokens"] += extra_tokens
-                steps[-1]["duration"] = _est_duration_ms(steps[-1]["tokens"])
-        # ignore system / user
-    if pending_assistant is not None or pending_tool_call is not None:
-        _flush()
-    return steps
+        content = m.get("content")
+        text = _msg_text(content)
 
-
-def extract_steps_inline_xml(
-    messages: list[dict],
-    rules: list[tuple[re.Pattern, str]],
-    xml_pattern: re.Pattern,
-) -> list[dict]:
-    steps: list[dict] = []
-    step_idx = 0
-    last_was_assistant = False
-
-    for i, m in enumerate(messages):
-        role = m.get("role")
-        if role != "assistant":
-            # Annotate previous step with error signal if user response indicates error
-            if role == "user" and steps:
-                resp_text = _msg_text(m.get("content"))
-                if re.search(r"(traceback|error:|exit code:\s*[1-9])", resp_text, re.IGNORECASE):
-                    steps[-1]["ok"] = False
-                # Add response tokens to previous step
-                extra = _est_tokens(resp_text)
-                steps[-1]["tokens"] += extra
-                steps[-1]["duration"] = _est_duration_ms(steps[-1]["tokens"])
-            last_was_assistant = False
+        if role == "system":
             continue
 
-        text = _msg_text(m.get("content"))
-        # Tool blocks
-        funcs = list(xml_pattern.finditer(text))
-        if not funcs:
-            cat = "plan"
-            tool = "thought"
-            code = ""
-        else:
-            # Use the first function block as the dominant tool for this step
-            f = funcs[0]
-            tool = f.group(1)
-            body = f.group("body") or ""
-            params = INLINE_XML_PARAM_PATTERN.findall(body)
-            param_blob = " ".join(f"{k}={v}" for k, v in params)
-            code = f"{tool}({param_blob})"
-            cat, _ = _classify(code, rules)
-        toks = _est_tokens(text)
-        dur = _est_duration_ms(toks)
-        steps.append(
-            {
-                "idx": step_idx,
-                "category": cat,
-                "tool": tool,
-                "tokens": toks,
-                "duration": dur,
-                "ok": True,
-            }
-        )
-        step_idx += 1
-        last_was_assistant = True
+        if role == "user":
+            kind = "task" if not seen_user else "observation"
+            seen_user = True
+            steps.append(_make_step(len(steps), name=kind, role="user", text=text))
+            continue
+
+        if role == "assistant":
+            steps.append(_make_step(len(steps), name="thought", role="assistant", text=text))
+            continue
+
+        if role in ("tool-call", "tool_call"):
+            pending_tool_call = m
+            wrapper, code = _parse_smolagents_tool_call(content)
+            tool_name = _first_tool_call_in_code(code) or wrapper or "tool_call"
+            steps.append(_make_step(len(steps), name=tool_name, role="tool", text=code or text))
+            continue
+
+        if role in ("tool-response", "tool_response"):
+            ok = not bool(re.search(r"\b(Error|Traceback|Exception)\b", text, re.IGNORECASE))
+            # Treat tool responses as observations for the trajectory shape.
+            step = _make_step(len(steps), name="observation", role="user", text=text, ok=ok)
+            steps.append(step)
+            pending_tool_call = None
+            continue
 
     return steps
+
+
+def extract_steps_inline_xml(messages: list[dict], xml_pattern: re.Pattern) -> list[dict]:
+    steps: list[dict] = []
+    seen_user = False
+
+    for m in messages:
+        role = m.get("role")
+        text = _msg_text(m.get("content"))
+
+        if role == "system":
+            continue
+
+        if role == "user":
+            kind = "task" if not seen_user else "observation"
+            seen_user = True
+            ok = not bool(re.search(r"(traceback|error:|exit code:\s*[1-9])", text, re.IGNORECASE))
+            steps.append(_make_step(len(steps), name=kind, role="user", text=text, ok=ok))
+            continue
+
+        if role == "assistant":
+            funcs = list(xml_pattern.finditer(text))
+            if not funcs:
+                steps.append(_make_step(len(steps), name="thought", role="assistant", text=text))
+                continue
+            # Each <function=NAME>...</function> block becomes its own tool step.
+            # Most assistant turns have one block; some multi-step exports include
+            # several, and we want to surface each.
+            for f in funcs:
+                tool = f.group(1)
+                body = f.group("body") or ""
+                params = INLINE_XML_PARAM_PATTERN.findall(body)
+                blob = " ".join(f"{k}={v[:60]}" for k, v in params)
+                # Disambiguate file_editor by sub-command if present.
+                if tool == "file_editor":
+                    cmd_match = re.search(r"command\s*=\s*([A-Za-z_]+)", blob)
+                    if cmd_match:
+                        sub = cmd_match.group(1)
+                        if sub in ("view", "open"):
+                            tool = "file_editor.view"
+                        elif sub in ("str_replace", "create", "insert", "write"):
+                            tool = f"file_editor.{sub}"
+                steps.append(_make_step(len(steps), name=tool, role="tool", text=blob))
+            continue
+
+        # Other roles ignored.
+
+    return steps
+
+
+def _make_step(idx: int, name: str, role: str, text: str, ok: bool = True) -> dict:
+    cat = category_for(name)
+    return {
+        "idx": idx,
+        "name": name,
+        "category": cat,
+        "tool": name,                # alias kept for backwards-compat readers
+        "role": role,
+        "tokens": max(1, len(text or "") // 4),
+        "duration": 0,               # no per-message timing in source data
+        "ok": ok,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -393,19 +404,23 @@ def outcome_score_match(score: Any, pred: Any, gold: Any, has_submit: bool) -> s
     )
     if not truthy:
         return "fail" if pred is None else "partial"
-    # Score truthy. Check loose match.
     if pred is not None and gold is not None:
         return "success" if loose_match(pred, gold) else "partial"
     return "success"
 
 
-def outcome_terminal_tool(steps: list[dict], message_cap: int = 80) -> str:
+def outcome_terminal_tool(steps: list[dict], message_cap: int = 100) -> str:
     if not steps:
         return "fail"
-    last = steps[-1]
-    if last["category"] == "submit":
+    # Look at the last 3 steps for a submit-category call. With per-message
+    # extraction the trailing step is often an `observation` after `finish`.
+    tail = steps[-3:]
+    if any(s["category"] == "submit" for s in tail):
+        # Any failure signal in the last few steps demotes to partial.
+        if any(not s["ok"] for s in tail):
+            return "partial"
         return "success"
-    if last["category"] == "error" or any(not s["ok"] for s in steps[-3:]):
+    if any(s["category"] == "error" for s in tail) or any(not s["ok"] for s in tail):
         return "fail"
     if len(steps) >= message_cap:
         return "fail"
@@ -413,15 +428,17 @@ def outcome_terminal_tool(steps: list[dict], message_cap: int = 80) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Main loop
+# Schema
 # ---------------------------------------------------------------------------
 
 
 STEP_STRUCT = pa.struct(
     [
         ("idx", pa.int32()),
+        ("name", pa.string()),
         ("category", pa.string()),
         ("tool", pa.string()),
+        ("role", pa.string()),
         ("tokens", pa.int32()),
         ("duration", pa.int32()),
         ("ok", pa.bool_()),
@@ -442,9 +459,16 @@ SCHEMA = pa.schema(
         ("reward", pa.float32()),
         ("cost", pa.float64()),
         ("tools_used", pa.list_(pa.string())),
+        ("step_tools", pa.list_(pa.string())),
+        ("step_categories", pa.list_(pa.string())),
         ("steps", pa.list_(STEP_STRUCT)),
     ]
 )
+
+
+# ---------------------------------------------------------------------------
+# IO helpers
+# ---------------------------------------------------------------------------
 
 
 def _parse_first_user_task(messages: list[dict]) -> str:
@@ -466,19 +490,6 @@ def detect_format(record: dict) -> str:
     return "smolagents"
 
 
-def detect_tool_call_mode(messages: list[dict]) -> str:
-    for m in messages:
-        if m.get("role") in ("tool-call", "tool_call"):
-            return "structured"
-    # Look for inline xml in assistant content
-    for m in messages:
-        if m.get("role") == "assistant":
-            text = _msg_text(m.get("content"))
-            if INLINE_XML_PATTERN_DEFAULT.search(text):
-                return "inline_xml"
-    return "structured"
-
-
 def _short_dataset(name: str | None, source_tag: str) -> str:
     if not name:
         return source_tag
@@ -497,22 +508,16 @@ def iter_records(path: Path) -> Iterable[dict]:
                 print(f"warn: skipping malformed json line: {e}", file=sys.stderr)
 
 
-def load_category_rules(path: str | None) -> list[tuple[re.Pattern, str]]:
-    if not path:
-        return list(DEFAULT_CATEGORY_RULES)
-    overlay = json.loads(Path(path).read_text())
-    rules: list[tuple[re.Pattern, str]] = []
-    for pattern, category in overlay.items():
-        rules.append((re.compile(pattern), category))
-    rules.extend(DEFAULT_CATEGORY_RULES)
-    return rules
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("input", type=Path, help="Path to source JSONL")
-    p.add_argument("--output", type=Path, required=True, help="Output .parquet path")
-    p.add_argument("--source-tag", default="traj", help="Short tag prefixed to trajectory ids")
+    p.add_argument("input", type=Path)
+    p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--source-tag", default="traj")
     p.add_argument("--format", choices=["auto", "smolagents", "raw_messages"], default="auto")
 
     p.add_argument("--messages-path")
@@ -527,11 +532,8 @@ def main() -> int:
 
     p.add_argument("--tool-call-mode", choices=["structured", "inline_xml", "auto"], default="auto")
     p.add_argument("--inline-xml-pattern", default=None)
-    p.add_argument("--code-arg-key", default="arguments")
 
-    p.add_argument("--category-rules", default=None)
-    p.add_argument("--outcome-mode", choices=["score+match", "terminal-tool", "custom"], default="score+match")
-    p.add_argument("--outcome-rules", default=None)
+    p.add_argument("--outcome-mode", choices=["score+match", "terminal-tool", "auto"], default="auto")
 
     p.add_argument("--batch-size", type=int, default=500)
     p.add_argument("--limit", type=int, default=None)
@@ -545,7 +547,6 @@ def main() -> int:
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
-    # Pre-flight: detect format from first record if --format auto
     first_record = next(iter_records(args.input), None)
     if first_record is None:
         print("error: input has no records", file=sys.stderr)
@@ -554,7 +555,6 @@ def main() -> int:
     fmt = args.format if args.format != "auto" else detect_format(first_record)
     preset = FORMAT_PRESETS[fmt]
 
-    # Resolve column paths (CLI flags override preset)
     paths = {
         "messages": args.messages_path or preset["messages_path"],
         "task": args.task_path if args.task_path is not None else preset["task_path"],
@@ -567,23 +567,10 @@ def main() -> int:
     }
 
     tool_call_mode = (
-        args.tool_call_mode
-        if args.tool_call_mode != "auto"
-        else preset["tool_call_mode"]
+        args.tool_call_mode if args.tool_call_mode != "auto" else preset["tool_call_mode"]
     )
+    outcome_mode = args.outcome_mode if args.outcome_mode != "auto" else preset["outcome_mode"]
 
-    # If still auto, sniff from messages of the first record
-    if tool_call_mode == "auto":
-        msgs0 = jsonpath_get(first_record, paths["messages"], []) or []
-        tool_call_mode = detect_tool_call_mode(msgs0)
-
-    outcome_mode = (
-        args.outcome_mode
-        if args.outcome_mode != "score+match" or fmt == "smolagents"
-        else preset["outcome_mode"]
-    )
-
-    rules = load_category_rules(args.category_rules)
     inline_pattern = (
         re.compile(args.inline_xml_pattern, re.DOTALL)
         if args.inline_xml_pattern
@@ -596,13 +583,12 @@ def main() -> int:
         file=sys.stderr,
     )
 
-    # Streaming write
     writer = pq.ParquetWriter(args.output, SCHEMA)
 
     batch: list[dict] = []
     n = 0
     outcome_hist = Counter()
-    category_hist = Counter()
+    name_hist = Counter()
     step_hist = Counter()
 
     def flush_batch():
@@ -625,23 +611,15 @@ def main() -> int:
         if not isinstance(messages, list):
             continue
 
-        # Steps
         if tool_call_mode == "structured":
-            steps = extract_steps_smolagents(messages, rules, args.code_arg_key)
+            steps = extract_steps_smolagents(messages)
         else:
-            steps = extract_steps_inline_xml(messages, rules, inline_pattern)
+            steps = extract_steps_inline_xml(messages, inline_pattern)
 
-        # First step → plan if there's no explicit reasoning category yet
-        if steps:
-            if steps[0]["category"] not in ("plan",):
-                # If the first assistant turn had no tool call we kept it as "plan";
-                # otherwise force the entry step semantics for icicle: keep it.
-                pass
-            tools_used = sorted({s["tool"] for s in steps if s["tool"]})
-        else:
-            tools_used = []
+        tools_used = sorted({s["name"] for s in steps if s["name"]})
+        step_tools = [s["name"] for s in steps]
+        step_categories = [s["category"] for s in steps]
 
-        # Trajectory metadata
         task_text = jsonpath_get(record, paths["task"]) if paths["task"] else None
         if not task_text:
             task_text = _parse_first_user_task(messages)
@@ -664,10 +642,8 @@ def main() -> int:
 
         if outcome_mode == "score+match":
             outcome = outcome_score_match(score, pred, gold, has_submit)
-        elif outcome_mode == "terminal-tool":
-            outcome = outcome_terminal_tool(steps)
         else:
-            outcome = outcome_score_match(score, pred, gold, has_submit)
+            outcome = outcome_terminal_tool(steps)
 
         reward = {"success": 1.0, "partial": 0.5, "fail": 0.0}[outcome]
         tokens_total = sum(s["tokens"] for s in steps)
@@ -689,13 +665,15 @@ def main() -> int:
                 "reward": float(reward),
                 "cost": float(cost) if cost is not None else 0.0,
                 "tools_used": tools_used,
+                "step_tools": step_tools,
+                "step_categories": step_categories,
                 "steps": steps,
             }
         )
 
         outcome_hist[outcome] += 1
         for s in steps:
-            category_hist[s["category"]] += 1
+            name_hist[s["name"]] += 1
         step_hist[len(steps)] += 1
         n += 1
 
@@ -708,16 +686,14 @@ def main() -> int:
     if args.print_summary:
         print(f"\n[extract_trajectories] wrote {n:,} trajectories to {args.output}", file=sys.stderr)
         print(f"  format         = {fmt}", file=sys.stderr)
-        print(f"  tool_call_mode = {tool_call_mode}", file=sys.stderr)
-        print(f"  outcome_mode   = {outcome_mode}", file=sys.stderr)
         print(f"  outcomes       = {dict(outcome_hist)}", file=sys.stderr)
-        print(f"  categories     = {dict(category_hist.most_common())}", file=sys.stderr)
-        print(
-            f"  step counts    = min={min(step_hist) if step_hist else 0} "
-            f"max={max(step_hist) if step_hist else 0} "
-            f"avg={sum(k*v for k,v in step_hist.items())/max(1,n):.2f}",
-            file=sys.stderr,
-        )
+        print(f"  top step names = {dict(name_hist.most_common(15))}", file=sys.stderr)
+        if step_hist:
+            print(
+                f"  step counts    = min={min(step_hist)} max={max(step_hist)} "
+                f"avg={sum(k*v for k,v in step_hist.items())/max(1,n):.2f}",
+                file=sys.stderr,
+            )
 
     return 0
 
