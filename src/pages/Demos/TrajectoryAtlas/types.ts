@@ -39,8 +39,7 @@ export interface Trajectory {
   reward: number;
   cost: number;
   tools_used: string[];
-  step_tools: string[];        // flat per-step tool name (matches steps[].name)
-  step_categories: string[];   // flat per-step category for fast colour resolution
+  step_tools: string[];   // flat per-step tool name (matches steps[].name)
   steps: Step[];
 }
 
@@ -50,5 +49,4 @@ export interface SourceConfig {
   key: SourceKey;
   label: string;
   parquetUrl: string;
-  hfUrl?: string;
 }

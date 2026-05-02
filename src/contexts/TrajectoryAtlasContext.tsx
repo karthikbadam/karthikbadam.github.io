@@ -1,10 +1,14 @@
 /**
  * Trajectory Atlas — DuckDB-WASM + Mosaic context.
  *
- * Loads the active trajectory parquet, materialises a flat `steps` table for
- * the icicle / sankey path queries, exposes a Mosaic crossfilter Selection
- * that the icicle, sankey, and AnyTable all bind to, and computes top-line
- * KPIs from DuckDB.
+ * Loads the trajectory parquet, materialises a flat `steps` table for the
+ * icicle's path queries and a `traj_summary` table for the sankey, exposes
+ * a Mosaic crossfilter Selection that the icicle, sankey, and AnyTable all
+ * bind to, and computes top-line KPIs via DuckDB.
+ *
+ * The user-visible filters (search box + outcome chips) are pushed into the
+ * crossfilter as a Mosaic clause so every chart reacts in addition to the
+ * KPI strip.
  */
 
 import {
@@ -32,13 +36,11 @@ const SOURCES: Record<SourceKey, SourceConfig> = {
     key: "qwen",
     label: "Qwen2.5 · math + hotpotqa",
     parquetUrl: "/data/trajectory-atlas/qwen-hotpotqa-math.parquet",
-    hfUrl: "https://huggingface.co/Qwen/Qwen2.5-32B-Instruct",
   },
   deepswe: {
     key: "deepswe",
     label: "DeepSWE · Kimi-K2",
     parquetUrl: "/data/trajectory-atlas/deepswe-kimi.parquet",
-    hfUrl: "https://huggingface.co/moonshotai/Kimi-K2-Instruct",
   },
 };
 
@@ -46,44 +48,32 @@ interface Stats {
   n: number;
   pass: number;
   avgSteps: number;
-  avgCost: number;
   avgTokens: number;
 }
 
 export interface TrajectoryAtlasContextValue {
   state: LoadingState;
+  coordinator: Coordinator | null;
+  crossfilter: VgSelection | null;
+
   source: SourceKey;
   sources: Record<SourceKey, SourceConfig>;
   setSource: (s: SourceKey) => void;
-
-  coordinator: Coordinator | null;
-  /** vgplot crossfilter — written to by icicle/sankey clicks; read by AnyTable. */
-  crossfilter: VgSelection | null;
-  /** vgplot single selection that holds the currently inspected trajectory id. */
-  rowSelection: VgSelection | null;
-  /** vgplot single selection for transient hover highlighting. */
-  hover: VgSelection | null;
 
   search: string;
   setSearch: (s: string) => void;
   outcomeFilter: Outcome | "all";
   setOutcomeFilter: (s: Outcome | "all") => void;
-  datasetFilter: string | "all";
-  setDatasetFilter: (s: string | "all") => void;
-  modelFilter: string | "all";
-  setModelFilter: (s: string | "all") => void;
 
   selectedTrajectory: Trajectory | null;
   setRowSelection: (t: Trajectory | null) => void;
 
   stats: Stats;
-  datasets: string[];
-  models: string[];
 
-  /** Builds a SQL predicate combining all current UI filters (search, outcome,
-   * dataset, model). Returns the WHERE-body (without the WHERE keyword), or
-   * null when no filters are active. */
-  buildFilterPredicate: () => string | null;
+  /** SQL WHERE-body (without the keyword) reflecting the user's search +
+   * outcome filters; null when no filters are active. Charts compose this
+   * with their own predicates. */
+  filterPredicate: string | null;
 }
 
 const Ctx = createContext<TrajectoryAtlasContextValue | null>(null);
@@ -93,33 +83,21 @@ function escSql(v: string): string {
 }
 
 export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
-  // UI state
+  const [state, setState] = useState<LoadingState>({ status: "idle" });
   const [source, setSource] = useState<SourceKey>(() => {
     const params = new URLSearchParams(window.location.hash.split("?")[1] || "");
-    const s = params.get("source");
-    return s === "deepswe" ? "deepswe" : "qwen";
+    return params.get("source") === "deepswe" ? "deepswe" : "qwen";
   });
-  const [state, setState] = useState<LoadingState>({ status: "idle" });
   const [search, setSearch] = useState("");
   const [outcomeFilter, setOutcomeFilter] = useState<Outcome | "all">("all");
-  const [datasetFilter, setDatasetFilter] = useState<string | "all">("all");
-  const [modelFilter, setModelFilter] = useState<string | "all">("all");
-  const [selectedTrajectory, setSelectedTrajectoryState] = useState<Trajectory | null>(null);
+  const [selectedTrajectory, setSelectedTrajectory] = useState<Trajectory | null>(null);
+  const [stats, setStats] = useState<Stats>({ n: 0, pass: 0, avgSteps: 0, avgTokens: 0 });
 
-  // Mosaic refs (kept stable across re-renders)
   const coordinatorRef = useRef<Coordinator | null>(null);
   const crossfilterRef = useRef<VgSelection | null>(null);
-  const rowSelectionRef = useRef<VgSelection | null>(null);
-  const hoverRef = useRef<VgSelection | null>(null);
-
-  const [datasets, setDatasets] = useState<string[]>([]);
-  const [models, setModels] = useState<string[]>([]);
-  const [stats, setStats] = useState<Stats>({ n: 0, pass: 0, avgSteps: 0, avgCost: 0, avgTokens: 0 });
-
   const initRef = useRef(false);
   const loadedSourceRef = useRef<SourceKey | null>(null);
 
-  // Initial coordinator setup — runs once.
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
@@ -138,54 +116,51 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
 
         await coord.exec(`INSTALL httpfs; LOAD httpfs;`);
         await coord.exec(`SET threads = 1;`);
-
-        // Selections live for the lifetime of the demo — they survive source
-        // switches so panels keep wiring through.
         crossfilterRef.current = vg.Selection.crossfilter();
-        rowSelectionRef.current = vg.Selection.single();
-        hoverRef.current = vg.Selection.single();
 
-        // Load initial source.
         await loadSource(coord, source);
         loadedSourceRef.current = source;
-        await refreshFacetsAndStats(coord);
+        await refreshStats(coord);
         setState({ status: "ready" });
       } catch (err) {
-        console.error("Failed to initialize TrajectoryAtlas context:", err);
+        console.error("TrajectoryAtlas init failed:", err);
         setState({
           status: "error",
           message: err instanceof Error ? err.message : "Unknown error",
         });
       }
     })();
-  }, [source]);
+  }, []);
 
-  // React to source changes after initial load.
+  // Recompute stats when filters change.
+  useEffect(() => {
+    const coord = coordinatorRef.current;
+    if (!coord || state.status !== "ready") return;
+    refreshStats(coord);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, outcomeFilter, state.status]);
+
+  // React to source switches after initial load.
   useEffect(() => {
     const coord = coordinatorRef.current;
     if (!coord) return;
     if (loadedSourceRef.current === source) return;
-    if (state.status !== "ready" && state.status !== "loading-parquet") return;
-
+    if (state.status !== "ready") return;
     (async () => {
       try {
         setState({ status: "loading-parquet", message: SOURCES[source].label });
-        // Drop existing tables before re-creating.
-        await coord.exec(`DROP TABLE IF EXISTS traj_summary`);
-        await coord.exec(`DROP TABLE IF EXISTS steps`);
-        await coord.exec(`DROP TABLE IF EXISTS trajectories`);
+        await coord.exec("DROP TABLE IF EXISTS traj_summary");
+        await coord.exec("DROP TABLE IF EXISTS steps");
+        await coord.exec("DROP TABLE IF EXISTS trajectories");
         await loadSource(coord, source);
         loadedSourceRef.current = source;
-        // Reset filters and selections on source switch.
         setSearch("");
         setOutcomeFilter("all");
-        setDatasetFilter("all");
-        setModelFilter("all");
-        setSelectedTrajectoryState(null);
-        await refreshFacetsAndStats(coord);
+        setSelectedTrajectory(null);
+        await refreshStats(coord);
         setState({ status: "ready" });
       } catch (err) {
-        console.error("Failed to switch source:", err);
+        console.error("source switch failed:", err);
         setState({
           status: "error",
           message: err instanceof Error ? err.message : "Unknown error",
@@ -196,53 +171,32 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
   }, [source]);
 
   async function loadSource(coord: Coordinator, src: SourceKey) {
-    const baseUrl = window.location.origin;
-    // The site is served under `/`, but during dev the parquet path is just
-    // /data/...; in production with HashRouter the same /data path works.
-    const parquetUrl = `${baseUrl}${SOURCES[src].parquetUrl}`;
+    const url = `${window.location.origin}${SOURCES[src].parquetUrl}`;
     setState({ status: "loading-parquet", message: SOURCES[src].label });
     await coord.exec(`
-      CREATE TABLE trajectories AS
-      SELECT * FROM read_parquet('${parquetUrl}')
+      CREATE TABLE trajectories AS SELECT * FROM read_parquet('${url}')
     `);
     setState({ status: "creating-tables", table: "steps" });
-    // UNNEST the per-trajectory steps so icicle/sankey can query directly.
-    // Keep the trajectory id under the same name (`id`) as the parent table
-    // so cross-filter clauses written by either chart match both tables —
-    // AnyTable fetches from `trajectories` and re-uses the same Selection.
     await coord.exec(`
       CREATE TABLE steps AS
-      SELECT t.id AS id,
-             t.outcome AS outcome,
-             t.dataset AS dataset,
-             t.model AS model,
-             s.idx AS step_idx,
-             s.name AS name,
-             s.category AS category,
-             s.tool AS tool,
-             s.role AS role,
-             s.tokens AS tokens,
+      SELECT t.id       AS id,
+             t.outcome  AS outcome,
+             s.idx      AS step_idx,
+             s.name     AS name,
+             s.tokens   AS tokens,
              s.duration AS duration,
-             s.ok AS ok
+             s.ok       AS ok
       FROM trajectories t, UNNEST(t.steps) AS u(s)
     `);
-
-    // Per-trajectory summary table — one row per id, with the entry tool and
-    // the top-2 dominant tools (by step count, ties broken by name) plus the
-    // outcome. Used by the sankey, which renders entry → dominant 1 → dominant 2
-    // → outcome and benefits from these being primitive columns rather than
-    // computed per-query.
+    // Per-trajectory summary: entry tool + top-2 dominant tools + outcome.
+    // Excludes meta-steps and submit terminators so the sankey columns
+    // represent real actions, not bookkeeping. NULLs (when a trajectory has
+    // no 2nd dominant) become '(none)' so the sankey can route skip-edges
+    // past them.
     setState({ status: "creating-tables", table: "traj_summary" });
-    await coord.exec(`DROP TABLE IF EXISTS traj_summary`);
-    // The dominant + entry computations exclude both meta steps (task /
-    // thought / observation) AND submit-class steps (final_answer / finish
-    // / submit / done). The latter is the terminator — it's the LAST step
-    // by definition and shouldn't appear in the entry/dominant columns
-    // (otherwise the sankey shows nonsensical flows like
-    // final_answer → python_interpreter → success).
     await coord.exec(`
       CREATE TABLE traj_summary AS
-      WITH tool_counts AS (
+      WITH counts AS (
         SELECT id, name, COUNT(*) AS cnt
         FROM steps
         WHERE name NOT IN ('task','thought','observation',
@@ -250,16 +204,15 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
         GROUP BY id, name
       ),
       ranked AS (
-        SELECT id, name, cnt,
+        SELECT id, name,
                ROW_NUMBER() OVER (PARTITION BY id ORDER BY cnt DESC, name) AS rk
-        FROM tool_counts
+        FROM counts
       ),
       dominant AS (
         SELECT id,
                MAX(name) FILTER (WHERE rk = 1) AS dominant_1,
                MAX(name) FILTER (WHERE rk = 2) AS dominant_2
-        FROM ranked
-        GROUP BY id
+        FROM ranked GROUP BY id
       ),
       entry AS (
         SELECT id, arg_min(name, step_idx) AS entry_tool
@@ -270,14 +223,8 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       )
       SELECT t.id,
              t.outcome,
-             -- A trajectory whose only tool calls are submit-class steps
-             -- (e.g. just final_answer) has no entry tool by our criteria.
-             -- Surface it as '(none)' so the flow doesn't go missing.
              COALESCE(e.entry_tool, '(none)') AS entry_tool,
              COALESCE(d.dominant_1, '(none)') AS dominant_1,
-             -- Many trajectories use only ONE distinct tool — dominant_2
-             -- is null for those. Coalesce so they still flow through the
-             -- 2nd-dominant column rather than silently dropping out.
              COALESCE(d.dominant_2, '(none)') AS dominant_2
       FROM trajectories t
       LEFT JOIN entry e USING (id)
@@ -285,130 +232,69 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
     `);
   }
 
-  async function refreshFacetsAndStats(coord: Coordinator) {
-    const dsRows = await coord.query(
-      `SELECT DISTINCT dataset FROM trajectories ORDER BY dataset`,
-    );
-    const mdRows = await coord.query(
-      `SELECT DISTINCT model FROM trajectories ORDER BY model`,
-    );
-    const statsRows = await coord.query(`
+  async function refreshStats(coord: Coordinator) {
+    const where = buildFilterPredicate();
+    const r = await coord.query(`
       SELECT
         COUNT(*) AS n,
         SUM(CASE WHEN outcome = 'success' THEN 1 ELSE 0 END) AS pass,
         AVG(step_count) AS avg_steps,
-        AVG(cost) AS avg_cost,
         AVG(tokens) AS avg_tokens
       FROM trajectories
+      ${where ? `WHERE ${where}` : ""}
     `);
-    const ds = arrowToList(dsRows, "dataset");
-    const md = arrowToList(mdRows, "model");
-    const row = arrowFirstRow(statsRows);
-    setDatasets(ds);
-    setModels(md);
+    const row = arrowFirstRow(r);
     setStats({
       n: Number(row?.n ?? 0),
       pass: Number(row?.pass ?? 0),
       avgSteps: Number(row?.avg_steps ?? 0),
-      avgCost: Number(row?.avg_cost ?? 0),
       avgTokens: Number(row?.avg_tokens ?? 0),
     });
   }
 
-  // Recompute stats whenever filters change.
-  useEffect(() => {
-    const coord = coordinatorRef.current;
-    if (!coord || state.status !== "ready") return;
-    const where = buildWhere();
-    (async () => {
-      const r = await coord.query(`
-        SELECT
-          COUNT(*) AS n,
-          SUM(CASE WHEN outcome = 'success' THEN 1 ELSE 0 END) AS pass,
-          AVG(step_count) AS avg_steps,
-          AVG(cost) AS avg_cost,
-          AVG(tokens) AS avg_tokens
-        FROM trajectories
-        ${where ? `WHERE ${where}` : ""}
-      `);
-      const row = arrowFirstRow(r);
-      setStats({
-        n: Number(row?.n ?? 0),
-        pass: Number(row?.pass ?? 0),
-        avgSteps: Number(row?.avg_steps ?? 0),
-        avgCost: Number(row?.avg_cost ?? 0),
-        avgTokens: Number(row?.avg_tokens ?? 0),
-      });
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, outcomeFilter, datasetFilter, modelFilter, state.status]);
-
-  function buildWhere(): string | null {
+  function buildFilterPredicate(): string | null {
     const parts: string[] = [];
     if (outcomeFilter !== "all") parts.push(`outcome = '${escSql(outcomeFilter)}'`);
-    if (datasetFilter !== "all") parts.push(`dataset = '${escSql(datasetFilter)}'`);
-    if (modelFilter !== "all") parts.push(`model = '${escSql(modelFilter)}'`);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      parts.push(`(
-        lower(id) LIKE '%${escSql(q)}%' OR
-        lower(task) LIKE '%${escSql(q)}%' OR
-        lower(model) LIKE '%${escSql(q)}%'
-      )`);
+      parts.push(
+        `(lower(id) LIKE '%${escSql(q)}%' OR ` +
+          `lower(task) LIKE '%${escSql(q)}%' OR ` +
+          `lower(model) LIKE '%${escSql(q)}%')`,
+      );
     }
     return parts.length ? parts.join(" AND ") : null;
   }
 
   const setRowSelection = useCallback((t: Trajectory | null) => {
-    // The rowSelection vgplot Selection is intentionally *not* mutated here:
-    // selecting a row should highlight (not filter) other panels, which
-    // crossfilter would do. Highlights are driven by the React state below
-    // through `selectedTrajectory`. Keeping the Selection in the context
-    // gives downstream panels a place to subscribe later if they need it.
-    setSelectedTrajectoryState(t);
+    setSelectedTrajectory(t);
   }, []);
+
+  const filterPredicate = useMemo(
+    () => buildFilterPredicate(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [search, outcomeFilter],
+  );
 
   const value = useMemo<TrajectoryAtlasContextValue>(
     () => ({
       state,
+      coordinator: coordinatorRef.current,
+      crossfilter: crossfilterRef.current,
       source,
       sources: SOURCES,
       setSource,
-      coordinator: coordinatorRef.current,
-      crossfilter: crossfilterRef.current,
-      rowSelection: rowSelectionRef.current,
-      hover: hoverRef.current,
       search,
       setSearch,
       outcomeFilter,
       setOutcomeFilter,
-      datasetFilter,
-      setDatasetFilter,
-      modelFilter,
-      setModelFilter,
       selectedTrajectory,
       setRowSelection,
       stats,
-      datasets,
-      models,
-      buildFilterPredicate: buildWhere,
+      filterPredicate,
     }),
-    // coordinator/crossfilter/rowSelection/hover are refs; their identity
-    // doesn't change after init. We deliberately don't list them as deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      state,
-      source,
-      search,
-      outcomeFilter,
-      datasetFilter,
-      modelFilter,
-      selectedTrajectory,
-      stats,
-      datasets,
-      models,
-      setRowSelection,
-    ],
+    [state, source, search, outcomeFilter, selectedTrajectory, stats, filterPredicate, setRowSelection],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -420,23 +306,6 @@ export function useTrajectoryAtlas(): TrajectoryAtlasContextValue {
   return v;
 }
 
-// --- Arrow result helpers ---------------------------------------------------
-
-// Mosaic returns an Arrow Table. We don't import the apache-arrow types
-// directly — these helpers just walk whatever shape comes back.
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function arrowToList(table: any, col: string): string[] {
-  if (!table) return [];
-  if (typeof table.toArray === "function") {
-    return table.toArray().map((r: Record<string, unknown>) => String(r[col] ?? ""));
-  }
-  if (Array.isArray(table)) {
-    return table.map((r) => String((r as Record<string, unknown>)[col] ?? ""));
-  }
-  return [];
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function arrowFirstRow(table: any): Record<string, unknown> | null {
   if (!table) return null;
@@ -444,8 +313,6 @@ function arrowFirstRow(table: any): Record<string, unknown> | null {
     const arr = table.toArray();
     return arr.length ? (arr[0] as Record<string, unknown>) : null;
   }
-  if (Array.isArray(table) && table.length) {
-    return table[0] as Record<string, unknown>;
-  }
+  if (Array.isArray(table) && table.length) return table[0] as Record<string, unknown>;
   return null;
 }
