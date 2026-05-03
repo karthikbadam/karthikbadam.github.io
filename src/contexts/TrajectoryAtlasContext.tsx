@@ -22,6 +22,7 @@ import {
   ReactNode,
 } from "react";
 import * as vg from "@uwdata/vgplot";
+import { verbatim } from "@uwdata/mosaic-sql";
 import type { Coordinator, Selection as VgSelection } from "@uwdata/mosaic-core";
 import { LoadingState } from "../types/loading";
 import type {
@@ -95,6 +96,7 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
 
   const coordinatorRef = useRef<Coordinator | null>(null);
   const crossfilterRef = useRef<VgSelection | null>(null);
+  const filterSourceRef = useRef<{ id: string }>({ id: "ta-ui-filter" });
   const initRef = useRef(false);
   const loadedSourceRef = useRef<SourceKey | null>(null);
 
@@ -132,6 +134,23 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       }
     })();
   }, []);
+
+  // Push the user's search + outcome filter into the crossfilter as a Mosaic
+  // clause. Every panel bound to the crossfilter (AnyTable, icicle, sankey)
+  // re-queries through this single mechanism — no need for each chart to
+  // also accept a whereExpr.
+  useEffect(() => {
+    const sel = crossfilterRef.current;
+    if (!sel || state.status !== "ready") return;
+    const where = buildFilterPredicate();
+    sel.update({
+      source: filterSourceRef.current,
+      clients: new Set(),
+      value: where,
+      predicate: where ? verbatim(`(${where})`) : null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, outcomeFilter, state.status]);
 
   // Recompute stats when filters change.
   useEffect(() => {

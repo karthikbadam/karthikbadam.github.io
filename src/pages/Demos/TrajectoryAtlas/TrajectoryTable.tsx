@@ -7,8 +7,8 @@
 // we capture row clicks at the wrapper level and read the row's id via the
 // rendered cell text — simple and stable.
 
-import { Box, Flex, Text } from "@chakra-ui/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Box } from "@chakra-ui/react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   AnyTable,
   MosaicProvider,
@@ -75,15 +75,16 @@ const SPEC: TableSpec = {
   rowKey: "id",
   height: "100%",
   selection: { mode: "single" },
+  rowHeight: { numLines: 1, padding: "4px" },
   columns: [
-    { key: "id", width: "9rem", cell: "text" },
-    { key: "task", flex: 1, minWidth: "12rem", cell: "text" },
-    { key: "model", width: "11rem", cell: "text" },
-    { key: "step_count", width: "5rem", cell: "number", align: "right" },
-    { key: "step_tools_str", width: "16rem", cell: "ta-step-path", sortable: false },
-    { key: "outcome", width: "6rem", cell: "ta-outcome" },
-    { key: "tokens", width: "5rem", cell: "ta-tokens", align: "right" },
-    { key: "reward", width: "5rem", cell: "ta-reward", align: "right" },
+    { key: "id", label: "ID", width: "9rem", cell: "text" },
+    { key: "task", label: "Task", flex: 1, minWidth: "12rem", cell: "text" },
+    { key: "model", label: "Model", width: "11rem", cell: "text" },
+    { key: "step_count", label: "Steps", width: "4.5rem", cell: "number", align: "right" },
+    { key: "step_tools_str", label: "Path", width: "16rem", cell: "ta-step-path", sortable: false },
+    { key: "outcome", label: "Outcome", width: "6rem", cell: "ta-outcome" },
+    { key: "tokens", label: "Tokens", width: "5rem", cell: "ta-tokens", align: "right" },
+    { key: "reward", label: "Reward", width: "5rem", cell: "ta-reward", align: "right" },
   ],
 };
 
@@ -101,7 +102,6 @@ function TrajectoryTableInner() {
   const { coordinator, crossfilter, setRowSelection, selectedTrajectory } =
     useTrajectoryAtlas();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [rowCount, setRowCount] = useState<number | null>(null);
 
   const filter = useMemo(() => crossfilter ?? undefined, [crossfilter]);
 
@@ -144,44 +144,10 @@ function TrajectoryTableInner() {
     return () => node.removeEventListener("click", handler);
   }, [coordinator, setRowSelection, selectedTrajectory]);
 
-  // Fetch the total row count for the footer.
-  useEffect(() => {
-    if (!coordinator) return;
-    let cancelled = false;
-    coordinator
-      .query("SELECT COUNT(*) AS n FROM trajectories")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((res: any) => {
-        if (cancelled) return;
-        const arr = res?.toArray?.() ?? [];
-        setRowCount(Number(arr[0]?.n ?? 0));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [coordinator]);
-
   return (
-    <Flex direction="column" w="100%" h="100%" position="relative">
-      <Box ref={containerRef} flex="1" minH={0} position="relative">
-        <AnyTable spec={SPEC} filter={filter} />
-      </Box>
-      <Flex
-        h={7}
-        px={3}
-        align="center"
-        justify="space-between"
-        borderTop="1px solid"
-        borderColor="bg.subtle"
-        bg="bg.panel"
-        flexShrink={0}
-      >
-        <Text fontSize="xs" color="fg.subtle">
-          {rowCount != null ? `${rowCount.toLocaleString()} trajectories` : "…"}
-        </Text>
-      </Flex>
-    </Flex>
+    <Box ref={containerRef} w="100%" h="100%" position="relative">
+      <AnyTable spec={SPEC} filter={filter} />
+    </Box>
   );
 }
 

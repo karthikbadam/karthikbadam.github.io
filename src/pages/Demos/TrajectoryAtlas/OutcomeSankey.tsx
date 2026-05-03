@@ -28,17 +28,13 @@ const ORDERINGS = {
 };
 
 export function OutcomeSankey() {
-  const { coordinator, crossfilter, selectedTrajectory, filterPredicate } =
-    useTrajectoryAtlas();
+  const { coordinator, crossfilter, selectedTrajectory } = useTrajectoryAtlas();
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
 
   if (!coordinator) return null;
 
   const highlight = selectedTrajectory ? new Set([selectedTrajectory.id]) : null;
-  const whereExpr = filterPredicate
-    ? `id IN (SELECT id FROM trajectories WHERE ${filterPredicate})`
-    : null;
 
   const palette = (column: string, value: string): string => {
     if (column === "outcome") return outcomeHex(value as Outcome, dark);
@@ -57,7 +53,6 @@ export function OutcomeSankey() {
       idCol="id"
       columns={COLUMNS}
       selection={crossfilter}
-      whereExpr={whereExpr}
       palette={palette}
       orderings={ORDERINGS}
       dark={dark}
