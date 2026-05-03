@@ -5,7 +5,7 @@
 // `selectedTrajectory` context state (charts treat highlightedTrajIds as a
 // dimming hint — they do not filter).
 
-import { Box } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { useCallback, useMemo, useRef } from "react";
 import { MosaicProvider, Table, useTable, type ColumnDef } from "@any_table/react";
 import type { Selection as VgSelection } from "@uwdata/mosaic-core";
@@ -97,7 +97,14 @@ function TrajectoryTableInner() {
     rowHeightConfig: { numLines: 2, padding: "8px" },
   });
 
-  const toggleSelection = table.selection?.toggle;
+  const toggleRow = useCallback(
+    (id: string) => {
+      const next =
+        selectedTrajectory?.id === id ? new Set<string>() : new Set([id]);
+      onSelectionChange(next);
+    },
+    [selectedTrajectory, onSelectionChange],
+  );
 
   return (
     <Box
@@ -166,28 +173,15 @@ function TrajectoryTableInner() {
                         column={cell.column}
                         width={cell.width}
                         offset={cell.offset}
-                        onClick={() => toggleSelection?.(String(row.key))}
+                        onClick={() => toggleRow(String(row.key))}
                         style={{
                           padding: "8px 12px",
+                          display: "flex",
                           alignItems: "center",
                           justifyContent: meta?.align === "right" ? "flex-end" : "flex-start",
-                          // Task wraps to 2 lines (clamped); other cells stay
-                          // single-line with ellipsis.
-                          ...(isTask
-                            ? {
-                                whiteSpace: "normal",
-                                overflow: "hidden",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                lineHeight: "1.35",
-                              }
-                            : {
-                                display: "flex",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }),
+                          whiteSpace: isTask ? "normal" : "nowrap",
+                          overflow: "hidden",
+                          textOverflow: isTask ? undefined : "ellipsis",
                         }}
                       >
                         {renderCell(cell.column, cell.value)}
@@ -207,6 +201,8 @@ function TrajectoryTableInner() {
 function renderCell(column: string, value: unknown): React.ReactNode {
   if (value == null) return "";
   switch (column) {
+    case "task":
+      return <Text lineClamp={2}>{String(value)}</Text>;
     case "step_tools_str":
       return <StepPath value={String(value ?? "")} />;
     case "step_tools":
