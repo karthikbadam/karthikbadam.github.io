@@ -1,5 +1,9 @@
-// Trajectory Atlas — taxonomy and color tokens.
+// Trajectory Atlas — taxonomy + colour mapping.
+// Categories map to Chakra `chart.*` tokens defined in src/theme.ts. The
+// hex helpers below are for SVG fills (Visx) where we need a concrete
+// colour string that responds to the active color mode.
 
+import { chartPalette } from "../../../theme";
 import type { Category, Outcome } from "./types";
 
 export const CATEGORY_LABELS: Record<Category, string> = {
@@ -17,84 +21,31 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   thought: "Thought",
 };
 
-// Observable 10 mapping for sankey nodes / step dots. Each category has a
-// concrete hex per mode so SVG `fill` doesn't depend on CSS-var resolution
-// (which has been flaky inside the AnyTable / Mosaic SVG render path).
-const HEX_LIGHT: Record<Category, string> = {
-  plan: "#A463F2",
-  task: "#A463F2",
-  thought: "#97BBF5",
-  observation: "#9498A0",
-  search: "#6CC5B0",
-  read: "#97BBF5",
-  edit: "#EFB118",
-  exec: "#4269D0",
-  tool: "#3CA951",
-  verify: "#9C6B4E",
-  submit: "#FF8AB7",
-  error: "#FF725C",
+// Category → palette key. Used both for `bg={`chart.${CAT_PALETTE_KEY[c]}`}`
+// in JSX and for hex resolution in SVG.
+export const CAT_PALETTE_KEY: Record<Category, keyof typeof chartPalette> = {
+  plan: "purple",
+  task: "purple",
+  thought: "lightBlue",
+  observation: "gray",
+  search: "cyan",
+  read: "lightBlue",
+  edit: "orange",
+  exec: "blue",
+  tool: "green",
+  verify: "brown",
+  submit: "pink",
+  error: "red",
 };
 
-const HEX_DARK: Record<Category, string> = {
-  plan: "#BC8AF5",
-  task: "#BC8AF5",
-  thought: "#B5CFFB",
-  observation: "#B8BCC4",
-  search: "#8FD8C5",
-  read: "#B5CFFB",
-  edit: "#F5C44D",
-  exec: "#7B9BE8",
-  tool: "#6BC97D",
-  verify: "#B58A72",
-  submit: "#FFA8C8",
-  error: "#FF9580",
-};
-
-export function categoryHex(cat: Category, dark: boolean): string {
-  return (dark ? HEX_DARK : HEX_LIGHT)[cat] ?? (dark ? "#B8BCC4" : "#9498A0");
-}
-
-// CSS-var-based mapping kept for code paths that DO resolve them
-// (HTML/CSS step-dots in the table render through `color-mix(in oklab, ...)`).
-export const CAT_COLOR: Record<Category, string> = {
-  plan: "var(--chart-purple)",
-  task: "var(--chart-purple)",
-  thought: "var(--chart-light-blue)",
-  observation: "var(--chart-gray)",
-  search: "var(--chart-cyan)",
-  read: "var(--chart-light-blue)",
-  edit: "var(--chart-orange)",
-  exec: "var(--chart-blue)",
-  tool: "var(--chart-green)",
-  verify: "var(--chart-brown)",
-  submit: "var(--chart-pink)",
-  error: "var(--chart-red)",
-};
-
-const OUTCOME_HEX_LIGHT: Record<Outcome, string> = {
-  success: "#4269D0",
-  partial: "#EFB118",
-  fail: "#FF725C",
-};
-const OUTCOME_HEX_DARK: Record<Outcome, string> = {
-  success: "#7B9BE8",
-  partial: "#F5C44D",
-  fail: "#FF9580",
-};
-export function outcomeHex(o: Outcome, dark: boolean): string {
-  return (dark ? OUTCOME_HEX_DARK : OUTCOME_HEX_LIGHT)[o] ?? (dark ? "#B8BCC4" : "#9498A0");
-}
-
-export const OUTCOME_COLOR: Record<Outcome, string> = {
-  success: "var(--chart-blue)",
-  partial: "var(--chart-orange)",
-  fail: "var(--chart-red)",
+const OUTCOME_PALETTE_KEY: Record<Outcome, keyof typeof chartPalette> = {
+  success: "blue",
+  partial: "orange",
+  fail: "red",
 };
 
 export const OUTCOME_ORDER: Outcome[] = ["success", "partial", "fail"];
 
-// JS mirror of the Python extractor's category rules — kept in sync so the UI
-// can map a tool name to a colour bucket without re-querying the DB.
 const CATEGORY_RULES: Array<[RegExp, Category]> = [
   [/^(task|user_task)$/, "task"],
   [/^(observation|user_observation|tool_response)$/, "observation"],
@@ -117,6 +68,27 @@ export function categoryFor(name: string): Category {
     if (pat.test(name)) return cat;
   }
   return "tool";
+}
+
+/** Chakra token name (e.g. "chart.blue") for a category. */
+export function categoryToken(cat: Category): string {
+  return `chart.${CAT_PALETTE_KEY[cat]}`;
+}
+
+/** Concrete hex for an SVG fill — used by visx where a CSS token isn't
+ * usable directly. */
+export function categoryHex(cat: Category, dark: boolean): string {
+  const v = chartPalette[CAT_PALETTE_KEY[cat]];
+  return dark ? v.dark : v.light;
+}
+
+export function outcomeToken(o: Outcome): string {
+  return `chart.${OUTCOME_PALETTE_KEY[o]}`;
+}
+
+export function outcomeHex(o: Outcome, dark: boolean): string {
+  const v = chartPalette[OUTCOME_PALETTE_KEY[o]];
+  return dark ? v.dark : v.light;
 }
 
 /**
