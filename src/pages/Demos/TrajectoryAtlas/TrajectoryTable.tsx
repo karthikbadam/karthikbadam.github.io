@@ -19,7 +19,6 @@ interface ColMeta {
   key: string;
   label: string;
   align?: "left" | "right";
-  mono?: boolean;
 }
 
 const COLUMNS: ColumnDef[] = [
@@ -34,14 +33,14 @@ const COLUMNS: ColumnDef[] = [
 ];
 
 const COL_META: Record<string, ColMeta> = {
-  id: { key: "id", label: "ID", mono: true },
+  id: { key: "id", label: "ID" },
   task: { key: "task", label: "Task" },
-  model: { key: "model", label: "Model", mono: true },
-  step_count: { key: "step_count", label: "Steps", align: "right", mono: true },
+  model: { key: "model", label: "Model" },
+  step_count: { key: "step_count", label: "Steps", align: "right" },
   step_tools_str: { key: "step_tools_str", label: "Path" },
   outcome: { key: "outcome", label: "Outcome" },
-  tokens: { key: "tokens", label: "Tokens", align: "right", mono: true },
-  reward: { key: "reward", label: "Reward", align: "right", mono: true },
+  tokens: { key: "tokens", label: "Tokens", align: "right" },
+  reward: { key: "reward", label: "Reward", align: "right" },
 };
 
 export function TrajectoryTable() {
@@ -129,15 +128,10 @@ function TrajectoryTableInner() {
                   key={col.key}
                   column={col.key}
                   style={{
-                    fontWeight: 500,
-                    fontSize: 12,
-                    letterSpacing: "0.02em",
-                    color: "var(--chakra-colors-fg-muted)",
                     padding: "0 12px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: meta?.align === "right" ? "flex-end" : "flex-start",
-                    whiteSpace: "nowrap",
                     cursor: "pointer",
                   }}
                 >
@@ -177,11 +171,6 @@ function TrajectoryTableInner() {
                           padding: "8px 12px",
                           alignItems: "center",
                           justifyContent: meta?.align === "right" ? "flex-end" : "flex-start",
-                          fontFamily: meta?.mono
-                            ? "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-                            : "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                          fontVariantNumeric: "tabular-nums",
-                          color: "var(--chakra-colors-fg)",
                           // Task wraps to 2 lines (clamped); other cells stay
                           // single-line with ellipsis.
                           ...(isTask
