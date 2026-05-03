@@ -11,8 +11,7 @@ import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { accentRamp } from "./taxonomy";
 
 export function StepIcicle() {
-  const { coordinator, crossfilter, selectedTrajectory, filterPredicate } =
-    useTrajectoryAtlas();
+  const { coordinator, crossfilter, selectedTrajectory } = useTrajectoryAtlas();
   const { colorMode } = useColorMode();
 
   if (!coordinator) {
@@ -20,11 +19,6 @@ export function StepIcicle() {
   }
 
   const highlight = selectedTrajectory ? new Set([selectedTrajectory.id]) : null;
-  // The user's UI filters live on the trajectory row. Push them into the
-  // steps query as a subquery: `id IN (SELECT id FROM trajectories WHERE ...)`.
-  const whereExpr = filterPredicate
-    ? `id IN (SELECT id FROM trajectories WHERE ${filterPredicate})`
-    : null;
 
   return (
     <IcicleMosaicClient
@@ -34,7 +28,6 @@ export function StepIcicle() {
       levelCol="step_idx"
       categoryCol="name"
       selection={crossfilter}
-      whereExpr={whereExpr}
       minRowHeight={28}
       colorRamp={(level, maxLevel) =>
         accentRamp(level / Math.max(1, maxLevel - 1), colorMode === "dark")
