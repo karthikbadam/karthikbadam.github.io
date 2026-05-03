@@ -66,7 +66,14 @@ export function Dashboard() {
         </Box>
       </Flex>
 
-      <Box flex={1.4} minH={0} px={4} pb={2} pt={2} overflow="hidden">
+      <Box
+        flex={1.4}
+        minH={0}
+        px={4}
+        pb={2}
+        pt={2}
+        overflow="hidden"
+      >
         <TrajectoryPanel
           title="Trajectories"
           subtitle="sort any column, click to inspect"
