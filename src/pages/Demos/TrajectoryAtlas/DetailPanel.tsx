@@ -4,7 +4,6 @@
 import { LuTriangleAlert, LuX } from "react-icons/lu";
 import { CAT_COLOR } from "./taxonomy";
 import type { Category, Trajectory } from "./types";
-import "./detail-panel.css";
 
 export function DetailPanel({ traj, onClose }: { traj: Trajectory; onClose: () => void }) {
   return (

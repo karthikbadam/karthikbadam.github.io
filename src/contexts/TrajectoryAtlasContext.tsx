@@ -24,6 +24,7 @@ import {
 import * as vg from "@uwdata/vgplot";
 import { verbatim } from "@uwdata/mosaic-sql";
 import type { Coordinator, Selection as VgSelection } from "@uwdata/mosaic-core";
+import { arrowFirstRow } from "../components/chartUtils";
 import { LoadingState } from "../types/loading";
 import type {
   Outcome,
@@ -82,11 +83,6 @@ export interface TrajectoryAtlasContextValue {
   setRowSelection: (t: Trajectory | null) => void;
 
   stats: Stats;
-
-  /** SQL WHERE-body (without the keyword) reflecting the user's search +
-   * outcome filters; null when no filters are active. Charts compose this
-   * with their own predicates. */
-  filterPredicate: string | null;
 }
 
 const Ctx = createContext<TrajectoryAtlasContextValue | null>(null);
@@ -264,12 +260,6 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
     setSelectedTrajectory(t);
   }, []);
 
-  const filterPredicate = useMemo(
-    () => buildFilterPredicate(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [search, outcomeFilter],
-  );
-
   const value = useMemo<TrajectoryAtlasContextValue>(
     () => ({
       state,
@@ -288,10 +278,9 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       selectedTrajectory,
       setRowSelection,
       stats,
-      filterPredicate,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, source, search, outcomeFilter, sankeyDepth, selectedTrajectory, stats, filterPredicate, setRowSelection],
+    [state, source, search, outcomeFilter, sankeyDepth, selectedTrajectory, stats, setRowSelection],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -303,13 +292,3 @@ export function useTrajectoryAtlas(): TrajectoryAtlasContextValue {
   return v;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function arrowFirstRow(table: any): Record<string, unknown> | null {
-  if (!table) return null;
-  if (typeof table.toArray === "function") {
-    const arr = table.toArray();
-    return arr.length ? (arr[0] as Record<string, unknown>) : null;
-  }
-  if (Array.isArray(table) && table.length) return table[0] as Record<string, unknown>;
-  return null;
-}

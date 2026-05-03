@@ -17,6 +17,7 @@ import {
   type TableSpec,
 } from "@any_table/react";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
+import { asArray, asStringList } from "../../../components/chartUtils";
 import { CAT_COLOR, categoryFor } from "./taxonomy";
 import type { Category, Outcome, Step, Trajectory } from "./types";
 
@@ -171,34 +172,8 @@ function arrowToTrajectory(row: any): Trajectory {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function asStringList(v: any): string[] {
-  if (v == null) return [];
-  if (Array.isArray(v)) return v.map((x) => (x == null ? "" : String(x)));
-  if (typeof v.toArray === "function") {
-    return v.toArray().map((x: unknown) => (x == null ? "" : String(x)));
-  }
-  if (typeof v.length === "number" && typeof v.get === "function") {
-    const out: string[] = [];
-    for (let i = 0; i < v.length; i++) {
-      const x = v.get(i);
-      out.push(x == null ? "" : String(x));
-    }
-    return out;
-  }
-  return [];
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function asStepList(v: any): Step[] {
-  if (v == null) return [];
-  let arr: unknown[];
-  if (Array.isArray(v)) arr = v;
-  else if (typeof v.toArray === "function") arr = v.toArray();
-  else if (typeof v.length === "number" && typeof v.get === "function") {
-    arr = [];
-    for (let i = 0; i < v.length; i++) arr.push(v.get(i));
-  } else return [];
-  return arr
+  return asArray(v)
     .map((s) => {
       if (s == null) return null;
       const r = s as Record<string, unknown>;
