@@ -53,7 +53,7 @@ export function OutcomeSankey() {
   return (
     <SankeyMosaicClient
       coordinator={coordinator}
-      table="traj_summary"
+      table="trajectories"
       idCol="id"
       columns={COLUMNS}
       selection={crossfilter}
