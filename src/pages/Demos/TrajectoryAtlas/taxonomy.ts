@@ -78,16 +78,18 @@ export function categoryToken(cat: Category): string {
 /** Concrete hex for an SVG fill — used by visx where a CSS token isn't
  * usable directly. */
 export function categoryHex(cat: Category, dark: boolean): string {
-  const v = chartPalette[CAT_PALETTE_KEY[cat]];
+  const key = CAT_PALETTE_KEY[cat] ?? "gray";
+  const v = chartPalette[key];
   return dark ? v.dark : v.light;
 }
 
 export function outcomeToken(o: Outcome): string {
-  return `chart.${OUTCOME_PALETTE_KEY[o]}`;
+  return `chart.${OUTCOME_PALETTE_KEY[o] ?? "gray"}`;
 }
 
 export function outcomeHex(o: Outcome, dark: boolean): string {
-  const v = chartPalette[OUTCOME_PALETTE_KEY[o]];
+  const key = OUTCOME_PALETTE_KEY[o] ?? "gray";
+  const v = chartPalette[key];
   return dark ? v.dark : v.light;
 }
 
