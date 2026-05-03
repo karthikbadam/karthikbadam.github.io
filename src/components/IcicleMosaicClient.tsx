@@ -161,8 +161,12 @@ export function IcicleMosaicClient({
         const lvl = column(levelCol);
         const cat = column(categoryCol);
 
+        // Keep the id column under its original name (`id`) through the CTE
+        // chain — cross-filter clauses written by the icicle/sankey reference
+        // `id`, so renaming it here would break the upstream `id IN (...)`
+        // predicate the coordinator tacks on.
         const filtered = Query.from(table).select({
-          traj_id: id,
+          id,
           step_idx: sql`ROW_NUMBER() OVER (PARTITION BY ${id} ORDER BY ${lvl}) - 1`,
           category: cat,
         });
@@ -177,10 +181,10 @@ export function IcicleMosaicClient({
         }
 
         const ranked = Query.with({ filtered }).from("filtered").select({
-          traj_id: column("traj_id"),
+          id: column("id"),
           step_idx: column("step_idx"),
           category: column("category"),
-          path: sql`STRING_AGG(category, '>') OVER (PARTITION BY traj_id ORDER BY step_idx ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)`,
+          path: sql`STRING_AGG(category, '>') OVER (PARTITION BY id ORDER BY step_idx ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)`,
         });
 
         if (typeof maxLevels === "number") {
@@ -192,10 +196,10 @@ export function IcicleMosaicClient({
           step_idx: column("step_idx"),
           category: column("category"),
           path: column("path"),
-          n: sql`COUNT(DISTINCT traj_id)`,
-          traj_ids: sql`ARRAY_AGG(DISTINCT traj_id)`,
+          n: sql`COUNT(DISTINCT id)`,
+          traj_ids: sql`ARRAY_AGG(DISTINCT id)`,
         }).groupby("step_idx", "category", "path")
-          .orderby(column("step_idx"), sql`COUNT(DISTINCT traj_id) DESC`);
+          .orderby(column("step_idx"), sql`COUNT(DISTINCT id) DESC`);
       },
     [table, idCol, levelCol, categoryCol, maxLevels, filterStepNames, whereExpr],
   );
