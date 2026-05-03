@@ -468,6 +468,15 @@ STEP_STRUCT = pa.struct(
 )
 
 
+# Number of pre-computed sequential tool-step columns. The sankey's depth
+# slider can request any 1..MAX_TOOL_STEPS of these.
+MAX_TOOL_STEPS = 8
+
+
+def _tool_step_fields() -> list[tuple[str, pa.DataType]]:
+    return [(f"step_{i + 1}", pa.string()) for i in range(MAX_TOOL_STEPS)]
+
+
 SCHEMA = pa.schema(
     [
         ("id", pa.string()),
@@ -486,14 +495,11 @@ SCHEMA = pa.schema(
         # for downstream tools (e.g. AnyTable's DuckDBStore) to round-trip
         # than Arrow List<Utf8>.
         ("step_tools_str", pa.string()),
-        # Per-trajectory summary fields, precomputed so the client doesn't
-        # have to run a heavy multi-CTE query per source switch:
-        #   entry_tool   — first tool call (excluding meta + submit terminators)
-        #   dominant_1   — most-used tool (same exclusion)
-        #   dominant_2   — 2nd most-used tool, '(none)' if only one distinct tool
-        ("entry_tool", pa.string()),
-        ("dominant_1", pa.string()),
-        ("dominant_2", pa.string()),
+        # Sequential tool-step columns: step_1 = first tool call (excluding
+        # meta + submit terminators), step_2 = second, etc. Trajectories
+        # shorter than k tool calls have '(none)' at positions ≥ k. The
+        # sankey's depth slider picks how many of these to render.
+        *_tool_step_fields(),
         ("steps", pa.list_(STEP_STRUCT)),
     ]
 )
@@ -652,27 +658,19 @@ def main() -> int:
         tools_used = sorted({s["name"] for s in steps if s["name"]})
         step_tools = [s["name"] for s in steps]
 
-        # Per-trajectory summary fields — what the client used to compute via
-        # a multi-CTE DuckDB query at load time. Computing once during
-        # extraction shaves seconds off DeepSWE (which has ~80 steps avg).
-        # Excludes meta-steps and submit terminators.
+        # Sequential tool-step columns — the i-th tool call in this
+        # trajectory (excluding meta + submit terminators). Pads with '(none)'
+        # when the trajectory has fewer than MAX_TOOL_STEPS tool calls. The
+        # sankey's depth slider chooses how many of these columns to render.
         _META_OR_SUBMIT = {
             "task", "thought", "observation",
             "final_answer", "finish", "submit", "done",
         }
-        action_steps = [s for s in steps if s["name"] not in _META_OR_SUBMIT]
-        if action_steps:
-            entry_tool = action_steps[0]["name"]
-            tool_counts: dict[str, int] = {}
-            for s in action_steps:
-                tool_counts[s["name"]] = tool_counts.get(s["name"], 0) + 1
-            ranked = sorted(tool_counts.items(), key=lambda kv: (-kv[1], kv[0]))
-            dominant_1 = ranked[0][0]
-            dominant_2 = ranked[1][0] if len(ranked) > 1 else "(none)"
-        else:
-            entry_tool = "(none)"
-            dominant_1 = "(none)"
-            dominant_2 = "(none)"
+        action_names = [s["name"] for s in steps if s["name"] not in _META_OR_SUBMIT]
+        tool_step_values = [
+            action_names[i] if i < len(action_names) else "(none)"
+            for i in range(MAX_TOOL_STEPS)
+        ]
 
         task_text = jsonpath_get(record, paths["task"]) if paths["task"] else None
         if not task_text:
@@ -721,9 +719,7 @@ def main() -> int:
                 "tools_used": tools_used,
                 "step_tools": step_tools,
                 "step_tools_str": ",".join(step_tools),
-                "entry_tool": entry_tool,
-                "dominant_1": dominant_1,
-                "dominant_2": dominant_2,
+                **{f"step_{i + 1}": tool_step_values[i] for i in range(MAX_TOOL_STEPS)},
                 "steps": steps,
             }
         )

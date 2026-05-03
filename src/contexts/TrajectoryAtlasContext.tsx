@@ -32,6 +32,10 @@ import type {
   Trajectory,
 } from "../pages/Demos/TrajectoryAtlas/types";
 
+// Must match MAX_TOOL_STEPS in extract_trajectories.py — these are the
+// pre-computed step_1..step_N columns the sankey can pull from.
+const MAX_SANKEY_DEPTH = 8;
+
 const SOURCES: Record<SourceKey, SourceConfig> = {
   qwen: {
     key: "qwen",
@@ -66,6 +70,14 @@ export interface TrajectoryAtlasContextValue {
   outcomeFilter: Outcome | "all";
   setOutcomeFilter: (s: Outcome | "all") => void;
 
+  /** Number of sequential tool-step columns the sankey renders before the
+   * outcome column. Bound at extraction by MAX_SANKEY_DEPTH. */
+  sankeyDepth: number;
+  setSankeyDepth: (n: number) => void;
+  /** Maximum allowed sankey depth — matches the parquet's step_1..step_N
+   * columns. Surface this so the slider knows its upper bound. */
+  maxSankeyDepth: number;
+
   selectedTrajectory: Trajectory | null;
   setRowSelection: (t: Trajectory | null) => void;
 
@@ -91,6 +103,7 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
   });
   const [search, setSearch] = useState("");
   const [outcomeFilter, setOutcomeFilter] = useState<Outcome | "all">("all");
+  const [sankeyDepth, setSankeyDepth] = useState(3);
   const [selectedTrajectory, setSelectedTrajectory] = useState<Trajectory | null>(null);
   const [stats, setStats] = useState<Stats>({ n: 0, pass: 0, avgSteps: 0, avgTokens: 0 });
 
@@ -269,13 +282,16 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       setSearch,
       outcomeFilter,
       setOutcomeFilter,
+      sankeyDepth,
+      setSankeyDepth,
+      maxSankeyDepth: MAX_SANKEY_DEPTH,
       selectedTrajectory,
       setRowSelection,
       stats,
       filterPredicate,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, source, search, outcomeFilter, selectedTrajectory, stats, filterPredicate, setRowSelection],
+    [state, source, search, outcomeFilter, sankeyDepth, selectedTrajectory, stats, filterPredicate, setRowSelection],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
