@@ -238,10 +238,14 @@ export function IcicleMosaicClient({
 
   const { rects, totalN, maxLevelInData, svgHeight } = useMemo(() => {
     const tree = buildTree(rows);
+    const totalN = tree.children.reduce((a, c) => a + c.n, 0) || 1;
+    // Prune nodes representing less than 0.1% of trajectories. With deep
+    // trajectories (e.g. DeepSWE at 80+ steps) the tail produces tens of
+    // thousands of sub-pixel rects that lock up the browser.
+    pruneByShare(tree, totalN, 0.001);
     if (maxNodesPerLevel && maxNodesPerLevel > 1) {
       collapseTail(tree, maxNodesPerLevel);
     }
-    const totalN = tree.children.reduce((a, c) => a + c.n, 0) || 1;
     const maxLevelInData = rows.reduce((m, r) => Math.max(m, r.level), -1) + 1;
     const levels = maxLevels ?? Math.max(1, maxLevelInData);
     const containerH = size.h || 1;
@@ -448,6 +452,22 @@ function parentOf(path: string): string {
  * kept; the rest collapse into a synthetic `other (M)` node that takes their
  * combined `n` and `trajIds`. Recursion is pruned at the synthetic node.
  */
+/**
+ * Drop subtrees whose share of the global total falls below `threshold`.
+ * Important for deep trajectories where the tail produces thousands of
+ * sub-pixel rects that lock up the browser. Pruned trees still report their
+ * remaining children's counts truthfully — we just stop rendering the noise.
+ */
+function pruneByShare(node: TreeNode, total: number, threshold: number) {
+  const minN = total * threshold;
+  function recur(n: TreeNode) {
+    if (!n.children.length) return;
+    n.children = n.children.filter((c) => c.n >= minN);
+    n.children.forEach(recur);
+  }
+  recur(node);
+}
+
 function collapseTail(node: TreeNode, k: number) {
   if (!node.children.length) return;
   if (node.children.length > k) {
