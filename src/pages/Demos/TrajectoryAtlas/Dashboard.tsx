@@ -7,6 +7,7 @@ import { OutcomeSankey } from "./OutcomeSankey";
 import { TrajectoryTable } from "./TrajectoryTable";
 import { DetailPanel } from "./DetailPanel";
 import { TrajectoryPanel } from "./TrajectoryPanel";
+import { SankeyDepthSlider } from "./SankeyDepthSlider";
 
 export function Dashboard() {
   const { state, selectedTrajectory, setRowSelection } = useTrajectoryAtlas();
@@ -55,7 +56,8 @@ export function Dashboard() {
         <Box flex={1} minW={0} minH={0}>
           <TrajectoryPanel
             title="Outcome Sankey"
-            subtitle="entry → top tools → outcome · click a ribbon · top 10 per column"
+            subtitle="i-th tool call → outcome · click a ribbon · top 10 per column"
+            right={<SankeyDepthSlider />}
           >
             <OutcomeSankey />
           </TrajectoryPanel>

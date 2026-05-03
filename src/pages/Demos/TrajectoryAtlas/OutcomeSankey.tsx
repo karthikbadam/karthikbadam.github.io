@@ -1,57 +1,64 @@
-// Trajectory Atlas — OutcomeSankey. Pulls per-trajectory aggregates from the
-// `traj_summary` table the context built at load time:
-//   entry_tool   — first non-meta tool the trajectory invokes
-//   dominant_1   — most-used tool overall
-//   dominant_2   — second-most-used tool (null when the trajectory only ever
-//                  uses one tool)
-//   outcome      — success / partial / fail
-//
-// Each column's `expr` is `any_value(col)` because traj_summary is already
-// one-row-per-id; the aggregation is a no-op needed only to satisfy the
-// SankeyMosaicClient's GROUP BY id pipeline.
+// Trajectory Atlas — OutcomeSankey. Renders the slider-controlled
+// step_1..step_K columns alongside the outcome column. The step_i values
+// are pre-computed in the parquet (see public/scripts/extract_trajectories.py).
 
+import { useMemo } from "react";
 import { useColorMode } from "../../../components/ui/color-mode";
 import { SankeyMosaicClient, type SankeyColumnSpec } from "../../../components/SankeyMosaicClient";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { OUTCOME_ORDER, categoryFor, categoryHex, outcomeHex } from "./taxonomy";
 import type { Category, Outcome } from "./types";
 
-const COLUMNS: SankeyColumnSpec[] = [
-  { name: "entry", label: "Entry tool", expr: "any_value(entry_tool)" },
-  { name: "dominant_1", label: "1st dominant", expr: "any_value(dominant_1)" },
-  { name: "dominant_2", label: "2nd dominant", expr: "any_value(dominant_2)" },
-  { name: "outcome", label: "Outcome", expr: "any_value(outcome)" },
-];
-
 const ORDERINGS = {
   outcome: OUTCOME_ORDER as readonly string[] as string[],
 };
 
+function stepLabel(i: number): string {
+  if (i === 0) return "Entry tool";
+  if (i === 1) return "2nd tool";
+  if (i === 2) return "3rd tool";
+  return `${i + 1}th tool`;
+}
+
 export function OutcomeSankey() {
-  const { coordinator, crossfilter, selectedTrajectory } = useTrajectoryAtlas();
+  const { coordinator, crossfilter, selectedTrajectory, sankeyDepth } =
+    useTrajectoryAtlas();
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
+
+  const columns: SankeyColumnSpec[] = useMemo(() => {
+    const stepCols: SankeyColumnSpec[] = Array.from({ length: sankeyDepth }, (_, i) => ({
+      name: `step_${i + 1}`,
+      label: stepLabel(i),
+      expr: `any_value(step_${i + 1})`,
+    }));
+    return [
+      ...stepCols,
+      { name: "outcome", label: "Outcome", expr: "any_value(outcome)" },
+    ];
+  }, [sankeyDepth]);
+
+  const palette = useMemo(
+    () =>
+      (column: string, value: string): string => {
+        if (column === "outcome") return outcomeHex(value as Outcome, dark);
+        if (value === "(none)") return dark ? "#4a5568" : "#a0aec0";
+        const cat = categoryFor(value) as Category;
+        return categoryHex(cat, dark);
+      },
+    [dark],
+  );
 
   if (!coordinator) return null;
 
   const highlight = selectedTrajectory ? new Set([selectedTrajectory.id]) : null;
-
-  const palette = (column: string, value: string): string => {
-    if (column === "outcome") return outcomeHex(value as Outcome, dark);
-    // Surface synthetic placeholder nodes (e.g. "(none)" when a trajectory
-    // had no 2nd dominant tool) as neutral grey so they read as a default
-    // bucket rather than a coloured tool.
-    if (value === "(none)") return dark ? "#4a5568" : "#a0aec0";
-    const cat = categoryFor(value) as Category;
-    return categoryHex(cat, dark);
-  };
 
   return (
     <SankeyMosaicClient
       coordinator={coordinator}
       table="trajectories"
       idCol="id"
-      columns={COLUMNS}
+      columns={columns}
       selection={crossfilter}
       palette={palette}
       orderings={ORDERINGS}
