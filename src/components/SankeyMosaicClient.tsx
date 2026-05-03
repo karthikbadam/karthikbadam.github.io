@@ -397,19 +397,13 @@ export function SankeyMosaicClient({
             );
           })}
           {columns.map((c, i) => {
-            const labelText = c.label ?? c.name;
-            // Anchor each header above its column by reading the first node
-            // we placed in that column. Falls back to size endpoints if a
-            // column is empty.
+            // Skip the header when no nodes landed in this column — e.g. a
+            // step_3 column with no trajectories that reach a third tool.
             const firstNode = layout.nodes.find((n) => n.col === i);
+            if (!firstNode) return null;
+            const labelText = c.label ?? c.name;
             const lastCol = i === columns.length - 1;
-            const x = firstNode
-              ? lastCol
-                ? firstNode.x + firstNode.w
-                : firstNode.x
-              : lastCol
-              ? size.w - 8
-              : 8;
+            const x = lastCol ? firstNode.x + firstNode.w : firstNode.x;
             const anchor = lastCol ? "end" : "start";
             return (
               <text

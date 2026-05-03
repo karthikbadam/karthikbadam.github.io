@@ -1,16 +1,21 @@
 // Trajectory Atlas — TrajectoryTable. Wraps the @any_table/react useTable
 // hook against the same DuckDB Mosaic coordinator the icicle and sankey
-// use. A row click selects the trajectory: opens the detail drawer and
-// highlights that trajectory's path in the icicle / sankey via the
-// `selectedTrajectory` context state (charts treat highlightedTrajIds as a
-// dimming hint — they do not filter).
+// use. Row click highlights the trajectory's path in the icicle / sankey
+// (charts treat highlightedTrajIds as a dimming hint — they do not filter).
+// The trailing chevron button opens the DetailPanel drawer.
 
-import { Box, Text } from "@chakra-ui/react";
-import { useCallback, useMemo, useRef } from "react";
-import { MosaicProvider, Table, useTable, type ColumnDef } from "@any_table/react";
+import {
+  MosaicProvider,
+  Table,
+  useTable,
+  type ColumnDef,
+} from "@any_table/react";
+import { Box, IconButton, Text } from "@chakra-ui/react";
 import type { Selection as VgSelection } from "@uwdata/mosaic-core";
-import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
+import { useCallback, useMemo, useRef } from "react";
+import { LuChevronRight } from "react-icons/lu";
 import { asArray, asStringList } from "../../../components/chartUtils";
+import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { OutcomeBadge } from "./OutcomeBadge";
 import { StepPath } from "./StepPath";
 import type { Category, Outcome, Step, Trajectory } from "./types";
@@ -21,6 +26,10 @@ interface ColMeta {
   align?: "left" | "right";
 }
 
+// Synthetic column for the row-action button. Width carved out at render time;
+// no parquet column maps to it.
+const DETAIL_COLUMN = "__detail__";
+
 const COLUMNS: ColumnDef[] = [
   { key: "id", width: "8.5rem" },
   { key: "task", flex: 1, minWidth: "12rem" },
@@ -30,6 +39,7 @@ const COLUMNS: ColumnDef[] = [
   { key: "outcome", width: "6rem" },
   { key: "tokens", width: "5rem" },
   { key: "reward", width: "5rem" },
+  { key: DETAIL_COLUMN, width: "2.5rem" },
 ];
 
 const COL_META: Record<string, ColMeta> = {
@@ -41,7 +51,15 @@ const COL_META: Record<string, ColMeta> = {
   outcome: { key: "outcome", label: "Outcome" },
   tokens: { key: "tokens", label: "Tokens", align: "right" },
   reward: { key: "reward", label: "Reward", align: "right" },
+  [DETAIL_COLUMN]: { key: DETAIL_COLUMN, label: "" },
 };
+
+// AnyTable's VisibleRow exposes `.data` as `RowRecord | null`. Pull the
+// trajectory id off it without sprinkling casts everywhere.
+function rowId(row: { data: unknown }): string {
+  const data = row.data as Record<string, unknown> | null;
+  return data ? String(data.id ?? "") : "";
+}
 
 export function TrajectoryTable() {
   const { coordinator } = useTrajectoryAtlas();
@@ -54,8 +72,13 @@ export function TrajectoryTable() {
 }
 
 function TrajectoryTableInner() {
-  const { coordinator, crossfilter, setRowSelection, selectedTrajectory } =
-    useTrajectoryAtlas();
+  const {
+    coordinator,
+    crossfilter,
+    highlightedTrajId,
+    setHighlightedTrajId,
+    setRowSelection,
+  } = useTrajectoryAtlas();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filter = useMemo(() => crossfilter ?? undefined, [crossfilter]);
@@ -63,28 +86,15 @@ function TrajectoryTableInner() {
   const onSelectionChange = useCallback(
     (selected: Set<string>) => {
       const id = selected.values().next().value as string | undefined;
-      if (!id) {
-        setRowSelection(null);
-        return;
-      }
-      if (!coordinator) return;
-      const escaped = id.replace(/'/g, "''");
-      coordinator
-        .query(`SELECT * FROM trajectories WHERE id = '${escaped}' LIMIT 1`)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .then((res: any) => {
-          const arr = res?.toArray?.() ?? [];
-          if (!arr.length) return;
-          setRowSelection(toTrajectory(arr[0]));
-        })
-        .catch((err: unknown) => console.error("[TrajectoryTable] query error:", err));
+      setHighlightedTrajId(id ?? null);
     },
-    [coordinator, setRowSelection],
+    [setHighlightedTrajId],
   );
 
   const selectedSet = useMemo(
-    () => (selectedTrajectory ? new Set([selectedTrajectory.id]) : new Set<string>()),
-    [selectedTrajectory],
+    () =>
+      highlightedTrajId ? new Set([highlightedTrajId]) : new Set<string>(),
+    [highlightedTrajId],
   );
 
   const table = useTable({
@@ -99,11 +109,29 @@ function TrajectoryTableInner() {
 
   const toggleRow = useCallback(
     (id: string) => {
-      const next =
-        selectedTrajectory?.id === id ? new Set<string>() : new Set([id]);
-      onSelectionChange(next);
+      if (!id) return;
+      setHighlightedTrajId(highlightedTrajId === id ? null : id);
     },
-    [selectedTrajectory, onSelectionChange],
+    [highlightedTrajId, setHighlightedTrajId],
+  );
+
+  const openDetail = useCallback(
+    (id: string) => {
+      if (!id || !coordinator) return;
+      const escaped = id.replace(/'/g, "''");
+      coordinator
+        .query(`SELECT * FROM trajectories WHERE id = '${escaped}' LIMIT 1`)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .then((res: any) => {
+          const arr = res?.toArray?.() ?? [];
+          if (!arr.length) return;
+          setRowSelection(toTrajectory(arr[0]));
+        })
+        .catch((err: unknown) =>
+          console.error("[TrajectoryTable] detail query failed:", err),
+        );
+    },
+    [coordinator, setRowSelection],
   );
 
   return (
@@ -121,8 +149,9 @@ function TrajectoryTableInner() {
       <Table.Root {...table.rootProps}>
         <Table.Header
           style={{
-            height: 32,
-            background: "var(--chakra-colors-bg-subtle)",
+            height: 18,
+            fontSize: "0.8rem",
+            background: "var(--chakra-colors-bg)",
             borderBottom: "1px solid var(--chakra-colors-gray-subtle)",
             flex: "0 0 auto",
           }}
@@ -135,10 +164,11 @@ function TrajectoryTableInner() {
                   key={col.key}
                   column={col.key}
                   style={{
-                    padding: "0 12px",
+                    padding: "0 8px",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: meta?.align === "right" ? "flex-end" : "flex-start",
+                    justifyContent:
+                      meta?.align === "right" ? "flex-end" : "flex-start",
                     cursor: "pointer",
                   }}
                 >
@@ -165,6 +195,35 @@ function TrajectoryTableInner() {
               >
                 {({ cells }) =>
                   cells.map((cell) => {
+                    if (cell.column === DETAIL_COLUMN) {
+                      return (
+                        <Table.Cell
+                          key={cell.column}
+                          column={cell.column}
+                          width={cell.width}
+                          offset={cell.offset}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            padding: "0 4px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <IconButton
+                            size="2xs"
+                            variant="ghost"
+                            aria-label="Open detail"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDetail(rowId(row));
+                            }}
+                          >
+                            <LuChevronRight />
+                          </IconButton>
+                        </Table.Cell>
+                      );
+                    }
                     const meta = COL_META[cell.column];
                     const isTask = cell.column === "task";
                     return (
@@ -173,12 +232,13 @@ function TrajectoryTableInner() {
                         column={cell.column}
                         width={cell.width}
                         offset={cell.offset}
-                        onClick={() => toggleRow(String(row.key))}
+                        onClick={() => toggleRow(rowId(row))}
                         style={{
-                          padding: "8px 12px",
+                          padding: "0px 12px",
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: meta?.align === "right" ? "flex-end" : "flex-start",
+                          justifyContent:
+                            meta?.align === "right" ? "flex-end" : "flex-start",
                           whiteSpace: isTask ? "normal" : "nowrap",
                           overflow: "hidden",
                           textOverflow: isTask ? undefined : "ellipsis",
@@ -257,11 +317,9 @@ function asStepList(v: any): Step[] {
     .map((s) => {
       if (s == null) return null;
       const r = s as Record<string, unknown>;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const o = (typeof (r as any).toJSON === "function" ? (r as any).toJSON() : r) as Record<
-        string,
-        unknown
-      >;
+      const o = (
+        typeof r.toJSON === "function" ? r.toJSON() : r
+      ) as Record<string, unknown>;
       const name = String(o.name ?? o.tool ?? "");
       return {
         idx: Number(o.idx ?? 0),

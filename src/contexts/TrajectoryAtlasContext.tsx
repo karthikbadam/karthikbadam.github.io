@@ -79,6 +79,11 @@ export interface TrajectoryAtlasContextValue {
    * columns. Surface this so the slider knows its upper bound. */
   maxSankeyDepth: number;
 
+  highlightedTrajId: string | null;
+  setHighlightedTrajId: (id: string | null) => void;
+
+  /** Full trajectory record loaded for the DetailPanel drawer. Set by the
+   * row's "open detail" button — the drawer is open iff this is non-null. */
   selectedTrajectory: Trajectory | null;
   setRowSelection: (t: Trajectory | null) => void;
 
@@ -101,6 +106,7 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
   const [outcomeFilter, setOutcomeFilter] = useState<Outcome | "all">("all");
   const [sankeyDepth, setSankeyDepth] = useState(3);
   const [selectedTrajectory, setSelectedTrajectory] = useState<Trajectory | null>(null);
+  const [highlightedTrajId, setHighlightedTrajId] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats>({ n: 0, pass: 0, avgSteps: 0, avgTokens: 0 });
 
   const coordinatorRef = useRef<Coordinator | null>(null);
@@ -185,6 +191,7 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
         setSearch("");
         setOutcomeFilter("all");
         setSelectedTrajectory(null);
+        setHighlightedTrajId(null);
         await refreshStats(coord);
         setState({ status: "ready" });
       } catch (err) {
@@ -275,11 +282,23 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       sankeyDepth,
       setSankeyDepth,
       maxSankeyDepth: MAX_SANKEY_DEPTH,
+      highlightedTrajId,
+      setHighlightedTrajId,
       selectedTrajectory,
       setRowSelection,
       stats,
     }),
-    [state, source, search, outcomeFilter, sankeyDepth, selectedTrajectory, stats, setRowSelection],
+    [
+      state,
+      source,
+      search,
+      outcomeFilter,
+      sankeyDepth,
+      highlightedTrajId,
+      selectedTrajectory,
+      stats,
+      setRowSelection,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

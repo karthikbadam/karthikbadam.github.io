@@ -8,7 +8,7 @@ import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { accentRamp } from "./taxonomy";
 
 export function StepIcicle() {
-  const { coordinator, crossfilter, selectedTrajectory } = useTrajectoryAtlas();
+  const { coordinator, crossfilter, highlightedTrajId } = useTrajectoryAtlas();
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
 
@@ -27,9 +27,7 @@ export function StepIcicle() {
         accentRamp(level / Math.max(1, maxLevel - 1), dark)
       }
       dark={dark}
-      highlightedTrajIds={
-        selectedTrajectory ? new Set([selectedTrajectory.id]) : null
-      }
+      highlightedTrajIds={highlightedTrajId ? new Set([highlightedTrajId]) : null}
     />
   );
 }
