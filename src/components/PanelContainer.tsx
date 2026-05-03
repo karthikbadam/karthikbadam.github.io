@@ -7,7 +7,7 @@ import { Box, BoxProps } from "@chakra-ui/react";
 export function PanelContainer({ children, ...props }: BoxProps) {
   return (
     <Box
-      bg="bg.panel"
+      bg="bg"
       borderRadius="lg"
       p={2}
       border="1px solid"

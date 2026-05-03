@@ -1,37 +1,39 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
-import { TrajectoryStatsPanel } from "./TrajectoryStatsPanel";
-import { StepIcicle } from "./StepIcicle";
-import { OutcomeSankey } from "./OutcomeSankey";
-import { TrajectoryTable } from "./TrajectoryTable";
 import { DetailPanel } from "./DetailPanel";
-import { TrajectoryPanel } from "./TrajectoryPanel";
+import { OutcomeSankey } from "./OutcomeSankey";
 import { SankeyDepthSlider } from "./SankeyDepthSlider";
+import { StepIcicle } from "./StepIcicle";
+import { TrajectoryPanel } from "./TrajectoryPanel";
+import { TrajectoryStatsPanel } from "./TrajectoryStatsPanel";
+import { TrajectoryTable } from "./TrajectoryTable";
 
 export function Dashboard() {
   const { state, selectedTrajectory, setRowSelection } = useTrajectoryAtlas();
 
   if (state.status !== "ready") {
-    return <LoadingIndicator state={state} title="Loading agent trajectories" />;
+    return (
+      <LoadingIndicator state={state} title="Loading agent trajectories" />
+    );
   }
 
   return (
-    <Flex direction="column" h={{ base: "auto", md: "100%" }} bg="bg.muted" overflow="hidden">
-      <Box px={4} pt={3} pb={2}>
+    <Flex
+      direction="column"
+      h={{ base: "auto", md: "100%" }}
+      bg="bg.muted"
+      overflow="hidden"
+    >
+      <Box px={4} pt={4} pb={2} maxW="80em" mx="auto">
         <Box mb={2}>
-          <Heading as="h1" size="md" color="accent" fontWeight="semibold" lineHeight="1.2">
-            Visualizing Agent Trajectories
+          <Heading as="h1" size="lg" color="accent" mb={1}>
+            Trajectory Atlas
           </Heading>
-          <Text
-            fontSize="sm"
-            color="gray.fg"
-            mt={1}
-            whiteSpace="nowrap"
-            overflow="hidden"
-            textOverflow="ellipsis"
-          >
-            Each step is one message — a user task, tool call, observation, or assistant thought. Click any node or row to cross-filter.
+          <Text fontSize="sm" color="gray.fg" mt={1}>
+            Understand Agent trajectories by steps taken. Each step in the
+            graphs is one action: a user input, tool call, assistant
+            observation, or thought. Click any node or row to cross-filter.
           </Text>
         </Box>
         <TrajectoryStatsPanel />
@@ -73,7 +75,10 @@ export function Dashboard() {
         </TrajectoryPanel>
       </Box>
 
-      <DetailPanel traj={selectedTrajectory} onClose={() => setRowSelection(null)} />
+      <DetailPanel
+        traj={selectedTrajectory}
+        onClose={() => setRowSelection(null)}
+      />
     </Flex>
   );
 }

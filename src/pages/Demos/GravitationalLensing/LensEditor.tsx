@@ -40,7 +40,7 @@ export function LensEditor() {
 
   return (
     <Box
-      bg="bg.panel"
+      bg="bg"
       borderRadius="lg"
       h="100%"
       display="flex"

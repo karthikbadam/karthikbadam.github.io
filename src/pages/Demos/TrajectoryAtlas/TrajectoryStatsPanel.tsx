@@ -30,7 +30,9 @@ export function TrajectoryStatsPanel() {
     stats,
   } = useTrajectoryAtlas();
 
-  const passRate = stats.n ? `${((stats.pass / stats.n) * 100).toFixed(1)}%` : "—";
+  const passRate = stats.n
+    ? `${((stats.pass / stats.n) * 100).toFixed(1)}%`
+    : "—";
   const avgSteps = stats.avgSteps ? stats.avgSteps.toFixed(1) : "—";
   const avgTokens = stats.avgTokens ? formatTokens(stats.avgTokens) : "—";
 
@@ -42,19 +44,17 @@ export function TrajectoryStatsPanel() {
   ];
 
   return (
-    <Box
-      px={3}
-      py={2}
-      borderRadius="lg"
-      bg="bg.panel"
-      border="1px solid"
-      borderColor="gray.subtle"
-    >
-      <Flex gap={4} wrap="wrap" align="center" justify="space-between">
-        <Flex gap={5} wrap="nowrap">
+    <Box py={2}>
+      <Flex gap={10} wrap="wrap" justify="space-between">
+        <Flex gap={4} wrap="nowrap">
           {items.map((item) => (
-            <Stat.Root key={item.label} size="sm" px={0} minW="6rem">
-              <Stat.Label fontSize="xs" color="accentSubtle" whiteSpace="nowrap">
+            <Stat.Root key={item.label} size="sm" px={0} minW="5rem">
+              <Stat.Label
+                fontSize="xs"
+                fontWeight="medium"
+                color="accentSubtle"
+                whiteSpace="nowrap"
+              >
                 {item.label}
               </Stat.Label>
               <Stat.ValueText
@@ -69,16 +69,31 @@ export function TrajectoryStatsPanel() {
           ))}
         </Flex>
 
-        <HStack gap={2} flexWrap="wrap">
+        <HStack gap={4} flexWrap="wrap">
+          <NativeSelect.Root size="sm" w="auto" minW="200px">
+            <NativeSelect.Field
+              value={source}
+              onChange={(e) => setSource(e.target.value as SourceKey)}
+              color="fg"
+              fontSize="sm"
+            >
+              {Object.values(sources).map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </NativeSelect.Field>
+            <NativeSelect.Indicator />
+          </NativeSelect.Root>
           <HStack
             gap={1}
             px={2}
-            h={8}
             borderRadius="md"
             border="1px solid"
-            borderColor="gray.subtle"
+            borderColor="gray.muted"
             bg="bg.subtle"
-            minW="220px"
+            minW="250px"
+            height="auto"
           >
             <LuSearch size={13} />
             <Input
@@ -104,24 +119,13 @@ export function TrajectoryStatsPanel() {
             )}
           </HStack>
 
-          <NativeSelect.Root size="sm" w="auto" minW="200px">
-            <NativeSelect.Field
-              value={source}
-              onChange={(e) => setSource(e.target.value as SourceKey)}
-              bg="accentBackground"
-              color="fg"
-              fontSize="sm"
-            >
-              {Object.values(sources).map((s) => (
-                <option key={s.key} value={s.key}>
-                  {s.label}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-
-          <HStack gap={0} bg="bg.muted" p="2px" borderRadius="md">
+          <HStack
+            gap={0}
+            borderRadius="md"
+            border="1px solid"
+            borderColor="gray.muted"
+            bg="bg.muted"
+          >
             {OUTCOMES.map((o) => (
               <Button
                 key={o}
@@ -132,11 +136,11 @@ export function TrajectoryStatsPanel() {
                     ? o === "success"
                       ? "blue"
                       : o === "partial"
-                      ? "orange"
-                      : o === "fail"
-                      ? "red"
-                      : "gray"
-                    : undefined
+                        ? "orange"
+                        : o === "fail"
+                          ? "red"
+                          : "gray"
+                    : "undefined"
                 }
                 onClick={() => setOutcomeFilter(o)}
                 textTransform="capitalize"

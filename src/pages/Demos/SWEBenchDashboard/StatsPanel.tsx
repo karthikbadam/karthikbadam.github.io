@@ -65,7 +65,9 @@ export function StatsPanel() {
   if (state.status !== "ready" || loading || !stats) {
     return (
       <Box p={4}>
-        <Text fontSize="sm" color="gray.500">Loading stats...</Text>
+        <Text fontSize="sm" color="gray.500">
+          Loading stats...
+        </Text>
       </Box>
     );
   }
@@ -75,18 +77,29 @@ export function StatsPanel() {
     { label: "Spans", value: stats.totalSpans.toLocaleString() },
     { label: "LLM Calls", value: stats.llmCalls.toLocaleString() },
     { label: "Tokens", value: stats.totalTokens.toLocaleString() },
-    { label: traceIdValue ? "Duration" : "Avg Duration", value: `${stats.avgDuration.toFixed(1)}s` },
+    {
+      label: traceIdValue ? "Duration" : "Avg Duration",
+      value: `${stats.avgDuration.toFixed(1)}s`,
+    },
     { label: "Total Duration", value: `${stats.totalDuration.toFixed(1)}s` },
   ];
 
   return (
-    <Box px={2} py={2} borderRadius="lg" bg="bg.panel" border="1px solid" borderColor="gray.subtle">
-      <Flex gap={2} wrap="wrap">
+    <Box py={2}>
+      <Flex gap={10} wrap="wrap">
         {statItems.map((item, idx) => (
           <Flex key={idx} align="center">
-            <Stat.Root size="sm" px={2}>
-              <Stat.Label fontSize="xs" color="accentSubtle">{item.label}</Stat.Label>
-              <Stat.ValueText fontSize="sm" fontWeight="semibold">{item.value}</Stat.ValueText>
+            <Stat.Root size="sm">
+              <Stat.Label
+                fontSize="xs"
+                fontWeight="medium"
+                color="accentSubtle"
+              >
+                {item.label}
+              </Stat.Label>
+              <Stat.ValueText fontSize="md" fontWeight="semibold">
+                {item.value}
+              </Stat.ValueText>
             </Stat.Root>
           </Flex>
         ))}
