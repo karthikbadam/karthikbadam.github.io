@@ -482,12 +482,18 @@ SCHEMA = pa.schema(
         ("cost", pa.float64()),
         ("tools_used", pa.list_(pa.string())),
         ("step_tools", pa.list_(pa.string())),
-        ("step_categories", pa.list_(pa.string())),
-        # Comma-joined mirrors of step_tools / step_categories — primitive
-        # strings are easier for downstream tools (e.g. AnyTable's DuckDBStore)
-        # to round-trip than Arrow List<Utf8>.
+        # Comma-joined mirror of step_tools — primitive string is easier
+        # for downstream tools (e.g. AnyTable's DuckDBStore) to round-trip
+        # than Arrow List<Utf8>.
         ("step_tools_str", pa.string()),
-        ("step_categories_str", pa.string()),
+        # Per-trajectory summary fields, precomputed so the client doesn't
+        # have to run a heavy multi-CTE query per source switch:
+        #   entry_tool   — first tool call (excluding meta + submit terminators)
+        #   dominant_1   — most-used tool (same exclusion)
+        #   dominant_2   — 2nd most-used tool, '(none)' if only one distinct tool
+        ("entry_tool", pa.string()),
+        ("dominant_1", pa.string()),
+        ("dominant_2", pa.string()),
         ("steps", pa.list_(STEP_STRUCT)),
     ]
 )
@@ -645,7 +651,28 @@ def main() -> int:
 
         tools_used = sorted({s["name"] for s in steps if s["name"]})
         step_tools = [s["name"] for s in steps]
-        step_categories = [s["category"] for s in steps]
+
+        # Per-trajectory summary fields — what the client used to compute via
+        # a multi-CTE DuckDB query at load time. Computing once during
+        # extraction shaves seconds off DeepSWE (which has ~80 steps avg).
+        # Excludes meta-steps and submit terminators.
+        _META_OR_SUBMIT = {
+            "task", "thought", "observation",
+            "final_answer", "finish", "submit", "done",
+        }
+        action_steps = [s for s in steps if s["name"] not in _META_OR_SUBMIT]
+        if action_steps:
+            entry_tool = action_steps[0]["name"]
+            tool_counts: dict[str, int] = {}
+            for s in action_steps:
+                tool_counts[s["name"]] = tool_counts.get(s["name"], 0) + 1
+            ranked = sorted(tool_counts.items(), key=lambda kv: (-kv[1], kv[0]))
+            dominant_1 = ranked[0][0]
+            dominant_2 = ranked[1][0] if len(ranked) > 1 else "(none)"
+        else:
+            entry_tool = "(none)"
+            dominant_1 = "(none)"
+            dominant_2 = "(none)"
 
         task_text = jsonpath_get(record, paths["task"]) if paths["task"] else None
         if not task_text:
@@ -693,9 +720,10 @@ def main() -> int:
                 "cost": float(cost) if cost is not None else 0.0,
                 "tools_used": tools_used,
                 "step_tools": step_tools,
-                "step_categories": step_categories,
                 "step_tools_str": ",".join(step_tools),
-                "step_categories_str": ",".join(step_categories),
+                "entry_tool": entry_tool,
+                "dominant_1": dominant_1,
+                "dominant_2": dominant_2,
                 "steps": steps,
             }
         )

@@ -115,7 +115,8 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
         coordinatorRef.current = coord;
 
         await coord.exec(`INSTALL httpfs; LOAD httpfs;`);
-        await coord.exec(`SET threads = 1;`);
+        // Let DuckDB-WASM use its default thread count — capping at 1 made
+        // the heavy DeepSWE summary query unbearably slow.
         crossfilterRef.current = vg.Selection.crossfilter();
 
         await loadSource(coord, source);
@@ -149,7 +150,6 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         setState({ status: "loading-parquet", message: SOURCES[source].label });
-        await coord.exec("DROP TABLE IF EXISTS traj_summary");
         await coord.exec("DROP TABLE IF EXISTS steps");
         await coord.exec("DROP TABLE IF EXISTS trajectories");
         await loadSource(coord, source);
@@ -173,6 +173,10 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
   async function loadSource(coord: Coordinator, src: SourceKey) {
     const url = `${window.location.origin}${SOURCES[src].parquetUrl}`;
     setState({ status: "loading-parquet", message: SOURCES[src].label });
+    // The parquet already carries entry_tool / dominant_1 / dominant_2
+    // (precomputed in extract_trajectories.py) so the sankey can read them
+    // straight off `trajectories` instead of running a multi-CTE summary
+    // query at load time.
     await coord.exec(`
       CREATE TABLE trajectories AS SELECT * FROM read_parquet('${url}')
     `);
@@ -187,48 +191,6 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
              s.duration AS duration,
              s.ok       AS ok
       FROM trajectories t, UNNEST(t.steps) AS u(s)
-    `);
-    // Per-trajectory summary: entry tool + top-2 dominant tools + outcome.
-    // Excludes meta-steps and submit terminators so the sankey columns
-    // represent real actions, not bookkeeping. NULLs (when a trajectory has
-    // no 2nd dominant) become '(none)' so the sankey can route skip-edges
-    // past them.
-    setState({ status: "creating-tables", table: "traj_summary" });
-    await coord.exec(`
-      CREATE TABLE traj_summary AS
-      WITH counts AS (
-        SELECT id, name, COUNT(*) AS cnt
-        FROM steps
-        WHERE name NOT IN ('task','thought','observation',
-                           'final_answer','finish','submit','done')
-        GROUP BY id, name
-      ),
-      ranked AS (
-        SELECT id, name,
-               ROW_NUMBER() OVER (PARTITION BY id ORDER BY cnt DESC, name) AS rk
-        FROM counts
-      ),
-      dominant AS (
-        SELECT id,
-               MAX(name) FILTER (WHERE rk = 1) AS dominant_1,
-               MAX(name) FILTER (WHERE rk = 2) AS dominant_2
-        FROM ranked GROUP BY id
-      ),
-      entry AS (
-        SELECT id, arg_min(name, step_idx) AS entry_tool
-        FROM steps
-        WHERE name NOT IN ('task','thought','observation',
-                           'final_answer','finish','submit','done')
-        GROUP BY id
-      )
-      SELECT t.id,
-             t.outcome,
-             COALESCE(e.entry_tool, '(none)') AS entry_tool,
-             COALESCE(d.dominant_1, '(none)') AS dominant_1,
-             COALESCE(d.dominant_2, '(none)') AS dominant_2
-      FROM trajectories t
-      LEFT JOIN entry e USING (id)
-      LEFT JOIN dominant d USING (id)
     `);
   }
 
