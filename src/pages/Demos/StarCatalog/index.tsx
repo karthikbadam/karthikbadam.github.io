@@ -31,7 +31,7 @@ function DashboardContent() {
           <Heading as="h1" size="lg" color="accent" mb={1}>
             Gaia Star Catalog Explorer
           </Heading>
-          <Text fontSize="sm" color="gray.fg">
+          <Text fontSize="sm" color="fg.muted">
             A small collection of 1 million stars with their positions,
             magnitudes, and other properties. This is a subset of the Gaia star
             catalog that contains 1 billion stars.{" "}
