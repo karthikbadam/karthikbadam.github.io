@@ -69,6 +69,12 @@ export interface IcicleMosaicClientProps {
   dark?: boolean;
   highlightedTrajIds?: Set<string> | null;
   onCellClick?: (level: number, category: string, trajIds: Set<string>) => void;
+  /** Increment to clear the icicle's local node selection and write a null
+   * clause to the bound crossfilter. Used by an external "Clear all" button. */
+  resetSignal?: number;
+  /** Reports whether the icicle currently has a node-path selection. The
+   * topbar uses this to keep its "Clear filters" button visible. */
+  onSelectionStateChange?: (active: boolean) => void;
 }
 
 interface PathRow {
@@ -126,6 +132,8 @@ export function IcicleMosaicClient({
   dark = false,
   highlightedTrajIds,
   onCellClick,
+  resetSignal,
+  onSelectionStateChange,
 }: IcicleMosaicClientProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -236,6 +244,21 @@ export function IcicleMosaicClient({
     };
   }, [coordinator, selection, buildQuery]);
 
+  // External "Clear all" — flush local selection and the matching clause on
+  // the crossfilter so the icicle no longer narrows the other charts.
+  useEffect(() => {
+    if (resetSignal === undefined) return;
+    setLocalSelection(null);
+    onSelectionStateChange?.(false);
+    if (selection && clientRef.current) {
+      const client = clientRef.current;
+      selection.update(
+        clausePoints([idCol], undefined, { source: client, clients: new Set([client]) }),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal]);
+
   const { rects, totalN, maxLevelInData, svgHeight } = useMemo(() => {
     const tree = buildTree(rows);
     const totalN = tree.children.reduce((a, c) => a + c.n, 0) || 1;
@@ -278,6 +301,7 @@ export function IcicleMosaicClient({
   function handleClick(rect: LayoutRect) {
     const next = isSelected(rect) ? null : rect.node.path;
     setLocalSelection(next);
+    onSelectionStateChange?.(next !== null);
 
     if (selection && clientRef.current) {
       const client = clientRef.current;

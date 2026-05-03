@@ -8,7 +8,13 @@ import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { accentRamp } from "./taxonomy";
 
 export function StepIcicle() {
-  const { coordinator, crossfilter, highlightedTrajId } = useTrajectoryAtlas();
+  const {
+    coordinator,
+    crossfilter,
+    highlightedTrajId,
+    resetSignal,
+    setIcicleSelectionActive,
+  } = useTrajectoryAtlas();
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
 
@@ -28,6 +34,8 @@ export function StepIcicle() {
       }
       dark={dark}
       highlightedTrajIds={highlightedTrajId ? new Set([highlightedTrajId]) : null}
+      resetSignal={resetSignal}
+      onSelectionStateChange={setIcicleSelectionActive}
     />
   );
 }
