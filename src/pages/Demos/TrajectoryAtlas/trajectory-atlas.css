@@ -35,7 +35,38 @@
   --chart-gray:       #B8BCC4;
 }
 
-/* ---- 2. Trajectory table — step path column ----------------------------- */
+/* ---- 2. AnyTable surface — color-mode aware --------------------------- */
+/* AnyTable stamps role=grid/row/columnheader/gridcell on its DOM. Drive the
+ * header / cell colours from Chakra's semantic tokens so dark mode flips. */
+[role="grid"] {
+  background: var(--chakra-colors-bg-panel);
+  color: var(--chakra-colors-fg);
+}
+[role="grid"] [role="rowgroup"]:first-of-type,
+[role="grid"] [role="rowgroup"]:first-of-type [role="row"] {
+  background: var(--chakra-colors-bg-subtle);
+  border-bottom: 1px solid var(--chakra-colors-gray-subtle);
+}
+[role="grid"] [role="columnheader"] {
+  color: var(--chakra-colors-fg-muted);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+[role="grid"] [role="row"] {
+  border-bottom: 1px solid var(--chakra-colors-bg-subtle);
+}
+[role="grid"] [role="row"]:hover {
+  background: var(--chakra-colors-bg-subtle);
+}
+[role="grid"] [role="row"][aria-selected="true"] {
+  background: var(--chakra-colors-accent-subtle, var(--chakra-colors-accentBackground));
+}
+[role="grid"] [role="gridcell"] {
+  color: var(--chakra-colors-fg);
+}
+
+/* ---- 3. Trajectory table — step path column ----------------------------- */
 .ta-step-path {
   display: flex; align-items: center; gap: 2px;
   flex-wrap: nowrap;
