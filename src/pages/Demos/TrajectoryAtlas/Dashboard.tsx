@@ -73,9 +73,7 @@ export function Dashboard() {
         </TrajectoryPanel>
       </Box>
 
-      {selectedTrajectory && (
-        <DetailPanel traj={selectedTrajectory} onClose={() => setRowSelection(null)} />
-      )}
+      <DetailPanel traj={selectedTrajectory} onClose={() => setRowSelection(null)} />
     </Flex>
   );
 }

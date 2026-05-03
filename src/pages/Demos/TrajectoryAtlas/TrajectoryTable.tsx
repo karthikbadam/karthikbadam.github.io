@@ -126,14 +126,6 @@ function TrajectoryTableInner() {
       borderRadius="md"
       fontSize="sm"
       color="fg"
-      // Bridge AnyTable's CSS-var dependencies onto Chakra's runtime tokens
-      // so the table chrome flips with the active color mode.
-      style={{
-        ["--accent" as string]: "var(--chakra-colors-accent)",
-        ["--border" as string]: "var(--chakra-colors-gray-subtle)",
-        ["--fg" as string]: "var(--chakra-colors-fg)",
-        ["--muted-fg" as string]: "var(--chakra-colors-fg-muted)",
-      }}
     >
       <Table.Root {...table.rootProps}>
         <Table.Header
