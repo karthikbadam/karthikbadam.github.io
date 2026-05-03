@@ -33,7 +33,7 @@ function DashboardContent() {
           <Heading as="h1" size="lg" color="accent" mb={1}>
             Gravitational Lensing Simulation
           </Heading>
-          <Text fontSize="sm" color="gray.fg">
+          <Text fontSize="sm" color="fg.muted">
             Interactive visualization of gravitational lensing using the
             thin-lens point-mass approximation. Edit lens positions and observe
             the warped grid.

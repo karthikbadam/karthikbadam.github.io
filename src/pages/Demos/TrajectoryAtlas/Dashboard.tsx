@@ -30,7 +30,7 @@ export function Dashboard() {
           <Heading as="h1" size="lg" color="accent" mb={1}>
             Trajectory Atlas
           </Heading>
-          <Text fontSize="sm" color="gray.fg" mt={1}>
+          <Text fontSize="sm" color="fg.muted">
             Understand Agent trajectories by steps taken. Each step in the
             graphs is one action: a user input, tool call, assistant
             observation, or thought. Click any node or row to cross-filter.
