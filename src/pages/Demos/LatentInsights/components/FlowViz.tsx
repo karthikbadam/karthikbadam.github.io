@@ -355,11 +355,11 @@ export const FlowViz: React.FC = () => {
         <Flex
           px={2}
           py={1}
-          gap={3}
+          gap={4}
           flexWrap="wrap"
           borderTop="1px solid"
           borderColor="gray.subtle"
-          bg="bg.panel"
+          bg="bg"
           flexShrink={0}
         >
           {[

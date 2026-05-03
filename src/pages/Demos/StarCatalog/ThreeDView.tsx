@@ -414,7 +414,7 @@ export function ThreeDView() {
 
   return (
     <Box
-      bg="bg.panel"
+      bg="bg"
       borderRadius="lg"
       p={2}
       overflow="hidden"

@@ -102,7 +102,7 @@ export function MosaicChart<T = void>({
 
   if (!isReady) {
     return (
-      <Box gridArea={gridArea} bg="bg.subtle" borderRadius="lg" p={3}>
+      <Box gridArea={gridArea} bg="bg.subtle" borderRadius="lg" p={4}>
         <Text fontSize="sm" color="fg.muted">
           {loadingText}
         </Text>
@@ -113,7 +113,7 @@ export function MosaicChart<T = void>({
   return (
     <Box
       gridArea={gridArea}
-      bg="bg.panel"
+      bg="bg"
       borderRadius="lg"
       p={2}
       position="relative"
