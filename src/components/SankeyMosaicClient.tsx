@@ -128,7 +128,11 @@ export function SankeyMosaicClient({
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [nodes, setNodes] = useState<NodeRow[]>([]);
   const [links, setLinks] = useState<LinkRow[]>([]);
-  const [hover, setHover] = useState<LinkLayout | null>(null);
+  type HoverState =
+    | { kind: "link"; lk: LinkLayout }
+    | { kind: "node"; n: NodeLayout }
+    | null;
+  const [hover, setHover] = useState<HoverState>(null);
   const [localSelection, setLocalSelection] = useState<{
     col: number;
     toCol: number;
@@ -316,18 +320,29 @@ export function SankeyMosaicClient({
             const sel = isSelected(lk);
             const hi =
               highlightedTrajIds && setIntersects(lk.trajIds, highlightedTrajIds);
-            const dimmed =
+            // Hover-driven dimming: when the user hovers a link or a node,
+            // dim every link NOT involved in the hover.
+            const isHoverLink = hover?.kind === "link" && hover.lk === lk;
+            const isHoverConnected =
+              hover?.kind === "node" &&
+              ((hover.n.col === lk.fromCol && hover.n.key === lk.from) ||
+                (hover.n.col === lk.toCol && hover.n.key === lk.to));
+            const dimmedByHover =
+              hover != null && !isHoverLink && !isHoverConnected;
+            const dimmedBySelection =
               (localSelection !== null && !sel) ||
               (highlightedTrajIds != null && !hi);
+            const dimmed = dimmedByHover || dimmedBySelection;
+            const accent = isHoverLink || isHoverConnected || sel || hi;
             return (
               <path
                 key={`l-${i}`}
                 d={ribbonPath(lk.x0, lk.y0, lk.t0, lk.x1, lk.y1, lk.t1)}
                 fill={lk.color}
-                opacity={hi ? 0.85 : sel ? 0.85 : dimmed ? 0.06 : 0.32}
-                style={{ cursor: "pointer", transition: "opacity .2s" }}
+                opacity={accent ? 0.85 : dimmed ? 0.04 : 0.32}
+                style={{ cursor: "pointer", transition: "opacity .15s" }}
                 onClick={() => handleClick(lk)}
-                onMouseEnter={() => setHover(lk)}
+                onMouseEnter={() => setHover({ kind: "link", lk })}
                 onMouseLeave={() => setHover(null)}
               />
             );
@@ -336,6 +351,15 @@ export function SankeyMosaicClient({
             // Drop labels on rectangles too short to fit the text — they
             // collide otherwise. The "other" node is small but always shown.
             const showLabel = n.h >= 11 || n.key === OTHER_KEY;
+            const isHoverNode = hover?.kind === "node" && hover.n === n;
+            const dimmedNode =
+              hover != null &&
+              !isHoverNode &&
+              !(
+                hover.kind === "link" &&
+                ((hover.lk.fromCol === n.col && hover.lk.from === n.key) ||
+                  (hover.lk.toCol === n.col && hover.lk.to === n.key))
+              );
             return (
               <Group key={`n-${i}`}>
                 <Bar
@@ -345,7 +369,10 @@ export function SankeyMosaicClient({
                   height={Math.max(1, n.h)}
                   fill={n.color}
                   rx={2}
-                  opacity={0.95}
+                  opacity={dimmedNode ? 0.25 : 0.95}
+                  style={{ cursor: "pointer", transition: "opacity .15s" }}
+                  onMouseEnter={() => setHover({ kind: "node", n })}
+                  onMouseLeave={() => setHover(null)}
                 />
                 {showLabel && (
                   <text
@@ -355,6 +382,7 @@ export function SankeyMosaicClient({
                     textAnchor={n.col === columns.length - 1 ? "end" : "start"}
                     pointerEvents="none"
                     style={chartLabelStyle}
+                    opacity={dimmedNode ? 0.4 : 1}
                   >
                     {n.label}
                     {n.h >= 14 && (
@@ -397,22 +425,65 @@ export function SankeyMosaicClient({
           })}
         </Group>
       </svg>
-      {hover && (
+      {hover?.kind === "link" && (
         <div
           style={{
             ...tooltipContainerStyle(dark, 220),
-            left: Math.min((hover.x0 + hover.x1) / 2, Math.max(0, size.w - 240)),
-            top: Math.max(0, Math.min((hover.y0 + hover.y1) / 2 - 10, size.h - 80)),
+            left: Math.min(
+              (hover.lk.x0 + hover.lk.x1) / 2,
+              Math.max(0, size.w - 240),
+            ),
+            top: Math.max(
+              0,
+              Math.min((hover.lk.y0 + hover.lk.y1) / 2 - 10, size.h - 80),
+            ),
           }}
         >
           <div style={tooltipTitleStyle}>
-            {hover.from === OTHER_KEY ? "other" : hover.from}
+            {hover.lk.from === OTHER_KEY ? "other" : hover.lk.from}
             {" → "}
-            {hover.to === OTHER_KEY ? "other" : hover.to}
+            {hover.lk.to === OTHER_KEY ? "other" : hover.lk.to}
           </div>
           <div style={tooltipRowStyle(dark)}>
             <span>trajectories</span>
-            <b style={{ color: "inherit", fontWeight: 500 }}>{hover.count.toLocaleString()}</b>
+            <b style={{ color: "inherit", fontWeight: 500 }}>
+              {hover.lk.count.toLocaleString()}
+            </b>
+          </div>
+        </div>
+      )}
+      {hover?.kind === "node" && (
+        <div
+          style={{
+            ...tooltipContainerStyle(dark, 220),
+            left: Math.min(hover.n.x + hover.n.w + 10, Math.max(0, size.w - 240)),
+            top: Math.max(0, Math.min(hover.n.y + hover.n.h / 2 - 10, size.h - 80)),
+          }}
+        >
+          <div style={tooltipTitleStyle}>
+            {hover.n.label}
+            <span style={{ color: chartFgMuted(dark), marginLeft: 6, fontWeight: 400 }}>
+              · {columns[hover.n.col]?.label ?? columns[hover.n.col]?.name ?? ""}
+            </span>
+          </div>
+          <div style={tooltipRowStyle(dark)}>
+            <span>trajectories</span>
+            <b style={{ color: "inherit", fontWeight: 500 }}>
+              {hover.n.count.toLocaleString()}
+            </b>
+          </div>
+          <div style={tooltipRowStyle(dark)}>
+            <span>share of column</span>
+            <b style={{ color: "inherit", fontWeight: 500 }}>
+              {(() => {
+                const total = layout.nodes
+                  .filter((n) => n.col === hover.n.col)
+                  .reduce((a, n) => a + n.count, 0);
+                return total > 0
+                  ? `${((hover.n.count / total) * 100).toFixed(1)}%`
+                  : "—";
+              })()}
+            </b>
           </div>
         </div>
       )}
