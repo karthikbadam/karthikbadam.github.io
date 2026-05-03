@@ -13,7 +13,8 @@ import { MosaicProvider, Table, useTable, type ColumnDef } from "@any_table/reac
 import type { Selection as VgSelection } from "@uwdata/mosaic-core";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { asArray, asStringList } from "../../../components/chartUtils";
-import { CAT_COLOR, categoryFor } from "./taxonomy";
+import { OutcomeBadge } from "./OutcomeBadge";
+import { StepPath } from "./StepPath";
 import type { Category, Outcome, Step, Trajectory } from "./types";
 
 interface ColMeta {
@@ -125,6 +126,14 @@ function TrajectoryTableInner() {
       borderRadius="md"
       fontSize="sm"
       color="fg"
+      // Bridge AnyTable's CSS-var dependencies onto Chakra's runtime tokens
+      // so the table chrome flips with the active color mode.
+      style={{
+        ["--accent" as string]: "var(--chakra-colors-accent)",
+        ["--border" as string]: "var(--chakra-colors-gray-subtle)",
+        ["--fg" as string]: "var(--chakra-colors-fg)",
+        ["--muted-fg" as string]: "var(--chakra-colors-fg-muted)",
+      }}
     >
       <Table.Root {...table.rootProps}>
         <Table.Header
@@ -217,77 +226,16 @@ function TrajectoryTableInner() {
 function renderCell(column: string, value: unknown): React.ReactNode {
   if (value == null) return "";
   switch (column) {
-    case "step_tools_str": {
-      const raw = String(value ?? "").trim();
-      if (!raw) return null;
-      const names = raw.split(",");
-      const max = 24;
-      const shown = names.slice(0, max);
-      const more = names.length - shown.length;
-      return (
-        <div className="ta-step-path">
-          {shown.map((name, i) => {
-            const cat = categoryFor(name);
-            return (
-              <span
-                key={i}
-                className="ta-step-dot"
-                title={`${i + 1}. ${name}`}
-                style={{ background: CAT_COLOR[cat as Category] ?? "var(--chakra-colors-fg-subtle)" }}
-              />
-            );
-          })}
-          {more > 0 && <span className="ta-step-more">+{more}</span>}
-        </div>
-      );
-    }
-    case "step_tools": {
-      const names = asStringList(value);
-      if (!names.length) return null;
-      const max = 24;
-      const shown = names.slice(0, max);
-      const more = names.length - shown.length;
-      return (
-        <div className="ta-step-path">
-          {shown.map((name, i) => {
-            const cat = categoryFor(name);
-            return (
-              <span
-                key={i}
-                className="ta-step-dot"
-                title={`${i + 1}. ${name}`}
-                style={{ background: CAT_COLOR[cat as Category] ?? "var(--chakra-colors-fg-subtle)" }}
-              />
-            );
-          })}
-          {more > 0 && <span className="ta-step-more">+{more}</span>}
-        </div>
-      );
-    }
+    case "step_tools_str":
+      return <StepPath value={String(value ?? "")} />;
+    case "step_tools":
+      return <StepPath value={asStringList(value).join(",")} />;
     case "steps": {
       const steps = asStepList(value);
-      if (!steps.length) return null;
-      const max = 24;
-      const shown = steps.slice(0, max);
-      const more = steps.length - shown.length;
-      return (
-        <div className="ta-step-path">
-          {shown.map((s, i) => (
-            <span
-              key={i}
-              className="ta-step-dot"
-              title={`${i + 1}. ${s.name || s.tool}`}
-              style={{ background: CAT_COLOR[s.category as Category] ?? "var(--chakra-colors-fg-subtle)" }}
-            />
-          ))}
-          {more > 0 && <span className="ta-step-more">+{more}</span>}
-        </div>
-      );
+      return <StepPath value={steps.map((s) => s.name || s.tool).join(",")} />;
     }
-    case "outcome": {
-      const o = String(value ?? "") as Outcome;
-      return <span className={`ta-outcome-badge ta-outcome-${o}`}>{o}</span>;
-    }
+    case "outcome":
+      return <OutcomeBadge outcome={String(value ?? "fail") as Outcome} />;
     case "tokens": {
       const t = Number(value ?? 0);
       if (t < 1000) return String(t);

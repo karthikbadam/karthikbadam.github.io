@@ -8,7 +8,6 @@ import { TrajectoryTable } from "./TrajectoryTable";
 import { DetailPanel } from "./DetailPanel";
 import { TrajectoryPanel } from "./TrajectoryPanel";
 import { SankeyDepthSlider } from "./SankeyDepthSlider";
-import "./trajectory-atlas.css";
 
 export function Dashboard() {
   const { state, selectedTrajectory, setRowSelection } = useTrajectoryAtlas();

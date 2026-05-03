@@ -1,58 +1,123 @@
-// Trajectory Atlas — DetailPanel: slide-in inspector. Keeps things simple
-// with plain divs. Only the main TrajectoryTable uses AnyTable in this demo.
+// Trajectory Atlas — DetailPanel: slide-in inspector for a single trajectory.
+// All Chakra, no custom CSS file.
 
+import { Box, Button, Flex, Grid, Text } from "@chakra-ui/react";
 import { LuTriangleAlert, LuX } from "react-icons/lu";
-import { CAT_COLOR } from "./taxonomy";
-import type { Category, Trajectory } from "./types";
+import { OutcomeBadge } from "./OutcomeBadge";
+import { categoryFor, categoryToken } from "./taxonomy";
+import type { Trajectory } from "./types";
 
 export function DetailPanel({ traj, onClose }: { traj: Trajectory; onClose: () => void }) {
   return (
-    <div className="ta-detail" role="dialog" aria-label="Trajectory details">
-      <div className="ta-detail-head">
-        <div className="ta-detail-head-text">
-          <div className="ta-detail-id">{traj.id}</div>
-          <div className="ta-detail-task">{traj.task}</div>
-        </div>
-        <button className="ta-detail-close" onClick={onClose} aria-label="Close">
+    <Flex
+      role="dialog"
+      aria-label="Trajectory details"
+      direction="column"
+      position="fixed"
+      top={0}
+      right={0}
+      bottom={0}
+      w={{ base: "95vw", md: "440px" }}
+      bg="bg.panel"
+      borderLeft="1px solid"
+      borderColor="gray.subtle"
+      boxShadow="xl"
+      zIndex={50}
+      animation="ta-slide-in 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
+      css={{
+        "@keyframes ta-slide-in": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
+        },
+      }}
+    >
+      <Flex
+        justify="space-between"
+        align="flex-start"
+        gap={3}
+        p={4}
+        borderBottom="1px solid"
+        borderColor="gray.subtle"
+      >
+        <Box minW={0}>
+          <Text fontSize="xs" color="fg.subtle" fontFamily="mono" mb={1}>
+            {traj.id}
+          </Text>
+          <Text fontSize="sm" fontWeight="medium" color="fg">
+            {traj.task}
+          </Text>
+        </Box>
+        <Button size="xs" variant="ghost" onClick={onClose} aria-label="Close" flexShrink={0}>
           <LuX size={14} />
-        </button>
-      </div>
+        </Button>
+      </Flex>
 
-      <div className="ta-detail-meta">
+      <Grid
+        templateColumns="1fr 1fr"
+        gap={2}
+        px={4}
+        py={3}
+        borderBottom="1px solid"
+        borderColor="gray.subtle"
+        fontSize="xs"
+      >
         <Meta label="model" value={traj.model} mono />
         <Meta label="dataset" value={traj.dataset} />
-        <Meta
-          label="outcome"
-          value={
-            <span className={`ta-outcome-badge ta-outcome-${traj.outcome}`}>{traj.outcome}</span>
-          }
-        />
+        <Meta label="outcome" value={<OutcomeBadge outcome={traj.outcome} />} />
         <Meta label="steps" value={traj.step_count} mono />
         <Meta label="tokens" value={traj.tokens.toLocaleString()} mono />
         <Meta label="reward" value={traj.reward.toFixed(2)} mono />
-      </div>
+      </Grid>
 
-      <div className="ta-detail-section-title">Trajectory steps</div>
-      <div className="ta-detail-steps">
+      <Text
+        fontSize="11px"
+        fontWeight="semibold"
+        color="fg.muted"
+        textTransform="uppercase"
+        letterSpacing="0.05em"
+        px={4}
+        pt={3}
+        pb={2}
+      >
+        Trajectory steps
+      </Text>
+      <Box flex="1" minH={0} overflowY="auto" px={4} pb={4}>
         {traj.steps.map((s, i) => (
-          <div key={i} className={`ta-step-row ${!s.ok ? "is-err" : ""}`}>
-            <div className="ta-step-num">{String(i + 1).padStart(2, "0")}</div>
-            <div
-              className="ta-step-bar"
-              style={{ background: CAT_COLOR[s.category as Category] ?? "#9498A0" }}
-            />
-            <div className="ta-step-name">{s.name || s.tool}</div>
-            <div className="ta-step-role">{s.role}</div>
-            <div className="ta-step-meta">
+          <Grid
+            key={i}
+            templateColumns="28px 4px minmax(0, 1.4fr) minmax(0, 1fr) auto"
+            gap={2}
+            alignItems="center"
+            py={1.5}
+            borderBottom="1px solid"
+            borderColor="bg.subtle"
+            fontSize="xs"
+            color={s.ok ? "fg" : "red.500"}
+          >
+            <Text fontFamily="mono" fontSize="10px" color="fg.subtle">
+              {String(i + 1).padStart(2, "0")}
+            </Text>
+            <Box w="4px" h="16px" borderRadius="2px" bg={categoryToken(categoryFor(s.name))} />
+            <Text fontFamily="mono" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+              {s.name || s.tool}
+            </Text>
+            <Text
+              fontSize="11px"
+              color="fg.muted"
+              overflow="hidden"
+              textOverflow="ellipsis"
+              whiteSpace="nowrap"
+            >
+              {s.role}
+            </Text>
+            <Flex align="center" gap={1} fontFamily="mono" fontSize="10px" color="fg.subtle">
               {s.tokens}t
-              {!s.ok && (
-                <LuTriangleAlert size={11} color="var(--chart-red, #FF725C)" />
-              )}
-            </div>
-          </div>
+              {!s.ok && <LuTriangleAlert size={11} />}
+            </Flex>
+          </Grid>
         ))}
-      </div>
-    </div>
+      </Box>
+    </Flex>
   );
 }
 
@@ -66,9 +131,19 @@ function Meta({
   mono?: boolean;
 }) {
   return (
-    <div className="ta-meta-row">
-      <span className="ta-meta-label">{label}</span>
-      <span className={`ta-meta-value ${mono ? "is-mono" : ""}`}>{value}</span>
-    </div>
+    <Flex justify="space-between" align="center">
+      <Text
+        as="span"
+        color="fg.subtle"
+        textTransform="uppercase"
+        letterSpacing="0.04em"
+        fontSize="10px"
+      >
+        {label}
+      </Text>
+      <Box as="span" color="fg" fontFamily={mono ? "mono" : undefined}>
+        {value}
+      </Box>
+    </Flex>
   );
 }
