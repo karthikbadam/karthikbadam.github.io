@@ -15,7 +15,7 @@ interface TrajectoryPanelProps {
 export function TrajectoryPanel({ title, subtitle, right, children }: TrajectoryPanelProps) {
   return (
     <Box
-      bg="bg.panel"
+      bg="bg"
       borderRadius="lg"
       p={2}
       position="relative"

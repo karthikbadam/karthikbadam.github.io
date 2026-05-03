@@ -39,7 +39,7 @@ function DetailContents({ traj }: { traj: Trajectory }) {
   return (
     <>
       <Drawer.Header>
-        <Flex justify="space-between" align="flex-start" gap={3} w="100%">
+        <Flex justify="space-between" align="flex-start" gap={4} w="100%">
           <Box minW={0}>
             <Text fontSize="xs" color="fg.subtle" fontFamily="mono" mb={1}>
               {traj.id}
@@ -57,7 +57,7 @@ function DetailContents({ traj }: { traj: Trajectory }) {
       <Drawer.Body p={0}>
         <Grid
           templateColumns="repeat(2, minmax(0, 1fr))"
-          rowGap={3}
+          rowGap={4}
           columnGap={4}
           px={4}
           py={4}
@@ -79,7 +79,7 @@ function DetailContents({ traj }: { traj: Trajectory }) {
           textTransform="uppercase"
           letterSpacing="0.05em"
           px={4}
-          pt={3}
+          pt={4}
           pb={2}
         >
           Trajectory steps

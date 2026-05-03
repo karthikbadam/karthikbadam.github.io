@@ -141,7 +141,7 @@ function TrajectoryTableInner() {
       w="100%"
       h="100%"
       overflow="hidden"
-      bg="bg.panel"
+      bg="bg"
       borderRadius="md"
       fontSize="sm"
       color="fg"

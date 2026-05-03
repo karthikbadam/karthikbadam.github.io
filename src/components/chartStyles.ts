@@ -1,10 +1,4 @@
 // Centralized style tokens for the Mosaic chart components.
-//
-// SVG <text> needs styles via the React `style` attribute (the SVG
-// `font-size` attribute is unreliable across renderers — see the Sankey
-// label-blow-up bug). All chart text + tooltip styling routes through
-// this module so font sizes / colours line up across icicle, sankey, and
-// any future visualisations and so changes happen in one place.
 
 import type { CSSProperties } from "react";
 
@@ -57,7 +51,7 @@ export function tooltipContainerStyle(
     borderRadius: 6,
     boxShadow: "0 4px 12px rgba(0,0,0,.18)",
     padding: "8px 10px",
-    fontSize: 12,
+    fontSize: "0.8rem",
     pointerEvents: "none",
     width,
     maxWidth: width,

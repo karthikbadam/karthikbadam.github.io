@@ -27,7 +27,7 @@ export function TokenList() {
 
   return (
     <Box
-      bg="bg.panel"
+      bg="bg"
       borderRadius="lg"
       p={2}
       border="1px solid"

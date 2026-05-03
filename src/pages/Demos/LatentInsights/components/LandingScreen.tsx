@@ -187,13 +187,13 @@ export function LandingScreen() {
           </VStack>
 
           {/* Upload + source link */}
-          <Flex align="center" gap={3}>
+          <Flex align="center" gap={4}>
             <Box
               as="label"
               display="inline-flex"
               alignItems="center"
               gap={1}
-              px={3}
+              px={4}
               py={1}
               border="1px solid"
               borderColor={pendingFile ? "fg.muted" : "gray.600"}
@@ -243,7 +243,7 @@ export function LandingScreen() {
                   key={s.id}
                   as="button"
                   w="100%"
-                  p={3}
+                  p={4}
                   border="1px solid"
                   borderColor="gray.600"
                   borderRadius="md"
@@ -279,7 +279,7 @@ export function LandingScreen() {
                 key={s.id}
                 as="button"
                 w="100%"
-                p={3}
+                p={4}
                 border="1px solid"
                 borderColor="gray.600"
                 borderRadius="md"

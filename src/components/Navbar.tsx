@@ -96,7 +96,7 @@ export const Navbar = () => {
                         variant="ghost"
                         size="sm"
                         position="absolute"
-                        top={3}
+                        top={4}
                         insetEnd={2}
                       >
                         <LuX size={18} />
