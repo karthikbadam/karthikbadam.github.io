@@ -9,16 +9,14 @@ import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { OUTCOME_ORDER, categoryFor, categoryHex, outcomeHex } from "./taxonomy";
 import type { Category, Outcome } from "./types";
 
-const ORDERINGS = {
-  outcome: OUTCOME_ORDER as readonly string[] as string[],
-};
+const ORDERINGS = { outcome: OUTCOME_ORDER as readonly string[] as string[] };
 
-function stepLabel(i: number): string {
+const stepLabel = (i: number): string => {
   if (i === 0) return "Entry tool";
   if (i === 1) return "2nd tool";
   if (i === 2) return "3rd tool";
   return `${i + 1}th tool`;
-}
+};
 
 export function OutcomeSankey() {
   const { coordinator, crossfilter, selectedTrajectory, sankeyDepth } =
@@ -26,32 +24,28 @@ export function OutcomeSankey() {
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
 
-  const columns: SankeyColumnSpec[] = useMemo(() => {
-    const stepCols: SankeyColumnSpec[] = Array.from({ length: sankeyDepth }, (_, i) => ({
-      name: `step_${i + 1}`,
-      label: stepLabel(i),
-      expr: `any_value(step_${i + 1})`,
-    }));
-    return [
-      ...stepCols,
+  const columns: SankeyColumnSpec[] = useMemo(
+    () => [
+      ...Array.from({ length: sankeyDepth }, (_, i) => ({
+        name: `step_${i + 1}`,
+        label: stepLabel(i),
+        expr: `any_value(step_${i + 1})`,
+      })),
       { name: "outcome", label: "Outcome", expr: "any_value(outcome)" },
-    ];
-  }, [sankeyDepth]);
+    ],
+    [sankeyDepth],
+  );
 
   const palette = useMemo(
-    () =>
-      (column: string, value: string): string => {
-        if (column === "outcome") return outcomeHex(value as Outcome, dark);
-        if (value === "(none)") return dark ? "#4a5568" : "#a0aec0";
-        const cat = categoryFor(value) as Category;
-        return categoryHex(cat, dark);
-      },
+    () => (column: string, value: string): string => {
+      if (column === "outcome") return outcomeHex(value as Outcome, dark);
+      if (value === "(none)") return dark ? "#4a5568" : "#a0aec0";
+      return categoryHex(categoryFor(value) as Category, dark);
+    },
     [dark],
   );
 
   if (!coordinator) return null;
-
-  const highlight = selectedTrajectory ? new Set([selectedTrajectory.id]) : null;
 
   return (
     <SankeyMosaicClient
@@ -64,7 +58,9 @@ export function OutcomeSankey() {
       orderings={ORDERINGS}
       dark={dark}
       maxNodesPerColumn={11}
-      highlightedTrajIds={highlight}
+      highlightedTrajIds={
+        selectedTrajectory ? new Set([selectedTrajectory.id]) : null
+      }
     />
   );
 }

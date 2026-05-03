@@ -28,6 +28,7 @@ import {
   tooltipRowStyle,
   tooltipTitleStyle,
 } from "./chartStyles";
+import { arrowRows, asArray, setIntersects } from "./chartUtils";
 
 export interface SankeyColumnSpec {
   /** Unique column name used as a node-set key. */
@@ -498,22 +499,6 @@ function col(name: string): string {
   return `"${name.replace(/"/g, '""')}"`;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function arrowRows(table: any): Record<string, unknown>[] {
-  if (!table) return [];
-  if (typeof table.toArray === "function") return table.toArray();
-  if (Array.isArray(table)) return table;
-  return [];
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function asArray(x: any): unknown[] {
-  if (Array.isArray(x)) return x;
-  if (x && typeof x.toArray === "function") return x.toArray();
-  if (x == null) return [];
-  return [x];
-}
-
 function combineWhere(a: string | null, b: string | null): string | null {
   if (a && b) return `(${a}) AND (${b})`;
   return a ?? b ?? null;
@@ -580,25 +565,11 @@ function layoutSankey(
     }
   }
 
-  // Per-trajectory height unit shared across columns: the column with the
-  // largest total count fills `innerH` (minus its gaps); columns with fewer
-  // trajectories naturally appear shorter, leaving whitespace through which
-  // skip-edges can flow without being hidden behind nodes.
-  let unit = 0;
-  for (let ci = 0; ci < nCols; ci++) {
-    const list = byCol[ci] ?? [];
-    if (!list.length) continue;
-    const total = list.reduce((a, n) => a + n.count, 0);
-    if (total <= 0) continue;
-    const nGaps = Math.max(0, list.length - 1);
-    const colUnit = Math.max(0, innerH - nGaps * gapY) / total;
-    if (colUnit > unit) unit = colUnit;
-  }
-  if (unit <= 0) unit = innerH; // fallback for empty data
-
-  // Find the unit that ALL columns can fit within innerH (the largest column
-  // pins it). Pick the smallest per-column unit so nothing overflows.
-  unit = Infinity;
+  // Per-trajectory height unit shared across columns. Each column's nodes
+  // need `total * unit + gaps` to fit within `innerH`; the most-crowded
+  // column pins `unit` so nothing overflows. Columns with fewer trajectories
+  // become shorter, leaving whitespace for skip-edges to pass through.
+  let unit = Infinity;
   for (let ci = 0; ci < nCols; ci++) {
     const list = byCol[ci] ?? [];
     if (!list.length) continue;
@@ -683,15 +654,6 @@ function layoutSankey(
   }
 
   return { nodes: orderedNodes, links: linkLayouts };
-}
-
-function setIntersects(a: Set<string>, b: Set<string>): boolean {
-  const [s, l] = a.size < b.size ? [a, b] : [b, a];
-  let found = false;
-  s.forEach((x) => {
-    if (!found && l.has(x)) found = true;
-  });
-  return found;
 }
 
 function ribbonPath(x0: number, y0: number, t0: number, x1: number, y1: number, t1: number): string {

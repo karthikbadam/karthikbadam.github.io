@@ -40,6 +40,7 @@ import {
   tooltipRowStyle,
   tooltipTitleStyle,
 } from "./chartStyles";
+import { asArray, setIntersects } from "./chartUtils";
 
 export type IcicleColorRamp = (level: number, maxLevel: number, dark: boolean) => string;
 
@@ -398,14 +399,6 @@ export function IcicleMosaicClient({
 
 // ----- helpers --------------------------------------------------------------
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function asArray(x: any): unknown[] {
-  if (Array.isArray(x)) return x;
-  if (x && typeof x.toArray === "function") return x.toArray();
-  if (x == null) return [];
-  return [x];
-}
-
 function buildTree(rows: PathRow[]): TreeNode {
   const root: TreeNode = {
     level: -1,
@@ -502,11 +495,3 @@ function layoutTree(root: TreeNode, width: number, height: number, levels: numbe
   return rects;
 }
 
-function setIntersects(a: Set<string>, b: Set<string>): boolean {
-  const [s, l] = a.size < b.size ? [a, b] : [b, a];
-  let found = false;
-  s.forEach((x) => {
-    if (!found && l.has(x)) found = true;
-  });
-  return found;
-}
