@@ -56,13 +56,13 @@ function DetailContents({ traj }: { traj: Trajectory }) {
 
       <Drawer.Body p={0}>
         <Grid
-          templateColumns="1fr 1fr"
-          gap={2}
+          templateColumns="repeat(2, minmax(0, 1fr))"
+          rowGap={3}
+          columnGap={4}
           px={4}
-          py={3}
+          py={4}
           borderBottom="1px solid"
           borderColor="gray.subtle"
-          fontSize="xs"
         >
           <Meta label="model" value={traj.model} mono />
           <Meta label="dataset" value={traj.dataset} />
@@ -151,20 +151,25 @@ function Meta({
   mono?: boolean;
 }) {
   return (
-    <Flex justify="space-between" align="center">
+    <Box minW={0}>
       <Text
-        as="span"
         color="fg.subtle"
         textTransform="uppercase"
-        letterSpacing="0.04em"
+        letterSpacing="0.05em"
         fontSize="10px"
+        mb={1}
       >
         {label}
       </Text>
-      <Box as="span" color="fg" fontFamily={mono ? "mono" : undefined}>
+      <Box
+        color="fg"
+        fontFamily={mono ? "mono" : undefined}
+        fontSize="sm"
+        wordBreak="break-word"
+      >
         {value}
       </Box>
-    </Flex>
+    </Box>
   );
 }
 

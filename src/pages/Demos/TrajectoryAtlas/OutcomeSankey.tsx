@@ -19,7 +19,7 @@ const stepLabel = (i: number): string => {
 };
 
 export function OutcomeSankey() {
-  const { coordinator, crossfilter, selectedTrajectory, sankeyDepth } =
+  const { coordinator, crossfilter, highlightedTrajId, sankeyDepth } =
     useTrajectoryAtlas();
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
@@ -58,9 +58,7 @@ export function OutcomeSankey() {
       orderings={ORDERINGS}
       dark={dark}
       maxNodesPerColumn={11}
-      highlightedTrajIds={
-        selectedTrajectory ? new Set([selectedTrajectory.id]) : null
-      }
+      highlightedTrajIds={highlightedTrajId ? new Set([highlightedTrajId]) : null}
     />
   );
 }
