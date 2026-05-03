@@ -1,5 +1,21 @@
 [
   {
+    "title": "Understand Agent Trajectories",
+    "abstract": "Inspect agent run trajectories across datasets and models. A step-icicle reveals the most-traveled paths, an outcome sankey traces entry actions through dominant tools to outcomes, and a virtualized table cross-filters with both. Real trajectories from Qwen2.5-32B-Instruct and DeepSWE Kimi-K2 backed by DuckDB-WASM and AnyTable.",
+    "link": "/trajectory-atlas",
+    "image": {
+      "dark": "trajectory-atlas-dark.png",
+      "light": "trajectory-atlas-light.png"
+    },
+    "type": "Interactive Demo",
+    "date": {
+      "month": "April",
+      "year": 2026
+    },
+    "featured": true,
+    "tags": ["Interactive Demo", "Agents", "DuckDB", "Mosaic"]
+  },
+  {
     "title": "Analyze Data with Agents",
     "abstract": "Monitor and interact with a parallel-agent system that explores datasets through coordinated sensemaking loops. Upload a CSV, watch threads investigate questions via SQL and LLM calls, and respond to stuck agents.",
     "link": "/latent-insights",

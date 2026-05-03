@@ -20,8 +20,6 @@ import {
 import { API_BASE } from "../pages/Demos/LatentInsights/config";
 import { buildFeedFromSession } from "../pages/Demos/LatentInsights/utils";
 
-// --- State ---
-
 interface LatentInsightsState {
   status: "idle" | "loading" | "ready" | "error";
   mode: SessionMode | null;
