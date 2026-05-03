@@ -1,15 +1,20 @@
 // Trajectory Atlas — TrajectoryTable. Wraps the @any_table/react useTable
-// hook against the same DuckDB Mosaic coordinator the icicle and sankey use,
-// so a click in either chart writes a clauseList to the crossfilter and the
-// table (also bound to that crossfilter) re-fetches automatically.
-//
-// We use the imperative `useTable` + `Table.*` compound API rather than the
-// declarative `<AnyTable spec>` because we need the `selection.onSelectionChange`
-// callback to drive the detail panel.
+// hook against the same DuckDB Mosaic coordinator the icicle and sankey
+// use. A row click selects the trajectory: opens the detail drawer AND
+// writes a `clausePoints` to the crossfilter so the icicle / sankey narrow
+// to that trajectory. A click on the Task cell toggles AnyTable's row
+// expansion (built-in TextCell expand/collapse) instead of selecting.
 
 import { Box } from "@chakra-ui/react";
 import { useCallback, useMemo, useRef } from "react";
-import { MosaicProvider, Table, useTable, type ColumnDef } from "@any_table/react";
+import {
+  MosaicProvider,
+  Table,
+  TextCell,
+  useTable,
+  type ColumnDef,
+} from "@any_table/react";
+import { clausePoints } from "@uwdata/mosaic-core";
 import type { Selection as VgSelection } from "@uwdata/mosaic-core";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { asArray, asStringList } from "../../../components/chartUtils";
@@ -57,19 +62,43 @@ export function TrajectoryTable() {
 }
 
 function TrajectoryTableInner() {
-  const { coordinator, crossfilter, setRowSelection, selectedTrajectory } = useTrajectoryAtlas();
+  const { coordinator, crossfilter, setRowSelection, selectedTrajectory } =
+    useTrajectoryAtlas();
   const containerRef = useRef<HTMLDivElement>(null);
+  // Stable identity for the table's clauseList writer so it doesn't collide
+  // with the icicle / sankey when multiple sources publish to the crossfilter.
+  const sourceRef = useRef<{ id: string }>({ id: "ta-table-row-select" });
 
   const filter = useMemo(() => crossfilter ?? undefined, [crossfilter]);
 
   const onSelectionChange = useCallback(
     (selected: Set<string>) => {
       const id = selected.values().next().value as string | undefined;
+      if (!coordinator) return;
+
+      // Push selection into the crossfilter so the icicle / sankey narrow.
+      if (crossfilter) {
+        if (!id) {
+          crossfilter.update(
+            clausePoints(["id"], undefined, {
+              source: sourceRef.current,
+              clients: new Set(),
+            }),
+          );
+        } else {
+          crossfilter.update(
+            clausePoints(["id"], [[id]], {
+              source: sourceRef.current,
+              clients: new Set(),
+            }),
+          );
+        }
+      }
+
       if (!id) {
         setRowSelection(null);
         return;
       }
-      if (!coordinator) return;
       const escaped = id.replace(/'/g, "''");
       coordinator
         .query(`SELECT * FROM trajectories WHERE id = '${escaped}' LIMIT 1`)
@@ -77,27 +106,11 @@ function TrajectoryTableInner() {
         .then((res: any) => {
           const arr = res?.toArray?.() ?? [];
           if (!arr.length) return;
-          const row = arr[0] as Record<string, unknown>;
-          const traj: Trajectory = {
-            id: String(row.id ?? ""),
-            dataset: String(row.dataset ?? ""),
-            model: String(row.model ?? ""),
-            task: String(row.task ?? ""),
-            outcome: String(row.outcome ?? "fail") as Outcome,
-            step_count: Number(row.step_count ?? 0),
-            tokens: Number(row.tokens ?? 0),
-            duration: Number(row.duration ?? 0),
-            reward: Number(row.reward ?? 0),
-            cost: Number(row.cost ?? 0),
-            tools_used: asStringList(row.tools_used),
-            step_tools: asStringList(row.step_tools),
-            steps: asStepList(row.steps),
-          };
-          setRowSelection(traj);
+          setRowSelection(toTrajectory(arr[0]));
         })
         .catch((err: unknown) => console.error("[TrajectoryTable] query error:", err));
     },
-    [coordinator, setRowSelection],
+    [coordinator, crossfilter, setRowSelection],
   );
 
   const selectedSet = useMemo(
@@ -112,8 +125,11 @@ function TrajectoryTableInner() {
     filter: filter as VgSelection | undefined,
     containerRef,
     selection: { mode: "single", selected: selectedSet, onSelectionChange },
+    expansion: { expandedRowHeight: 240 },
     rowHeightConfig: { numLines: 1, padding: "8px" },
   });
+
+  const toggleSelection = table.selection?.toggle;
 
   return (
     <Box
@@ -180,12 +196,20 @@ function TrajectoryTableInner() {
                 {({ cells }) =>
                   cells.map((cell) => {
                     const meta = COL_META[cell.column];
+                    const isTask = cell.column === "task";
                     return (
                       <Table.Cell
                         key={cell.column}
                         column={cell.column}
                         width={cell.width}
                         offset={cell.offset}
+                        // Task cell toggles AnyTable's expansion; every other
+                        // cell selects the row and pushes a clauseList into
+                        // the crossfilter via onSelectionChange.
+                        onClick={() => {
+                          if (isTask) cell.onToggleExpand?.();
+                          else toggleSelection?.(String(row.key));
+                        }}
                         style={{
                           padding: "0 12px",
                           whiteSpace: "nowrap",
@@ -201,7 +225,12 @@ function TrajectoryTableInner() {
                           color: "var(--chakra-colors-fg)",
                         }}
                       >
-                        {renderCell(cell.column, cell.value)}
+                        {renderCell(
+                          cell.column,
+                          cell.value,
+                          cell.isExpanded,
+                          cell.onToggleExpand,
+                        )}
                       </Table.Cell>
                     );
                   })
@@ -215,9 +244,22 @@ function TrajectoryTableInner() {
   );
 }
 
-function renderCell(column: string, value: unknown): React.ReactNode {
+function renderCell(
+  column: string,
+  value: unknown,
+  isExpanded: boolean,
+  onToggleExpand?: () => void,
+): React.ReactNode {
   if (value == null) return "";
   switch (column) {
+    case "task":
+      return (
+        <TextCell
+          value={String(value)}
+          isExpanded={isExpanded}
+          onToggleExpand={onToggleExpand}
+        />
+      );
     case "step_tools_str":
       return <StepPath value={String(value ?? "")} />;
     case "step_tools":
@@ -243,6 +285,26 @@ function renderCell(column: string, value: unknown): React.ReactNode {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toTrajectory(row: any): Trajectory {
+  const r = row as Record<string, unknown>;
+  return {
+    id: String(r.id ?? ""),
+    dataset: String(r.dataset ?? ""),
+    model: String(r.model ?? ""),
+    task: String(r.task ?? ""),
+    outcome: String(r.outcome ?? "fail") as Outcome,
+    step_count: Number(r.step_count ?? 0),
+    tokens: Number(r.tokens ?? 0),
+    duration: Number(r.duration ?? 0),
+    reward: Number(r.reward ?? 0),
+    cost: Number(r.cost ?? 0),
+    tools_used: asStringList(r.tools_used),
+    step_tools: asStringList(r.step_tools),
+    steps: asStepList(r.steps),
+  };
+}
+
 // Normalises an Arrow vector / list-of-struct / plain JS array of step
 // records into a uniform `Step[]`. Arrow row proxies sometimes need
 // explicit field access via `toJSON()`; we handle both shapes.
@@ -252,9 +314,11 @@ function asStepList(v: any): Step[] {
     .map((s) => {
       if (s == null) return null;
       const r = s as Record<string, unknown>;
-      // Arrow row proxies sometimes need explicit field access via `toJSON()`.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const o = (typeof (r as any).toJSON === "function" ? (r as any).toJSON() : r) as Record<string, unknown>;
+      const o = (typeof (r as any).toJSON === "function" ? (r as any).toJSON() : r) as Record<
+        string,
+        unknown
+      >;
       const name = String(o.name ?? o.tool ?? "");
       return {
         idx: Number(o.idx ?? 0),
