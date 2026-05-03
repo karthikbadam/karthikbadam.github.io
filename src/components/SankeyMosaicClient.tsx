@@ -489,8 +489,9 @@ function layoutSankey(
   for (const n of nodeRows) {
     (byCol[n.col] ??= []).push(n);
   }
-  const orderedNodes: NodeLayout[] = [];
-  const nodeIndex = new Map<string, NodeLayout>(); // key: "col|key"
+  const gapY = 6;
+
+  // Sort each column.
   for (let ci = 0; ci < nCols; ci++) {
     const col = columns[ci];
     const list = byCol[ci] ?? [];
@@ -506,13 +507,47 @@ function layoutSankey(
     } else {
       list.sort((a, b) => b.count - a.count);
     }
+  }
+
+  // Per-trajectory height unit shared across columns: the column with the
+  // largest total count fills `innerH` (minus its gaps); columns with fewer
+  // trajectories naturally appear shorter, leaving whitespace through which
+  // skip-edges can flow without being hidden behind nodes.
+  let unit = 0;
+  for (let ci = 0; ci < nCols; ci++) {
+    const list = byCol[ci] ?? [];
+    if (!list.length) continue;
+    const total = list.reduce((a, n) => a + n.count, 0);
+    if (total <= 0) continue;
     const nGaps = Math.max(0, list.length - 1);
-    const gapY = 6;
-    const totalCount = list.reduce((a, n) => a + n.count, 0) || 1;
-    const usableH = Math.max(0, innerH - nGaps * gapY);
+    const colUnit = Math.max(0, innerH - nGaps * gapY) / total;
+    if (colUnit > unit) unit = colUnit;
+  }
+  if (unit <= 0) unit = innerH; // fallback for empty data
+
+  // Find the unit that ALL columns can fit within innerH (the largest column
+  // pins it). Pick the smallest per-column unit so nothing overflows.
+  unit = Infinity;
+  for (let ci = 0; ci < nCols; ci++) {
+    const list = byCol[ci] ?? [];
+    if (!list.length) continue;
+    const total = list.reduce((a, n) => a + n.count, 0);
+    if (total <= 0) continue;
+    const nGaps = Math.max(0, list.length - 1);
+    const colUnit = Math.max(1, innerH - nGaps * gapY) / total;
+    if (colUnit < unit) unit = colUnit;
+  }
+  if (!Number.isFinite(unit) || unit <= 0) unit = innerH;
+
+  const orderedNodes: NodeLayout[] = [];
+  const nodeIndex = new Map<string, NodeLayout>(); // key: "col|key"
+  for (let ci = 0; ci < nCols; ci++) {
+    const col = columns[ci];
+    const list = byCol[ci] ?? [];
+    if (!list.length) continue;
     let y = padTop;
     for (const n of list) {
-      const h = (n.count / totalCount) * usableH;
+      const h = Math.max(1, n.count * unit);
       const x = padLeft + ci * (colW + gapX);
       const layout: NodeLayout = {
         ...n,
