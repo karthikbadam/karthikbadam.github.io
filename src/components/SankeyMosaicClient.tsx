@@ -581,13 +581,21 @@ function layoutSankey(
   }
   if (!Number.isFinite(unit) || unit <= 0) unit = innerH;
 
+  // Bottom-align each column. Largest column reaches the top because its
+  // total fills `innerH`; shorter columns leave whitespace at the TOP of the
+  // chart, which is exactly where skip-edges from earlier columns to later
+  // ones need to flow without crossing intermediate nodes.
   const orderedNodes: NodeLayout[] = [];
   const nodeIndex = new Map<string, NodeLayout>(); // key: "col|key"
+  const bottomY = padTop + innerH;
   for (let ci = 0; ci < nCols; ci++) {
     const col = columns[ci];
     const list = byCol[ci] ?? [];
     if (!list.length) continue;
-    let y = padTop;
+    const colTotal = list.reduce((a, n) => a + n.count, 0);
+    const nGaps = Math.max(0, list.length - 1);
+    const colHeight = colTotal * unit + nGaps * gapY;
+    let y = bottomY - colHeight;
     for (const n of list) {
       const h = Math.max(1, n.count * unit);
       const x = padLeft + ci * (colW + gapX);
