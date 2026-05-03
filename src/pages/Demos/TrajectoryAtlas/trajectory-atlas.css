@@ -9,7 +9,10 @@
  * components instead.
  */
 
-/* ---- 1. Chart palette ---------------------------------------------------- */
+/* ---- 1. Chart palette + AnyTable surface tokens ------------------------- */
+/* AnyTable's internals reference --accent / --border / --fg / --muted-fg
+ * directly; we set them here (independent of Chakra) so the table flips
+ * with the document's `.light` / `.dark` class. */
 :root {
   --chart-blue:       #4269D0;
   --chart-orange:     #EFB118;
@@ -21,8 +24,15 @@
   --chart-light-blue: #97BBF5;
   --chart-brown:      #9C6B4E;
   --chart-gray:       #9498A0;
+
+  --accent:    #2b6cb0;
+  --fg:        #1a202c;
+  --muted-fg:  #4a5568;
+  --border:    #e2e8f0;
+  --surface:   #ffffff;
+  --surface-2: #f7fafc;
 }
-[data-theme="dark"], .dark {
+[data-theme="dark"], .dark, html.dark {
   --chart-blue:       #7B9BE8;
   --chart-orange:     #F5C44D;
   --chart-red:        #FF9580;
@@ -33,6 +43,13 @@
   --chart-light-blue: #B5CFFB;
   --chart-brown:      #B58A72;
   --chart-gray:       #B8BCC4;
+
+  --accent:    #dfd0b8;
+  --fg:        #f7fafc;
+  --muted-fg:  #a0aec0;
+  --border:    #2d3748;
+  --surface:   #1a202c;
+  --surface-2: #0f1419;
 }
 
 /* ---- 2. AnyTable surface — color-mode aware --------------------------- */
