@@ -1,20 +1,13 @@
 // Trajectory Atlas — TrajectoryTable. Wraps the @any_table/react useTable
 // hook against the same DuckDB Mosaic coordinator the icicle and sankey
-// use. A row click selects the trajectory: opens the detail drawer AND
-// writes a `clausePoints` to the crossfilter so the icicle / sankey narrow
-// to that trajectory. A click on the Task cell toggles AnyTable's row
-// expansion (built-in TextCell expand/collapse) instead of selecting.
+// use. A row click selects the trajectory: opens the detail drawer and
+// highlights that trajectory's path in the icicle / sankey via the
+// `selectedTrajectory` context state (charts treat highlightedTrajIds as a
+// dimming hint — they do not filter).
 
 import { Box } from "@chakra-ui/react";
 import { useCallback, useMemo, useRef } from "react";
-import {
-  MosaicProvider,
-  Table,
-  TextCell,
-  useTable,
-  type ColumnDef,
-} from "@any_table/react";
-import { clausePoints } from "@uwdata/mosaic-core";
+import { MosaicProvider, Table, useTable, type ColumnDef } from "@any_table/react";
 import type { Selection as VgSelection } from "@uwdata/mosaic-core";
 import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
 import { asArray, asStringList } from "../../../components/chartUtils";
@@ -65,40 +58,17 @@ function TrajectoryTableInner() {
   const { coordinator, crossfilter, setRowSelection, selectedTrajectory } =
     useTrajectoryAtlas();
   const containerRef = useRef<HTMLDivElement>(null);
-  // Stable identity for the table's clauseList writer so it doesn't collide
-  // with the icicle / sankey when multiple sources publish to the crossfilter.
-  const sourceRef = useRef<{ id: string }>({ id: "ta-table-row-select" });
 
   const filter = useMemo(() => crossfilter ?? undefined, [crossfilter]);
 
   const onSelectionChange = useCallback(
     (selected: Set<string>) => {
       const id = selected.values().next().value as string | undefined;
-      if (!coordinator) return;
-
-      // Push selection into the crossfilter so the icicle / sankey narrow.
-      if (crossfilter) {
-        if (!id) {
-          crossfilter.update(
-            clausePoints(["id"], undefined, {
-              source: sourceRef.current,
-              clients: new Set(),
-            }),
-          );
-        } else {
-          crossfilter.update(
-            clausePoints(["id"], [[id]], {
-              source: sourceRef.current,
-              clients: new Set(),
-            }),
-          );
-        }
-      }
-
       if (!id) {
         setRowSelection(null);
         return;
       }
+      if (!coordinator) return;
       const escaped = id.replace(/'/g, "''");
       coordinator
         .query(`SELECT * FROM trajectories WHERE id = '${escaped}' LIMIT 1`)
@@ -110,7 +80,7 @@ function TrajectoryTableInner() {
         })
         .catch((err: unknown) => console.error("[TrajectoryTable] query error:", err));
     },
-    [coordinator, crossfilter, setRowSelection],
+    [coordinator, setRowSelection],
   );
 
   const selectedSet = useMemo(
@@ -125,8 +95,7 @@ function TrajectoryTableInner() {
     filter: filter as VgSelection | undefined,
     containerRef,
     selection: { mode: "single", selected: selectedSet, onSelectionChange },
-    expansion: { expandedRowHeight: 240 },
-    rowHeightConfig: { numLines: 1, padding: "8px" },
+    rowHeightConfig: { numLines: 2, padding: "8px" },
   });
 
   const toggleSelection = table.selection?.toggle;
@@ -203,19 +172,9 @@ function TrajectoryTableInner() {
                         column={cell.column}
                         width={cell.width}
                         offset={cell.offset}
-                        // Task cell toggles AnyTable's expansion; every other
-                        // cell selects the row and pushes a clauseList into
-                        // the crossfilter via onSelectionChange.
-                        onClick={() => {
-                          if (isTask) cell.onToggleExpand?.();
-                          else toggleSelection?.(String(row.key));
-                        }}
+                        onClick={() => toggleSelection?.(String(row.key))}
                         style={{
-                          padding: "0 12px",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          display: "flex",
+                          padding: "8px 12px",
                           alignItems: "center",
                           justifyContent: meta?.align === "right" ? "flex-end" : "flex-start",
                           fontFamily: meta?.mono
@@ -223,14 +182,26 @@ function TrajectoryTableInner() {
                             : "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                           fontVariantNumeric: "tabular-nums",
                           color: "var(--chakra-colors-fg)",
+                          // Task wraps to 2 lines (clamped); other cells stay
+                          // single-line with ellipsis.
+                          ...(isTask
+                            ? {
+                                whiteSpace: "normal",
+                                overflow: "hidden",
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                lineHeight: "1.35",
+                              }
+                            : {
+                                display: "flex",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }),
                         }}
                       >
-                        {renderCell(
-                          cell.column,
-                          cell.value,
-                          cell.isExpanded,
-                          cell.onToggleExpand,
-                        )}
+                        {renderCell(cell.column, cell.value)}
                       </Table.Cell>
                     );
                   })
@@ -244,22 +215,9 @@ function TrajectoryTableInner() {
   );
 }
 
-function renderCell(
-  column: string,
-  value: unknown,
-  isExpanded: boolean,
-  onToggleExpand?: () => void,
-): React.ReactNode {
+function renderCell(column: string, value: unknown): React.ReactNode {
   if (value == null) return "";
   switch (column) {
-    case "task":
-      return (
-        <TextCell
-          value={String(value)}
-          isExpanded={isExpanded}
-          onToggleExpand={onToggleExpand}
-        />
-      );
     case "step_tools_str":
       return <StepPath value={String(value ?? "")} />;
     case "step_tools":
