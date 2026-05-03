@@ -65,6 +65,12 @@ export interface SankeyMosaicClientProps {
   highlightedTrajIds?: Set<string> | null;
   /** Optional fired-after-Selection-write callback. */
   onLinkClick?: (col: number, from: string, to: string, ids: string[]) => void;
+  /** Increment to clear the sankey's local ribbon selection and the matching
+   * crossfilter clause. Used by an external "Clear all" button. */
+  resetSignal?: number;
+  /** Reports whether the sankey currently has a ribbon selection — surfaced
+   * by the topbar so it can keep its "Clear filters" button visible. */
+  onSelectionStateChange?: (active: boolean) => void;
 }
 
 interface NodeRow {
@@ -124,6 +130,8 @@ export function SankeyMosaicClient({
   maxNodesPerColumn,
   highlightedTrajIds,
   onLinkClick,
+  resetSignal,
+  onSelectionStateChange,
 }: SankeyMosaicClientProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -163,6 +171,20 @@ export function SankeyMosaicClient({
     selection.addEventListener("value", handler);
     return () => selection.removeEventListener("value", handler);
   }, [selection]);
+
+  // External "Clear all" — drop the local ribbon selection and clear our
+  // contribution to the crossfilter so other charts unfilter.
+  useEffect(() => {
+    if (resetSignal === undefined) return;
+    setLocalSelection(null);
+    onSelectionStateChange?.(false);
+    if (selection) {
+      selection.update(
+        clausePoints([idCol], undefined, { source: sourceRef.current, clients: new Set() }),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal]);
 
   // Run the node + link queries in parallel. Re-runs whenever the column
   // spec, base WHERE, or upstream-selection version changes.
@@ -298,6 +320,7 @@ export function SankeyMosaicClient({
       ? null
       : { col: lk.fromCol, toCol: lk.toCol, from: lk.from, to: lk.to };
     setLocalSelection(next);
+    onSelectionStateChange?.(next !== null);
     if (selection) {
       if (next === null) {
         selection.update(

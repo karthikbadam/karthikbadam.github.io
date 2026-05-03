@@ -23,17 +23,17 @@ export function Dashboard() {
       direction="column"
       h={{ base: "auto", md: "100%" }}
       bg="bg.muted"
-      overflow="hidden"
+      overflow={{ base: "visible", md: "hidden" }}
     >
-      <Box px={4} pt={4} pb={2} maxW="80em" mx="auto">
+      <Box px={4} pt={4} pb={2} maxW="80em" mx="auto" w="100%">
         <Box mb={2}>
           <Heading as="h1" size="lg" color="accent" mb={1}>
             Trajectory Atlas
           </Heading>
           <Text fontSize="sm" color="fg.muted">
-            Understand Agent trajectories by steps taken. Each step in the
-            graphs is one action: a user input, tool call, assistant
-            observation, or thought. Click any node or row to cross-filter.
+            Understand agent trajectories by steps taken. Each step in the
+            graphs is one action: a tool call, user/assistant
+            observation, or thought.
           </Text>
         </Box>
         <TrajectoryStatsPanel />
@@ -41,13 +41,18 @@ export function Dashboard() {
 
       <Flex
         direction={{ base: "column", md: "row" }}
-        flex={2}
+        flex={{ base: "0 0 auto", md: 2 }}
         minH={0}
         gap={2}
         px={4}
-        overflow="hidden"
+        overflow={{ base: "visible", md: "hidden" }}
       >
-        <Box flex={1} minW={0} minH={0}>
+        <Box
+          flex={{ base: "0 0 auto", md: 1 }}
+          minW={0}
+          minH={0}
+          h={{ base: "350px", md: "auto" }}
+        >
           <TrajectoryPanel
             title="Step Icicle"
             subtitle="step depth (rows) · width = share of trajectories taking this path"
@@ -55,7 +60,12 @@ export function Dashboard() {
             <StepIcicle />
           </TrajectoryPanel>
         </Box>
-        <Box flex={1} minW={0} minH={0}>
+        <Box
+          flex={{ base: "0 0 auto", md: 1 }}
+          minW={0}
+          minH={0}
+          h={{ base: "350px", md: "auto" }}
+        >
           <TrajectoryPanel
             title="Outcome Sankey"
             subtitle="i-th tool call → outcome · click a ribbon · top 10 per column"
@@ -67,12 +77,13 @@ export function Dashboard() {
       </Flex>
 
       <Box
-        flex={1.4}
+        flex={{ base: "0 0 auto", md: 1.4 }}
         minH={0}
+        h={{ base: "450px", md: "auto" }}
         px={4}
         pb={2}
         pt={2}
-        overflow="hidden"
+        overflow={{ base: "visible", md: "hidden" }}
       >
         <TrajectoryPanel
           title="Trajectories"

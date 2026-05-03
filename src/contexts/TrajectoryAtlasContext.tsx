@@ -87,6 +87,21 @@ export interface TrajectoryAtlasContextValue {
   selectedTrajectory: Trajectory | null;
   setRowSelection: (t: Trajectory | null) => void;
 
+  /** True iff any filter / selection is currently narrowing the view —
+   * used to surface a "Clear" button. */
+  hasActiveSelection: boolean;
+  /** Clear search, outcome filter, row highlight, and any chart-side
+   * selections (icicle node, sankey ribbon). */
+  clearAll: () => void;
+  /** Counter the icicle/sankey watch to flush their local selection state
+   * when `clearAll()` fires. */
+  resetSignal: number;
+  /** Charts call these so the topbar knows whether an internal click
+   * selection is in place — keeps the Clear button visible for chart-only
+   * selections too. */
+  setIcicleSelectionActive: (active: boolean) => void;
+  setSankeySelectionActive: (active: boolean) => void;
+
   stats: Stats;
 }
 
@@ -107,6 +122,9 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
   const [sankeyDepth, setSankeyDepth] = useState(3);
   const [selectedTrajectory, setSelectedTrajectory] = useState<Trajectory | null>(null);
   const [highlightedTrajId, setHighlightedTrajId] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
+  const [icicleActive, setIcicleSelectionActive] = useState(false);
+  const [sankeyActive, setSankeySelectionActive] = useState(false);
   const [stats, setStats] = useState<Stats>({ n: 0, pass: 0, avgSteps: 0, avgTokens: 0 });
 
   const coordinatorRef = useRef<Coordinator | null>(null);
@@ -249,23 +267,51 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
     });
   }
 
+  // The predicate is broadcast through the crossfilter to every subscribed
+  // client (icicle, sankey, AnyTable). The icicle's CTE projects only
+  // `id / step_idx / category` from `steps`, so any predicate referencing
+  // other columns (like `outcome`, `task`, `model`) would fail to bind.
+  // Push every condition through `id IN (SELECT id FROM trajectories ...)`
+  // so the only column the predicate needs at the call site is `id`.
   function buildFilterPredicate(): string | null {
-    const parts: string[] = [];
-    if (outcomeFilter !== "all") parts.push(`outcome = '${escSql(outcomeFilter)}'`);
+    const conds: string[] = [];
+    if (outcomeFilter !== "all") {
+      conds.push(`outcome = '${escSql(outcomeFilter)}'`);
+    }
     if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      parts.push(
-        `(lower(id) LIKE '%${escSql(q)}%' OR ` +
-          `lower(task) LIKE '%${escSql(q)}%' OR ` +
-          `lower(model) LIKE '%${escSql(q)}%')`,
+      const q = escSql(search.trim().toLowerCase());
+      conds.push(
+        `(lower(id) LIKE '%${q}%' OR ` +
+          `lower(task) LIKE '%${q}%' OR ` +
+          `lower(model) LIKE '%${q}%')`,
       );
     }
-    return parts.length ? parts.join(" AND ") : null;
+    if (!conds.length) return null;
+    return `id IN (SELECT id FROM trajectories WHERE ${conds.join(" AND ")})`;
   }
 
   const setRowSelection = useCallback((t: Trajectory | null) => {
     setSelectedTrajectory(t);
   }, []);
+
+  const clearAll = useCallback(() => {
+    setSearch("");
+    setOutcomeFilter("all");
+    setHighlightedTrajId(null);
+    setSelectedTrajectory(null);
+    setIcicleSelectionActive(false);
+    setSankeySelectionActive(false);
+    // Bump the signal so icicle/sankey clear their internal click state and
+    // emit null clauses on the crossfilter from their own sources.
+    setResetSignal((n) => n + 1);
+  }, []);
+
+  const hasActiveSelection =
+    search.trim().length > 0 ||
+    outcomeFilter !== "all" ||
+    highlightedTrajId != null ||
+    icicleActive ||
+    sankeyActive;
 
   const value = useMemo<TrajectoryAtlasContextValue>(
     () => ({
@@ -286,6 +332,11 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       setHighlightedTrajId,
       selectedTrajectory,
       setRowSelection,
+      hasActiveSelection,
+      clearAll,
+      resetSignal,
+      setIcicleSelectionActive,
+      setSankeySelectionActive,
       stats,
     }),
     [
@@ -298,6 +349,9 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       selectedTrajectory,
       stats,
       setRowSelection,
+      hasActiveSelection,
+      clearAll,
+      resetSignal,
     ],
   );
 

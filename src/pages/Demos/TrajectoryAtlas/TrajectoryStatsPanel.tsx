@@ -27,6 +27,8 @@ export function TrajectoryStatsPanel() {
     setSearch,
     outcomeFilter,
     setOutcomeFilter,
+    hasActiveSelection,
+    clearAll,
     stats,
   } = useTrajectoryAtlas();
 
@@ -70,7 +72,13 @@ export function TrajectoryStatsPanel() {
         </Flex>
 
         <HStack columnGap={4} flexWrap="wrap">
-          <NativeSelect.Root size="sm" w="auto" minW="200px">
+          <NativeSelect.Root
+            size="sm"
+            w="auto"
+            minW={{ base: "auto", md: "200px" }}
+            bg="bg.subtle"
+            flex={{ base: 1, md: "0 0 auto" }}
+          >
             <NativeSelect.Field
               value={source}
               onChange={(e) => setSource(e.target.value as SourceKey)}
@@ -94,6 +102,7 @@ export function TrajectoryStatsPanel() {
             bg="bg.subtle"
             minW="250px"
             height="auto"
+            display={{ base: "none", md: "flex" }}
           >
             <LuSearch size={13} />
             <Input
@@ -124,7 +133,7 @@ export function TrajectoryStatsPanel() {
             borderRadius="md"
             border="1px solid"
             borderColor="gray.muted"
-            bg="bg.muted"
+            bg="bg.subtle"
           >
             {OUTCOMES.map((o) => (
               <Button
@@ -149,6 +158,18 @@ export function TrajectoryStatsPanel() {
               </Button>
             ))}
           </HStack>
+
+          {hasActiveSelection && (
+            <Button
+              size="sm"
+              colorPalette="orange"
+              variant="solid"
+              onClick={clearAll}
+            >
+              <LuX size={14} />
+              Clear filters
+            </Button>
+          )}
         </HStack>
       </Flex>
 
