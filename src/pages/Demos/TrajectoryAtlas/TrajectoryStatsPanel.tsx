@@ -45,7 +45,7 @@ export function TrajectoryStatsPanel() {
 
   return (
     <Box py={2}>
-      <Flex gap={10} wrap="wrap" justify="space-between">
+      <Flex columnGap={10} rowGap={2} wrap="wrap" justify="space-between">
         <Flex gap={4} wrap="nowrap">
           {items.map((item) => (
             <Stat.Root key={item.label} size="sm" px={0} minW="5rem">
@@ -69,7 +69,7 @@ export function TrajectoryStatsPanel() {
           ))}
         </Flex>
 
-        <HStack gap={4} flexWrap="wrap">
+        <HStack columnGap={4} flexWrap="wrap">
           <NativeSelect.Root size="sm" w="auto" minW="200px">
             <NativeSelect.Field
               value={source}

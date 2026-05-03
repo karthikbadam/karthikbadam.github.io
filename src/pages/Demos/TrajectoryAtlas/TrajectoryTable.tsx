@@ -139,7 +139,7 @@ function TrajectoryTableInner() {
       ref={containerRef}
       position="relative"
       w="100%"
-      h="100%"
+      maxH={{ base: "35vh", md: "auto" }}
       overflow="hidden"
       bg="bg"
       borderRadius="md"
