@@ -279,7 +279,6 @@ export function TrajectoryAtlasProvider({ children }: { children: ReactNode }) {
       setRowSelection,
       stats,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [state, source, search, outcomeFilter, sankeyDepth, selectedTrajectory, stats, setRowSelection],
   );
 
