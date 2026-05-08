@@ -129,8 +129,8 @@ export const Home = () => {
                 />
               </Box>
             </Stack>
-            <Stack gap={4}>
-              <Heading fontWeight="medium" size="2xl">
+            <Stack gap={2} mt={4}>
+              <Heading fontWeight="semibold" size="2xl" color="accent">
                 Karthik Badam
               </Heading>
               <Text fontSize="sm" color="gray.fg" lineHeight="tall">
@@ -147,7 +147,7 @@ export const Home = () => {
                 Maryland, College Park, where I published novel research in HCI,
                 Data Visualization, and ML.
               </Text>
-              <HStack gap={2} pt={1} align="center">
+              <HStack gap={2} pt={2} align="center">
                 <SocialExpandLink
                   href="mailto:karthikbadam7@gmail.com"
                   label="Email"
@@ -180,10 +180,9 @@ export const Home = () => {
             <Stack
               gap={2}
               maxW={{ base: "100%", lg: "80ch" }}
-              pr={4}
               mb={{ base: 10, md: 12 }}
             >
-              <Heading color="accent" fontWeight="semibold">
+              <Heading color="accent" fontWeight="semibold" fontSize="xl">
                 Featured Works
               </Heading>
               {featuredPosts.length > 0 && (
@@ -262,23 +261,26 @@ interface FeaturedCardProps {
 
 const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
   <Stack
-    gap={4}
-    p={4}
-    borderWidth="1px"
+    borderWidth="1.5px"
+    borderColor="gray.muted"
     borderRadius="xl"
-    _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
+    _hover={{
+      transform: "translateY(-4px)",
+      shadow: "xl",
+      shadowColor: "gray.muted",
+    }}
     transition="all 0.3s"
     h="100%"
+    overflow="hidden"
   >
     <Image
       src={`/images/${image}`}
       alt={post.title}
-      borderRadius="xl"
       objectFit="cover"
       width="100%"
       height="200px"
     />
-    <Stack gap={2} flex="1">
+    <Stack gap={2} flex="1" px={4} pt={2} pb={4}>
       <Heading size="sm" fontWeight="medium" css={{ wordBreak: "break-word" }}>
         {post.title}
         {post.date && (
