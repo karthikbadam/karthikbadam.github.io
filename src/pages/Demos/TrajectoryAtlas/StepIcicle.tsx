@@ -2,19 +2,24 @@
 // (task / thought / observation / each tool call). Deep trajectories scroll
 // inside the panel via the IcicleMosaicClient's minRowHeight.
 
+import { useAtomValue, useSetAtom } from "jotai";
 import { useColorMode } from "../../../components/ui/color-mode";
 import { IcicleMosaicClient } from "../../../components/IcicleMosaicClient";
-import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
+import {
+  coordinatorAtom,
+  crossfilterAtom,
+  highlightedTrajIdAtom,
+  icicleActiveAtom,
+  resetSignalAtom,
+} from "./atoms";
 import { accentRamp } from "./taxonomy";
 
 export function StepIcicle() {
-  const {
-    coordinator,
-    crossfilter,
-    highlightedTrajId,
-    resetSignal,
-    setIcicleSelectionActive,
-  } = useTrajectoryAtlas();
+  const coordinator = useAtomValue(coordinatorAtom);
+  const crossfilter = useAtomValue(crossfilterAtom);
+  const highlightedTrajId = useAtomValue(highlightedTrajIdAtom);
+  const resetSignal = useAtomValue(resetSignalAtom);
+  const setIcicleSelectionActive = useSetAtom(icicleActiveAtom);
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
 

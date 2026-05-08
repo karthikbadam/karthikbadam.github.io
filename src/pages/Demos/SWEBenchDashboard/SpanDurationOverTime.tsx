@@ -1,15 +1,27 @@
 import { useCallback } from "react";
 import * as vg from "@uwdata/vgplot";
+import { useAtomValue, useSetAtom } from "jotai";
 import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
-import { useSWEBench } from "../../../contexts/SWEBenchContext";
+import {
+  getOrCreateViewAtom,
+  isReadyAtom,
+  traceIdValueAtom,
+  traceSelectionAtom,
+} from "./atoms";
 
 export function SpanDurationOverTime() {
-  const { state, traceSelection, traceIdValue, getOrCreateView } = useSWEBench();
+  const isReady = useAtomValue(isReadyAtom);
+  const traceSelection = useAtomValue(traceSelectionAtom);
+  const traceIdValue = useAtomValue(traceIdValueAtom);
+  const getOrCreateView = useSetAtom(getOrCreateViewAtom);
 
   const setup = useCallback(async () => {
-    await getOrCreateView("spans_duration_time", `
+    await getOrCreateView({
+      name: "spans_duration_time",
+      sql: `
       SELECT * FROM spans WHERE depth > 0 AND start_time IS NOT NULL AND duration > 0
-    `);
+    `,
+    });
   }, [getOrCreateView]);
 
   const build = useCallback(
@@ -56,7 +68,7 @@ export function SpanDurationOverTime() {
       setup={setup}
       build={build}
       dependencies={[traceSelection, traceIdValue]}
-      isReady={state.status === "ready" && traceSelection}
+      isReady={isReady && !!traceSelection}
     />
   );
 }

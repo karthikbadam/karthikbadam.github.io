@@ -3,9 +3,17 @@
 // are pre-computed in the parquet (see public/scripts/extract_trajectories.py).
 
 import { useMemo } from "react";
+import { useAtomValue, useSetAtom } from "jotai";
 import { useColorMode } from "../../../components/ui/color-mode";
 import { SankeyMosaicClient, type SankeyColumnSpec } from "../../../components/SankeyMosaicClient";
-import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
+import {
+  coordinatorAtom,
+  crossfilterAtom,
+  highlightedTrajIdAtom,
+  resetSignalAtom,
+  sankeyActiveAtom,
+  sankeyDepthAtom,
+} from "./atoms";
 import { OUTCOME_ORDER, categoryFor, categoryHex, outcomeHex } from "./taxonomy";
 import type { Category, Outcome } from "./types";
 
@@ -19,14 +27,12 @@ const stepLabel = (i: number): string => {
 };
 
 export function OutcomeSankey() {
-  const {
-    coordinator,
-    crossfilter,
-    highlightedTrajId,
-    sankeyDepth,
-    resetSignal,
-    setSankeySelectionActive,
-  } = useTrajectoryAtlas();
+  const coordinator = useAtomValue(coordinatorAtom);
+  const crossfilter = useAtomValue(crossfilterAtom);
+  const highlightedTrajId = useAtomValue(highlightedTrajIdAtom);
+  const sankeyDepth = useAtomValue(sankeyDepthAtom);
+  const resetSignal = useAtomValue(resetSignalAtom);
+  const setSankeySelectionActive = useSetAtom(sankeyActiveAtom);
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
 

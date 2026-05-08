@@ -1,7 +1,8 @@
 import { Box, Flex, Stat, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import * as vg from "@uwdata/vgplot";
-import { useSWEBench } from "../../../contexts/SWEBenchContext";
+import { useAtomValue } from "jotai";
+import { isReadyAtom, traceIdValueAtom } from "./atoms";
 
 interface Stats {
   traceCount: number;
@@ -13,12 +14,13 @@ interface Stats {
 }
 
 export function StatsPanel() {
-  const { state, traceIdValue } = useSWEBench();
+  const isReady = useAtomValue(isReadyAtom);
+  const traceIdValue = useAtomValue(traceIdValueAtom);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (state.status !== "ready") return;
+    if (!isReady) return;
 
     const fetchStats = async () => {
       setLoading(true);
@@ -60,9 +62,9 @@ export function StatsPanel() {
     };
 
     fetchStats();
-  }, [state.status, traceIdValue]);
+  }, [isReady, traceIdValue]);
 
-  if (state.status !== "ready" || loading || !stats) {
+  if (!isReady || loading || !stats) {
     return (
       <Box p={4}>
         <Text fontSize="sm" color="gray.500">

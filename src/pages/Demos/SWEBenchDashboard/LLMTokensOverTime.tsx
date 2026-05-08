@@ -1,20 +1,28 @@
 import { useCallback } from "react";
 import * as vg from "@uwdata/vgplot";
+import { useAtomValue, useSetAtom } from "jotai";
 import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
-import { useSWEBench } from "../../../contexts/SWEBenchContext";
+import {
+  getOrCreateViewAtom,
+  isReadyAtom,
+  traceIdValueAtom,
+  traceSelectionAtom,
+} from "./atoms";
 
 export function LLMTokensOverTime() {
-  const { state, traceSelection, traceIdValue, getOrCreateView } =
-    useSWEBench();
+  const isReady = useAtomValue(isReadyAtom);
+  const traceSelection = useAtomValue(traceSelectionAtom);
+  const traceIdValue = useAtomValue(traceIdValueAtom);
+  const getOrCreateView = useSetAtom(getOrCreateViewAtom);
 
   const setup = useCallback(async () => {
-    await getOrCreateView(
-      "spans_llm_tokens",
-      `
-      SELECT *, SUBSTRING(trace_id, 1, 8) as trace_label 
+    await getOrCreateView({
+      name: "spans_llm_tokens",
+      sql: `
+      SELECT *, SUBSTRING(trace_id, 1, 8) as trace_label
       FROM spans WHERE type = 'LLM' AND tokens > 0 AND start_time IS NOT NULL
-    `
-    );
+    `,
+    });
   }, [getOrCreateView]);
 
   const build = useCallback(
@@ -54,7 +62,7 @@ export function LLMTokensOverTime() {
       setup={setup}
       build={build}
       dependencies={[traceSelection, traceIdValue]}
-      isReady={state.status === "ready" && !!traceSelection}
+      isReady={isReady && !!traceSelection}
     />
   );
 }

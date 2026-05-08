@@ -1,6 +1,11 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import { useAtom, useAtomValue } from "jotai";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
-import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
+import {
+  initializeTrajectoryAtlasAtom,
+  loadingStateAtom,
+  selectedTrajectoryAtom,
+} from "./atoms";
 import { DetailPanel } from "./DetailPanel";
 import { OutcomeSankey } from "./OutcomeSankey";
 import { SankeyDepthSlider } from "./SankeyDepthSlider";
@@ -10,7 +15,11 @@ import { TrajectoryStatsPanel } from "./TrajectoryStatsPanel";
 import { TrajectoryTable } from "./TrajectoryTable";
 
 export function Dashboard() {
-  const { state, selectedTrajectory, setRowSelection } = useTrajectoryAtlas();
+  useAtomValue(initializeTrajectoryAtlasAtom);
+  const state = useAtomValue(loadingStateAtom);
+  const [selectedTrajectory, setSelectedTrajectory] = useAtom(
+    selectedTrajectoryAtom,
+  );
 
   if (state.status !== "ready") {
     return (
@@ -95,7 +104,7 @@ export function Dashboard() {
 
       <DetailPanel
         traj={selectedTrajectory}
-        onClose={() => setRowSelection(null)}
+        onClose={() => setSelectedTrajectory(null)}
       />
     </Flex>
   );

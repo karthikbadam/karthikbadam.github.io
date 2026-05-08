@@ -4,7 +4,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { makeClient } from "@uwdata/mosaic-core";
 import { column, Query, sql } from "@uwdata/mosaic-sql";
-import { useGaia } from "../../../contexts/GaiaContext";
+import { useAtomValue } from "jotai";
+import { brushSelectionAtom, coordinatorAtom } from "./atoms";
 import { useStarHover } from "./useStarHover";
 import { StarInfoOverlay } from "./StarInfoOverlay";
 
@@ -130,7 +131,8 @@ export function ThreeDView() {
   const starsDataRef = useRef<{ stars: Star3D[]; positions: THREE.Vector3[] }>({ stars: [], positions: [] });
   const selectedIndexRef = useRef<number | null>(null);
 
-  const { coordinator, brushSelection } = useGaia();
+  const coordinator = useAtomValue(coordinatorAtom);
+  const brushSelection = useAtomValue(brushSelectionAtom);
   const [stars, setStars] = useState<Star3D[]>([]);
   const [isPending, setIsPending] = useState(false);
 

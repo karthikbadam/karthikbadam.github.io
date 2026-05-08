@@ -13,24 +13,28 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { LuSearch, LuX } from "react-icons/lu";
-import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import {
+  clearAllAtom,
+  hasActiveSelectionAtom,
+  outcomeFilterAtom,
+  searchAtom,
+  sourceAtom,
+  sourcesAtom,
+  statsAtom,
+} from "./atoms";
 import type { Outcome, SourceKey } from "./types";
 
 const OUTCOMES: Array<Outcome | "all"> = ["all", "success", "partial", "fail"];
 
 export function TrajectoryStatsPanel() {
-  const {
-    sources,
-    source,
-    setSource,
-    search,
-    setSearch,
-    outcomeFilter,
-    setOutcomeFilter,
-    hasActiveSelection,
-    clearAll,
-    stats,
-  } = useTrajectoryAtlas();
+  const sources = useAtomValue(sourcesAtom);
+  const [source, setSource] = useAtom(sourceAtom);
+  const [search, setSearch] = useAtom(searchAtom);
+  const [outcomeFilter, setOutcomeFilter] = useAtom(outcomeFilterAtom);
+  const hasActiveSelection = useAtomValue(hasActiveSelectionAtom);
+  const clearAll = useSetAtom(clearAllAtom);
+  const stats = useAtomValue(statsAtom);
 
   const passRate = stats.n
     ? `${((stats.pass / stats.n) * 100).toFixed(1)}%`
@@ -164,7 +168,7 @@ export function TrajectoryStatsPanel() {
               size="sm"
               colorPalette="orange"
               variant="solid"
-              onClick={clearAll}
+              onClick={() => clearAll()}
             >
               <LuX size={14} />
               Clear filters

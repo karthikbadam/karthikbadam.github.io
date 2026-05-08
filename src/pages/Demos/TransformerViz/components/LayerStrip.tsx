@@ -2,17 +2,21 @@ import { Box, HStack, Text, VStack } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { PanelContainer } from "../../../../components/PanelContainer";
 import { Tooltip } from "../../../../components/ui/tooltip";
-import { useTransformer } from "../../../../contexts/TransformerContext";
+import { useAtomValue, useSetAtom } from "jotai";
+import {
+  highlightedLayerAtom,
+  layerHighlightAtom,
+  layerMetricsAtom,
+  numLayersAtom,
+} from "../atoms";
 import { calculateStats } from "../utils/interpretability";
 import { MiniBarChart } from "./MiniBarChart";
 
 export function LayerStrip() {
-  const {
-    numLayers,
-    $layerHighlight,
-    layerMetrics,
-    setHighlightedLayer: setContextHighlightedLayer,
-  } = useTransformer();
+  const numLayers = useAtomValue(numLayersAtom);
+  const $layerHighlight = useAtomValue(layerHighlightAtom);
+  const layerMetrics = useAtomValue(layerMetricsAtom);
+  const setContextHighlightedLayer = useSetAtom(highlightedLayerAtom);
 
   // Local state for UI styling only
   const [highlightedLayer, setHighlightedLayer] = useState<number | null>(null);

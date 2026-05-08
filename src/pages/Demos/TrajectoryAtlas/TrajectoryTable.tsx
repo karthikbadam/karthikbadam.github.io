@@ -14,8 +14,14 @@ import { Box, IconButton, Text } from "@chakra-ui/react";
 import type { Selection as VgSelection } from "@uwdata/mosaic-core";
 import { useCallback, useMemo, useRef } from "react";
 import { LuChevronRight } from "react-icons/lu";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { asArray, asStringList } from "../../../components/chartUtils";
-import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
+import {
+  coordinatorAtom,
+  crossfilterAtom,
+  highlightedTrajIdAtom,
+  selectedTrajectoryAtom,
+} from "./atoms";
 import { OutcomeBadge } from "./OutcomeBadge";
 import { StepPath } from "./StepPath";
 import type { Category, Outcome, Step, Trajectory } from "./types";
@@ -62,7 +68,7 @@ function rowId(row: { data: unknown }): string {
 }
 
 export function TrajectoryTable() {
-  const { coordinator } = useTrajectoryAtlas();
+  const coordinator = useAtomValue(coordinatorAtom);
   if (!coordinator) return null;
   return (
     <MosaicProvider coordinator={coordinator}>
@@ -72,13 +78,12 @@ export function TrajectoryTable() {
 }
 
 function TrajectoryTableInner() {
-  const {
-    coordinator,
-    crossfilter,
-    highlightedTrajId,
-    setHighlightedTrajId,
-    setRowSelection,
-  } = useTrajectoryAtlas();
+  const coordinator = useAtomValue(coordinatorAtom);
+  const crossfilter = useAtomValue(crossfilterAtom);
+  const [highlightedTrajId, setHighlightedTrajId] = useAtom(
+    highlightedTrajIdAtom,
+  );
+  const setRowSelection = useSetAtom(selectedTrajectoryAtom);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filter = useMemo(() => crossfilter ?? undefined, [crossfilter]);

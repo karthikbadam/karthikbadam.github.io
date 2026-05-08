@@ -1,11 +1,13 @@
 import { useCallback } from "react";
 import * as vg from "@uwdata/vgplot";
-import { useGravitationalLensing } from "../../../contexts/GravitationalLensingContext";
+import { useAtomValue } from "jotai";
+import { isComputingAtom, isReadyAtom } from "./atoms";
 import { useColorMode } from "../../../components/ui/color-mode";
 import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
 
 export function LensedGrid() {
-  const { state, isComputing } = useGravitationalLensing();
+  const isComputing = useAtomValue(isComputingAtom);
+  const isReady = useAtomValue(isReadyAtom);
   const { colorMode } = useColorMode();
 
   const build = useCallback(
@@ -84,7 +86,7 @@ export function LensedGrid() {
       subtitle="2000 x 2000 points"
       build={build}
       dependencies={[isComputing, colorMode]}
-      isReady={state.status === "ready"}
+      isReady={isReady}
     />
   );
 }

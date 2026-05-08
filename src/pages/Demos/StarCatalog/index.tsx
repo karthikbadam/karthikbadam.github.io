@@ -1,7 +1,8 @@
 import { Box, Container, Heading, Link, Text } from "@chakra-ui/react";
+import { Provider, useAtomValue } from "jotai";
 import { Page } from "../../../components/Page";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
-import { GaiaProvider, useGaia } from "../../../contexts/GaiaContext";
+import { initializeGaiaAtom, loadingStateAtom } from "./atoms";
 import { SkyMap } from "./SkyMap";
 import { HistogramCharts } from "./HistogramCharts";
 import { ThreeDView } from "./ThreeDView";
@@ -10,7 +11,9 @@ import { ThreeDView } from "./ThreeDView";
  * Main content
  */
 function DashboardContent() {
-  const { state } = useGaia();
+  // Subscribing here triggers initializeGaiaAtom.onMount inside the scoped store.
+  useAtomValue(initializeGaiaAtom);
+  const state = useAtomValue(loadingStateAtom);
 
   if (state.status !== "ready") {
     return <LoadingIndicator state={state} title="Loading Star Catalog" />;
@@ -87,9 +90,9 @@ function DashboardContent() {
 export function StarCatalogExplorer() {
   return (
     <Page>
-      <GaiaProvider>
+      <Provider>
         <DashboardContent />
-      </GaiaProvider>
+      </Provider>
     </Page>
   );
 }

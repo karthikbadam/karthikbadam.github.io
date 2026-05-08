@@ -1,10 +1,12 @@
 import * as vg from "@uwdata/vgplot";
 import { useCallback } from "react";
+import { useAtomValue } from "jotai";
 import { ChartDimensions, MosaicChart } from "../../../components/MosaicChart";
-import { useGaia } from "../../../contexts/GaiaContext";
+import { brushSelectionAtom, isReadyAtom } from "./atoms";
 
 export function SkyMap() {
-  const { state, brushSelection } = useGaia();
+  const brushSelection = useAtomValue(brushSelectionAtom);
+  const isReady = useAtomValue(isReadyAtom);
   
   const build = useCallback(
     (_: void, { width, height }: ChartDimensions) => {
@@ -38,7 +40,7 @@ export function SkyMap() {
       subtitle={"Select a region in the sky map to explore in 3D"}
       build={build}
       dependencies={[brushSelection,]}
-      isReady={state.status === "ready" && !!brushSelection}
+      isReady={isReady && !!brushSelection}
     />
   );
 }

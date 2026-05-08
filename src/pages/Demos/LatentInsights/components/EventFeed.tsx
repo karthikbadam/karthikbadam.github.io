@@ -1,6 +1,7 @@
 import { Box, Code, Flex, Text } from "@chakra-ui/react";
 import React, { useRef, useEffect, useMemo, useCallback, useState } from "react";
-import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
+import { useAtomValue, useSetAtom } from "jotai";
+import { feedEntriesAtom, selectNodeAtom, stateAtom } from "../atoms";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { MarkdownContent } from "./MarkdownContent";
 import { ReplyInput } from "./ReplyInput";
@@ -15,7 +16,9 @@ import {
 } from "../utils";
 
 export const EventFeed: React.FC = () => {
-  const { state, feedEntries, selectNode } = useLatentInsights();
+  const state = useAtomValue(stateAtom);
+  const feedEntries = useAtomValue(feedEntriesAtom);
+  const selectNode = useSetAtom(selectNodeAtom);
   const { session, selectedNode } = state;
 
   const isDark = useColorModeValue(false, true);

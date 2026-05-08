@@ -1,7 +1,13 @@
 import { Box, HStack, Text, VStack } from "@chakra-ui/react";
 import * as vg from "@uwdata/vgplot";
 import { useEffect, useRef } from "react";
-import { useTransformer } from "../../../../contexts/TransformerContext";
+import { useAtomValue } from "jotai";
+import {
+  coordinatorAtom,
+  promptTokensAtom,
+  selectedMetricAtom,
+  selectedPromptIdAtom,
+} from "../atoms";
 import { getMetricInfo } from "../config/metrics";
 import { formatValue } from "../utils/formatting";
 import { PanelContainer } from "../../../../components/PanelContainer";
@@ -11,8 +17,10 @@ import { buildTokenDetailViewQuery } from "../utils/queryBuilders";
  * TokenDetailsPanel - Shows detailed statistics for a selected token
  */
 export function TokenDetailsPanel({ position }: { position: number }) {
-  const { promptTokens, selectedMetric, coordinator, selectedPromptId } =
-    useTransformer();
+  const promptTokens = useAtomValue(promptTokensAtom);
+  const selectedMetric = useAtomValue(selectedMetricAtom);
+  const coordinator = useAtomValue(coordinatorAtom);
+  const selectedPromptId = useAtomValue(selectedPromptIdAtom);
 
   const chartRef = useRef<HTMLDivElement>(null);
 
