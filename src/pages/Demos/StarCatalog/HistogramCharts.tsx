@@ -1,10 +1,12 @@
 import { useCallback } from "react";
 import * as vg from "@uwdata/vgplot";
+import { useAtomValue } from "jotai";
 import { ChartDimensions, MosaicChart } from "../../../components/MosaicChart";
-import { useGaia } from "../../../contexts/GaiaContext";
+import { brushSelectionAtom, isReadyAtom } from "./atoms";
 
 export function HistogramCharts() {
-  const { state, brushSelection } = useGaia();
+  const brushSelection = useAtomValue(brushSelectionAtom);
+  const isReady = useAtomValue(isReadyAtom);
 
   const build = useCallback(
     (_: void, { width, height }: ChartDimensions) => {
@@ -61,7 +63,7 @@ export function HistogramCharts() {
       subtitle="Select a range of values"
       build={build}
       dependencies={[brushSelection]}
-      isReady={state.status === "ready" && !!brushSelection}
+      isReady={isReady && !!brushSelection}
     />
   );
 }

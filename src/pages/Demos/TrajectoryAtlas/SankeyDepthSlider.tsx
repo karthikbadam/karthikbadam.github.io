@@ -1,12 +1,14 @@
 // SankeyDepthSlider — controls how many sequential tool-step columns the
 // sankey renders before the outcome column. Bound on the parquet's
-// pre-computed step_1..step_N range (see TrajectoryAtlasContext.maxSankeyDepth).
+// pre-computed step_1..step_N range (see maxSankeyDepthAtom).
 
 import { Flex, Slider, Text } from "@chakra-ui/react";
-import { useTrajectoryAtlas } from "../../../contexts/TrajectoryAtlasContext";
+import { useAtom, useAtomValue } from "jotai";
+import { maxSankeyDepthAtom, sankeyDepthAtom } from "./atoms";
 
 export function SankeyDepthSlider() {
-  const { sankeyDepth, setSankeyDepth, maxSankeyDepth } = useTrajectoryAtlas();
+  const [sankeyDepth, setSankeyDepth] = useAtom(sankeyDepthAtom);
+  const maxSankeyDepth = useAtomValue(maxSankeyDepthAtom);
   return (
     <Flex align="center" gap={2} flexShrink={0}>
       <Text fontSize="xs" color="fg.muted" textTransform="uppercase" letterSpacing="0.04em">

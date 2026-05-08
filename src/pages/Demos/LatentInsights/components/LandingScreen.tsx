@@ -2,7 +2,13 @@ import { Box, Flex, Heading, Input, Link, Text, Textarea, VStack } from "@chakra
 import { useCallback, useRef, useState } from "react";
 import { LuGithub, LuPlus, LuX } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
-import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
+import { useAtomValue, useSetAtom } from "jotai";
+import {
+  loadLiveSessionAtom,
+  loadSavedSessionAtom,
+  stateAtom,
+  uploadDatasetAtom,
+} from "../atoms";
 import { useLocalSessions } from "../hooks/useLocalSessions";
 import {
   QuestionSource,
@@ -56,8 +62,10 @@ function ToggleGroup<T extends string>({
 }
 
 export function LandingScreen() {
-  const { loadSavedSession, loadLiveSession, uploadDataset, state } =
-    useLatentInsights();
+  const loadSavedSession = useSetAtom(loadSavedSessionAtom);
+  const loadLiveSession = useSetAtom(loadLiveSessionAtom);
+  const uploadDataset = useSetAtom(uploadDatasetAtom);
+  const state = useAtomValue(stateAtom);
   const navigate = useNavigate();
   const {
     sessions: localSessions,
@@ -128,7 +136,7 @@ export function LandingScreen() {
     if (questionSource !== "scout" && customQuestions.length > 0) {
       config.initial_questions = customQuestions;
     }
-    const sessionId = await uploadDataset(pendingFile, config);
+    const sessionId = await uploadDataset({ file: pendingFile, config });
     if (sessionId) {
       refresh();
       setPendingFile(null);

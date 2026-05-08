@@ -1,7 +1,13 @@
 import { Box, Text, VStack } from "@chakra-ui/react";
 import { useState } from "react";
 import { Tooltip } from "../../../../components/ui/tooltip";
-import { useTransformer } from "../../../../contexts/TransformerContext";
+import { useAtomValue, useSetAtom } from "jotai";
+import {
+  highlightedTokenAtom,
+  promptTokensAtom,
+  tokenHighlightAtom,
+  tokenMetricsAtom,
+} from "../atoms";
 import { calculateStats } from "../utils/interpretability";
 import { MiniBarChart } from "./MiniBarChart";
 
@@ -15,12 +21,10 @@ import { MiniBarChart } from "./MiniBarChart";
  * Clicking a token selects it and highlights that row in the heatmap.
  */
 export function TokenList() {
-  const {
-    promptTokens,
-    $tokenHighlight,
-    tokenMetrics,
-    setHighlightedToken: setContextHighlightedToken,
-  } = useTransformer();
+  const promptTokens = useAtomValue(promptTokensAtom);
+  const $tokenHighlight = useAtomValue(tokenHighlightAtom);
+  const tokenMetrics = useAtomValue(tokenMetricsAtom);
+  const setContextHighlightedToken = useSetAtom(highlightedTokenAtom);
 
   // Local state for UI styling only
   const [highlightedToken, setHighlightedToken] = useState<number | null>(null);

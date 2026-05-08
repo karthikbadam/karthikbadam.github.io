@@ -1,7 +1,13 @@
 import { Box, Flex, Input, Text } from "@chakra-ui/react";
 import React, { useState, useCallback, useRef } from "react";
 import { LuCornerDownLeft } from "react-icons/lu";
-import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
+import { useSetAtom } from "jotai";
+import {
+  broadcastMessageAtom,
+  continueSessionAtom,
+  createThreadAtom,
+  replyToThreadAtom,
+} from "../atoms";
 import { THREAD_ID_PREVIEW_LENGTH } from "../config";
 
 interface CommandBarProps {
@@ -13,12 +19,10 @@ export const CommandBar: React.FC<CommandBarProps> = ({
   sessionId,
   selectedThreadId,
 }) => {
-  const {
-    createThread,
-    broadcastMessage,
-    replyToThread,
-    continueSession,
-  } = useLatentInsights();
+  const createThread = useSetAtom(createThreadAtom);
+  const broadcastMessage = useSetAtom(broadcastMessageAtom);
+  const replyToThread = useSetAtom(replyToThreadAtom);
+  const continueSession = useSetAtom(continueSessionAtom);
 
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
@@ -37,9 +41,9 @@ export const CommandBar: React.FC<CommandBarProps> = ({
       setSending(true);
       try {
         if (isDirectMode) {
-          await replyToThread(selectedThreadId!, text);
+          await replyToThread({ threadId: selectedThreadId!, content: text });
         } else {
-          await createThread(sessionId, text);
+          await createThread({ sessionId, question: text });
         }
         setValue("");
       } catch (err) {
@@ -57,7 +61,7 @@ export const CommandBar: React.FC<CommandBarProps> = ({
     setError(null);
     setSending(true);
     try {
-      await broadcastMessage(sessionId, text);
+      await broadcastMessage({ sessionId, content: text });
       setValue("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");

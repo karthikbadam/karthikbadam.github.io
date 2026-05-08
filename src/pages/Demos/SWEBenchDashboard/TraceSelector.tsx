@@ -1,28 +1,33 @@
 import { Text } from "@chakra-ui/react";
 import { useCallback } from "react";
 import * as vg from "@uwdata/vgplot";
+import { useAtomValue, useSetAtom } from "jotai";
 import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
-import { useSWEBench } from "../../../contexts/SWEBenchContext";
+import {
+  clearTraceSelectionAtom,
+  getOrCreateViewAtom,
+  isReadyAtom,
+  traceIdValueAtom,
+  traceSelectionAtom,
+} from "./atoms";
 
 export function TraceSelector() {
-  const {
-    state,
-    traceSelection,
-    traceIdValue,
-    clearSelection,
-    getOrCreateView,
-  } = useSWEBench();
+  const isReady = useAtomValue(isReadyAtom);
+  const traceSelection = useAtomValue(traceSelectionAtom);
+  const traceIdValue = useAtomValue(traceIdValueAtom);
+  const clearSelection = useSetAtom(clearTraceSelectionAtom);
+  const getOrCreateView = useSetAtom(getOrCreateViewAtom);
 
   const setup = useCallback(async () => {
-    await getOrCreateView(
-      "trace_selector_view",
-      `
-      SELECT *, 
+    await getOrCreateView({
+      name: "trace_selector_view",
+      sql: `
+      SELECT *,
         SUBSTRING(trace_id, 1, 10) as trace_label,
         ROUND(total_duration, 1) || 's' as duration_label
       FROM trace_metrics ORDER BY total_duration DESC
-    `
-    );
+    `,
+    });
   }, [getOrCreateView]);
 
   const build = useCallback(
@@ -69,7 +74,7 @@ export function TraceSelector() {
         as="span"
         color="blue.solid"
         cursor="pointer"
-        onClick={clearSelection}
+        onClick={() => clearSelection()}
         _hover={{ textDecoration: "underline" }}
       >
         clear
@@ -88,7 +93,7 @@ export function TraceSelector() {
       setup={setup}
       build={build}
       dependencies={[traceSelection]}
-      isReady={state.status === "ready" && !!traceSelection}
+      isReady={isReady && !!traceSelection}
       gridArea="selector"
     />
   );

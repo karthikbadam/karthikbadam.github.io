@@ -1,8 +1,13 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import * as vg from "@uwdata/vgplot";
+import { useAtomValue, useSetAtom } from "jotai";
 import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
 import { RecordInspector } from "../../../components/RecordInspector";
-import { useSWEBench } from "../../../contexts/SWEBenchContext";
+import {
+  getOrCreateViewAtom,
+  isReadyAtom,
+  traceIdValueAtom,
+} from "./atoms";
 
 interface GanttSetupResult {
   viewName: string;
@@ -10,7 +15,9 @@ interface GanttSetupResult {
 }
 
 export function SpanGantt() {
-  const { state, traceIdValue, getOrCreateView } = useSWEBench();
+  const isReady = useAtomValue(isReadyAtom);
+  const traceIdValue = useAtomValue(traceIdValueAtom);
+  const getOrCreateView = useSetAtom(getOrCreateViewAtom);
   const [spanCount, setSpanCount] = useState(0);
   const [currentViewName, setCurrentViewName] = useState<string | null>(null);
   const [selectedData, setSelectedData] = useState<Record<
@@ -71,14 +78,14 @@ export function SpanGantt() {
       setSpanCount(count);
 
       const viewName = `gantt_${traceIdValue.slice(0, 8)}`;
-      await getOrCreateView(
-        viewName,
-        `
+      await getOrCreateView({
+        name: viewName,
+        sql: `
         SELECT *, start_time + duration as end_time,
                ROW_NUMBER() OVER (ORDER BY start_time, depth) - 1 as row_index
         FROM spans WHERE trace_id = '${traceIdValue}' AND ${baseQuery}
-      `
-      );
+      `,
+      });
 
       setCurrentViewName(viewName);
       return { viewName, spanCount: count };
@@ -89,14 +96,14 @@ export function SpanGantt() {
       const count = Number(countResult?.get?.(0)?.total_spans || 0);
       setSpanCount(count);
 
-      await getOrCreateView(
-        "gantt_agg",
-        `
+      await getOrCreateView({
+        name: "gantt_agg",
+        sql: `
         SELECT *, start_time + duration as end_time,
                ROW_NUMBER() OVER (PARTITION BY trace_id ORDER BY start_time) - 1 as row_index
         FROM spans WHERE ${baseQuery}
-      `
-      );
+      `,
+      });
 
       setCurrentViewName("gantt_agg");
       return { viewName: "gantt_agg", spanCount: count };
@@ -147,7 +154,7 @@ export function SpanGantt() {
         setup={setup}
         build={build}
         dependencies={[traceIdValue]}
-        isReady={state.status === "ready"}
+        isReady={isReady}
       />
       <RecordInspector
         key={traceIdValue}

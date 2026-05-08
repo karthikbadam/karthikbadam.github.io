@@ -13,12 +13,10 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { Provider, useAtomValue } from "jotai";
 import { Page } from "../../../components/Page";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
-import {
-  SWEBenchProvider,
-  useSWEBench,
-} from "../../../contexts/SWEBenchContext";
+import { initializeSWEBenchAtom, loadingStateAtom } from "./atoms";
 import { DurationByType } from "./DurationByType";
 import { LLMTokensOverTime } from "./LLMTokensOverTime";
 import { SpanDurationOverTime } from "./SpanDurationOverTime";
@@ -30,7 +28,8 @@ import { TraceSelector } from "./TraceSelector";
  * Main dashboard content
  */
 function DashboardContent() {
-  const { state } = useSWEBench();
+  useAtomValue(initializeSWEBenchAtom);
+  const state = useAtomValue(loadingStateAtom);
   const [showSelector, setShowSelector] = useState(false);
 
   if (state.status !== "ready") {
@@ -208,14 +207,13 @@ function DashboardContent() {
 
 /**
  * SWEBenchDashboard - Main dashboard page component
- * Wraps content with the SWEBenchProvider context and Page for nav/footer
  */
 export function SWEBenchDashboard() {
   return (
     <Page>
-      <SWEBenchProvider>
+      <Provider>
         <DashboardContent />
-      </SWEBenchProvider>
+      </Provider>
     </Page>
   );
 }

@@ -3,7 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LuArrowLeft, LuGithub } from "react-icons/lu";
 import { useParams } from "react-router-dom";
 import { PanelContainer } from "../../../../components/PanelContainer";
-import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
+import { useAtomValue, useSetAtom } from "jotai";
+import {
+  loadLiveSessionAtom,
+  loadSavedSessionAtom,
+  stateAtom,
+} from "../atoms";
 import { FEATURED_SESSIONS, GITHUB_REPO_URL } from "../config";
 import { formatSchemaSummary } from "../utils";
 import { MarkdownContent } from "./MarkdownContent";
@@ -68,7 +73,9 @@ function SchemaSummaryPanel({ summary }: { summary: string }) {
 }
 
 export function Dashboard() {
-  const { state, loadLiveSession, loadSavedSession } = useLatentInsights();
+  const state = useAtomValue(stateAtom);
+  const loadLiveSession = useSetAtom(loadLiveSessionAtom);
+  const loadSavedSession = useSetAtom(loadSavedSessionAtom);
   const { session } = state;
   const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
   const didAutoLoad = useRef(false);

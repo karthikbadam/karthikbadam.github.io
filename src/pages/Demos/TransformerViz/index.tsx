@@ -8,14 +8,29 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { Provider, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
 import { Page } from "../../../components/Page";
 import { PanelContainer } from "../../../components/PanelContainer";
 import {
-  TransformerProvider,
-  useTransformer,
-} from "../../../contexts/TransformerContext";
+  availablePromptsAtom,
+  brushSelectionStateAtom,
+  highlightedLayerAtom,
+  highlightedTokenAtom,
+  initializeTransformerAtom,
+  isReadyAtom,
+  loadingStateAtom,
+  numHeadsAtom,
+  numLayersAtom,
+  promptTokensAtom,
+  refreshLayerMetricsAtom,
+  refreshPromptTokensAtom,
+  refreshSelectionStatsAtom,
+  refreshTokenMetricsAtom,
+  selectedMetricAtom,
+  selectedPromptIdAtom,
+} from "./atoms";
 import { Heatmap } from "./components/heatmaps";
 import { LayerDetailsPanel } from "./components/LayerDetailsPanel";
 import { LayerStrip } from "./components/LayerStrip";
@@ -23,20 +38,54 @@ import { TokenDetailsPanel } from "./components/TokenDetailsPanel";
 import { TokenList } from "./components/TokenList";
 import { getMetricInfo, METRIC_CATALOG } from "./config/metrics";
 
+/** Bridges that translate the old Provider's useEffects into reactive atom subscriptions. */
+function PromptTokensWatcher() {
+  const promptId = useAtomValue(selectedPromptIdAtom);
+  const isReady = useAtomValue(isReadyAtom);
+  const refresh = useSetAtom(refreshPromptTokensAtom);
+  useEffect(() => {
+    if (!isReady || promptId === null) return;
+    refresh();
+  }, [promptId, isReady, refresh]);
+  return null;
+}
+
+function MetricsWatcher() {
+  const promptId = useAtomValue(selectedPromptIdAtom);
+  const metric = useAtomValue(selectedMetricAtom);
+  const isReady = useAtomValue(isReadyAtom);
+  const refreshLayer = useSetAtom(refreshLayerMetricsAtom);
+  const refreshToken = useSetAtom(refreshTokenMetricsAtom);
+  useEffect(() => {
+    if (!isReady) return;
+    refreshLayer();
+    refreshToken();
+  }, [promptId, metric, isReady, refreshLayer, refreshToken]);
+  return null;
+}
+
+function SelectionStatsWatcher() {
+  const refresh = useSetAtom(refreshSelectionStatsAtom);
+  const promptId = useAtomValue(selectedPromptIdAtom);
+  const metric = useAtomValue(selectedMetricAtom);
+  const brush = useAtomValue(brushSelectionStateAtom);
+  useEffect(() => {
+    refresh();
+  }, [promptId, metric, brush, refresh]);
+  return null;
+}
+
 function DashboardContent() {
-  const {
-    state,
-    numLayers,
-    numHeads,
-    availablePrompts,
-    selectedPromptId,
-    setSelectedPromptId,
-    selectedMetric,
-    setSelectedMetric,
-    promptTokens,
-    highlightedToken,
-    highlightedLayer,
-  } = useTransformer();
+  useAtomValue(initializeTransformerAtom);
+  const state = useAtomValue(loadingStateAtom);
+  const numLayers = useAtomValue(numLayersAtom);
+  const numHeads = useAtomValue(numHeadsAtom);
+  const availablePrompts = useAtomValue(availablePromptsAtom);
+  const [selectedPromptId, setSelectedPromptId] = useAtom(selectedPromptIdAtom);
+  const [selectedMetric, setSelectedMetric] = useAtom(selectedMetricAtom);
+  const promptTokens = useAtomValue(promptTokensAtom);
+  const highlightedToken = useAtomValue(highlightedTokenAtom);
+  const highlightedLayer = useAtomValue(highlightedLayerAtom);
 
   const showTokenDetails = highlightedToken !== null;
   const showLayerDetails = highlightedLayer !== null;
@@ -276,9 +325,12 @@ function DashboardContent() {
 export function TransformerViz() {
   return (
     <Page>
-      <TransformerProvider>
+      <Provider>
+        <PromptTokensWatcher />
+        <MetricsWatcher />
+        <SelectionStatsWatcher />
         <DashboardContent />
-      </TransformerProvider>
+      </Provider>
     </Page>
   );
 }

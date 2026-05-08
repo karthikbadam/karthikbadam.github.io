@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { isNotDistinct, literal } from "@uwdata/mosaic-sql";
-import { useGaia } from "../../../contexts/GaiaContext";
+import { useAtomValue } from "jotai";
+import { hoverSelectionAtom } from "./atoms";
 
 /** Star data with source_id for hover identification */
 export interface HoverableStar {
@@ -31,7 +32,7 @@ export function useStarHover<T extends HoverableStar>({
   dwellTime = 500,
   findStar,
 }: UseStarHoverOptions<T>): UseStarHoverReturn<T> {
-  const { hoverSelection } = useGaia();
+  const hoverSelection = useAtomValue(hoverSelectionAtom);
   const [selectedStar, setSelectedStar] = useState<T | null>(null);
 
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

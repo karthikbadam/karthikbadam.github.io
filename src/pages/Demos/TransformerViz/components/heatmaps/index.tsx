@@ -5,7 +5,14 @@ import {
   MosaicChart,
 } from "../../../../../components/MosaicChart";
 import { useColorModeValue } from "../../../../../components/ui/color-mode";
-import { useTransformer } from "../../../../../contexts/TransformerContext";
+import { useAtomValue } from "jotai";
+import {
+  coordinatorAtom,
+  isReadyAtom,
+  promptTokensAtom,
+  selectedMetricAtom,
+  selectedPromptIdAtom,
+} from "../../atoms";
 import {
   createHeatmapView,
   resolveMetricColumn,
@@ -32,8 +39,11 @@ import { getMetricCategory, getMetricInfo } from "../../config/metrics";
  * - layernorm: Layer normalization metrics
  */
 export function Heatmap() {
-  const { state, coordinator, selectedPromptId, selectedMetric, promptTokens } =
-    useTransformer();
+  const isReady = useAtomValue(isReadyAtom);
+  const coordinator = useAtomValue(coordinatorAtom);
+  const selectedPromptId = useAtomValue(selectedPromptIdAtom);
+  const selectedMetric = useAtomValue(selectedMetricAtom);
+  const promptTokens = useAtomValue(promptTokensAtom);
   const category = getMetricCategory(selectedMetric);
   const config = HEATMAP_CONFIGS[category as keyof typeof HEATMAP_CONFIGS];
   const metricInfo = getMetricInfo(selectedMetric);
@@ -161,7 +171,7 @@ export function Heatmap() {
       setup={setup}
       build={build}
       dependencies={[selectedMetric, selectedPromptId, promptTokens.length]}
-      isReady={state.status === "ready"}
+      isReady={isReady}
       containerCss={{ overflowX: "auto", overflowY: "hidden" }}
     />
   );

@@ -1,6 +1,7 @@
 import { Box, Input, Text } from "@chakra-ui/react";
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
+import { useSetAtom } from "jotai";
+import { replyToThreadAtom } from "../atoms";
 import { THREAD_ID_PREVIEW_LENGTH } from "../config";
 
 interface ReplyInputProps {
@@ -16,7 +17,7 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({
   placeholder,
   onClose,
 }) => {
-  const { replyToThread } = useLatentInsights();
+  const replyToThread = useSetAtom(replyToThreadAtom);
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +35,7 @@ export const ReplyInput: React.FC<ReplyInputProps> = ({
       setSending(true);
       setError(null);
       try {
-        await replyToThread(threadId, value.trim());
+        await replyToThread({ threadId, content: value.trim() });
         setValue("");
         onClose();
       } catch (err) {

@@ -1,10 +1,13 @@
 import { useCallback } from "react";
 import * as vg from "@uwdata/vgplot";
+import { useAtomValue } from "jotai";
 import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
-import { useSWEBench } from "../../../contexts/SWEBenchContext";
+import { isReadyAtom, traceIdValueAtom, traceSelectionAtom } from "./atoms";
 
 export function DurationByType() {
-  const { state, traceSelection, traceIdValue } = useSWEBench();
+  const isReady = useAtomValue(isReadyAtom);
+  const traceSelection = useAtomValue(traceSelectionAtom);
+  const traceIdValue = useAtomValue(traceIdValueAtom);
 
   const build = useCallback(
     (_: void, { width, height }: ChartDimensions) => {
@@ -35,7 +38,7 @@ export function DurationByType() {
       subtitle={traceIdValue ? "(filtered)" : "(all traces)"}
       build={build}
       dependencies={[traceSelection]}
-      isReady={state.status === "ready" && !!traceSelection}
+      isReady={isReady && !!traceSelection}
     />
   );
 }

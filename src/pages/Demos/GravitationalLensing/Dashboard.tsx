@@ -1,10 +1,8 @@
 import { Box, Container, Heading, Text } from "@chakra-ui/react";
+import { Provider, useAtomValue } from "jotai";
 import { Page } from "../../../components/Page";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
-import {
-  GravitationalLensingProvider,
-  useGravitationalLensing,
-} from "../../../contexts/GravitationalLensingContext";
+import { initializeLensingAtom, loadingStateAtom } from "./atoms";
 import { LensEditor } from "./LensEditor";
 import { LensedGrid } from "./LensedGrid";
 
@@ -12,7 +10,8 @@ import { LensedGrid } from "./LensedGrid";
  * Main dashboard content
  */
 function DashboardContent() {
-  const { state } = useGravitationalLensing();
+  useAtomValue(initializeLensingAtom);
+  const state = useAtomValue(loadingStateAtom);
 
   if (state.status !== "ready") {
     return <LoadingIndicator state={state} title="Loading Gravitational Lenses" />;
@@ -74,9 +73,9 @@ function DashboardContent() {
 export function GravitationalLensingDashboard() {
   return (
     <Page>
-      <GravitationalLensingProvider>
+      <Provider>
         <DashboardContent />
-      </GravitationalLensingProvider>
+      </Provider>
     </Page>
   );
 }

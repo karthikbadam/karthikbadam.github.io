@@ -1,12 +1,20 @@
 import { Box, Button, HStack, Text, VStack } from "@chakra-ui/react";
 import { useCallback } from "react";
 import * as vg from "@uwdata/vgplot";
+import { useAtomValue, useSetAtom } from "jotai";
 import { MosaicChart, ChartDimensions } from "../../../components/MosaicChart";
-import { useGravitationalLensing } from "../../../contexts/GravitationalLensingContext";
+import {
+  addLensAtom,
+  isComputingAtom,
+  isReadyAtom,
+  removeLastLensAtom,
+} from "./atoms";
 
 export function LensEditor() {
-  const { state, addLens, removeLastLens, isComputing } =
-    useGravitationalLensing();
+  const isReady = useAtomValue(isReadyAtom);
+  const isComputing = useAtomValue(isComputingAtom);
+  const addLens = useSetAtom(addLensAtom);
+  const removeLastLens = useSetAtom(removeLastLensAtom);
 
   const build = useCallback((_: void, { width, height }: ChartDimensions) => {
     return vg.plot(
@@ -35,7 +43,7 @@ export function LensEditor() {
     const cx = (Math.random() - 0.5) * 1.5;
     const cy = (Math.random() - 0.5) * 1.5;
     const e = 0.1 + Math.random() * 0.2;
-    addLens(cx, cy, e);
+    addLens({ cx, cy, e });
   };
 
   return (
@@ -53,7 +61,7 @@ export function LensEditor() {
           title="Lens Editor"
           build={build}
           dependencies={[isComputing]}
-          isReady={state.status === "ready"}
+          isReady={isReady}
         />
       </Box>
 
@@ -71,7 +79,7 @@ export function LensEditor() {
           <Button
             size="xs"
             variant="outline"
-            onClick={removeLastLens}
+            onClick={() => removeLastLens()}
             disabled={isComputing}
             flex={1}
           >

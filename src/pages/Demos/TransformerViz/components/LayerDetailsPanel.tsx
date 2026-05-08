@@ -1,18 +1,20 @@
 import { Box, HStack, Text, VStack } from "@chakra-ui/react";
 import * as vg from "@uwdata/vgplot";
 import { useEffect, useRef, useState } from "react";
-import {
-  SelectionStats,
-  useTransformer,
-} from "../../../../contexts/TransformerContext";
+import { useAtomValue } from "jotai";
+import { SelectionStats, coordinatorAtom, numHeadsAtom, selectedMetricAtom, selectedPromptIdAtom } from "../atoms";
+import { useTransformerQueries } from "../hooks/useTransformerQueries";
 import { formatLayerLabel, formatValue } from "../utils/formatting";
 import { PanelContainer } from "../../../../components/PanelContainer";
 import { getMetricInfo, isHeadMetric } from "../config/metrics";
 import { buildLayerHeadViewQuery } from "../utils/queryBuilders";
 
 export function LayerDetailsPanel({ layer }: { layer: number }) {
-  const { selectedMetric, queryLayerAcrossTokens, coordinator, numHeads, selectedPromptId } =
-    useTransformer();
+  const selectedMetric = useAtomValue(selectedMetricAtom);
+  const coordinator = useAtomValue(coordinatorAtom);
+  const numHeads = useAtomValue(numHeadsAtom);
+  const selectedPromptId = useAtomValue(selectedPromptIdAtom);
+  const { queryLayerAcrossTokens } = useTransformerQueries();
 
   const [stats, setStats] = useState<SelectionStats | null>(null);
   const [topTokens, setTopTokens] = useState<

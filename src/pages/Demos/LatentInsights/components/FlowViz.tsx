@@ -1,7 +1,8 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
-import { useLatentInsights } from "../../../../contexts/LatentInsightsContext";
+import { useAtomValue, useSetAtom } from "jotai";
+import { selectNodeAtom, stateAtom } from "../atoms";
 import {
   EVENT_GAP,
   EVENT_H,
@@ -45,7 +46,8 @@ function getStatusFill(
 }
 
 export const FlowViz: React.FC = () => {
-  const { state, selectNode } = useLatentInsights();
+  const state = useAtomValue(stateAtom);
+  const selectNode = useSetAtom(selectNodeAtom);
   const { session, selectedNode } = state;
 
   const scrollRef = useRef<HTMLDivElement>(null);
