@@ -154,8 +154,8 @@ export const initializeTransformerAtom = atom(null, async (get, set) => {
       preagg: { enabled: false },
     });
     vg.coordinator(coord).databaseConnector(connector);
-    await connector.getDuckDB();
     set(coordinatorAtom, coord);
+    await connector.getDuckDB();
 
     set(brushSelectionAtom, vg.Selection.crossfilter());
     set(tokenHighlightAtom, vg.Selection.single());

@@ -212,8 +212,8 @@ export const initializeTrajectoryAtlasAtom = atom(null, async (get, set) => {
       preagg: { enabled: false },
     });
     vg.coordinator(coord).databaseConnector(connector);
-    await connector.getDuckDB();
     set(coordinatorAtom, coord);
+    await connector.getDuckDB();
 
     await coord.exec(`INSTALL httpfs; LOAD httpfs;`);
     set(crossfilterAtom, vg.Selection.crossfilter());

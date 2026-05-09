@@ -29,8 +29,10 @@ export const initializeGaiaAtom = atom(null, async (get, set) => {
       preagg: { enabled: false },
     });
     vg.coordinator(coord).databaseConnector(connector);
-    await connector.getDuckDB();
+    // Set the atom synchronously before any await so a StrictMode dev
+    // double-mount sees the guard at the top of this action and bails out.
     set(coordinatorAtom, coord);
+    await connector.getDuckDB();
 
     const baseUrl = window.location.origin;
     const hashBase = window.location.pathname.replace(/\/$/, "");
