@@ -27,7 +27,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { makeClient, clausePoints } from "@uwdata/mosaic-core";
 import { Query, sql, column, verbatim } from "@uwdata/mosaic-sql";
-import type { Coordinator, MosaicClient, Selection as VgSelection } from "@uwdata/mosaic-core";
+import type {
+  Coordinator,
+  MosaicClient,
+  Selection as VgSelection,
+} from "@uwdata/mosaic-core";
 import { Group } from "@visx/group";
 import { Bar } from "@visx/shape";
 import {
@@ -42,7 +46,11 @@ import {
 } from "./chartStyles";
 import { asArray, setIntersects } from "./chartUtils";
 
-export type IcicleColorRamp = (level: number, maxLevel: number, dark: boolean) => string;
+export type IcicleColorRamp = (
+  level: number,
+  maxLevel: number,
+  dark: boolean,
+) => string;
 
 export interface IcicleMosaicClientProps {
   coordinator: Coordinator;
@@ -188,28 +196,41 @@ export function IcicleMosaicClient({
           filtered.where(sql`${verbatim(`(${whereExpr})`)}`);
         }
 
-        const ranked = Query.with({ filtered }).from("filtered").select({
-          id: column("id"),
-          step_idx: column("step_idx"),
-          category: column("category"),
-          path: sql`STRING_AGG(category, '>') OVER (PARTITION BY id ORDER BY step_idx ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)`,
-        });
+        const ranked = Query.with({ filtered })
+          .from("filtered")
+          .select({
+            id: column("id"),
+            step_idx: column("step_idx"),
+            category: column("category"),
+            path: sql`STRING_AGG(category, '>') OVER (PARTITION BY id ORDER BY step_idx ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)`,
+          });
 
         if (typeof maxLevels === "number") {
           ranked.where(sql`step_idx < ${maxLevels}`);
         }
         if (predicate) ranked.where(predicate);
 
-        return Query.with({ ranked }).from("ranked").select({
-          step_idx: column("step_idx"),
-          category: column("category"),
-          path: column("path"),
-          n: sql`COUNT(DISTINCT id)`,
-          traj_ids: sql`ARRAY_AGG(DISTINCT id)`,
-        }).groupby("step_idx", "category", "path")
+        return Query.with({ ranked })
+          .from("ranked")
+          .select({
+            step_idx: column("step_idx"),
+            category: column("category"),
+            path: column("path"),
+            n: sql`COUNT(DISTINCT id)`,
+            traj_ids: sql`ARRAY_AGG(DISTINCT id)`,
+          })
+          .groupby("step_idx", "category", "path")
           .orderby(column("step_idx"), sql`COUNT(DISTINCT id) DESC`);
       },
-    [table, idCol, levelCol, categoryCol, maxLevels, filterStepNames, whereExpr],
+    [
+      table,
+      idCol,
+      levelCol,
+      categoryCol,
+      maxLevels,
+      filterStepNames,
+      whereExpr,
+    ],
   );
 
   useEffect(() => {
@@ -253,7 +274,10 @@ export function IcicleMosaicClient({
     if (selection && clientRef.current) {
       const client = clientRef.current;
       selection.update(
-        clausePoints([idCol], undefined, { source: client, clients: new Set([client]) }),
+        clausePoints([idCol], undefined, {
+          source: client,
+          clients: new Set([client]),
+        }),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -265,7 +289,7 @@ export function IcicleMosaicClient({
     // Prune nodes representing less than 0.1% of trajectories. With deep
     // trajectories (e.g. DeepSWE at 80+ steps) the tail produces tens of
     // thousands of sub-pixel rects that lock up the browser.
-    pruneByShare(tree, totalN, 0.001);
+    pruneByShare(tree, totalN, 0.0005);
     if (maxNodesPerLevel && maxNodesPerLevel > 1) {
       collapseTail(tree, maxNodesPerLevel);
     }
@@ -308,12 +332,18 @@ export function IcicleMosaicClient({
       if (next === null) {
         // undefined value yields a null predicate → Mosaic clears this source's clause.
         selection.update(
-          clausePoints([idCol], undefined, { source: client, clients: new Set([client]) }),
+          clausePoints([idCol], undefined, {
+            source: client,
+            clients: new Set([client]),
+          }),
         );
       } else {
         const ids = Array.from(rect.node.trajIds).map((id) => [id]);
         selection.update(
-          clausePoints([idCol], ids, { source: client, clients: new Set([client]) }),
+          clausePoints([idCol], ids, {
+            source: client,
+            clients: new Set([client]),
+          }),
         );
       }
     }
@@ -336,7 +366,9 @@ export function IcicleMosaicClient({
         <Group>
           {rects.map((r, i) => {
             const sel = isSelected(r);
-            const hi = highlightedTrajIds && setIntersects(r.node.trajIds, highlightedTrajIds);
+            const hi =
+              highlightedTrajIds &&
+              setIntersects(r.node.trajIds, highlightedTrajIds);
             // Dim a rect when:
             //   - the user clicked another node and this rect isn't on its path, OR
             //   - a row is highlighted and this rect's trajectories don't include it.
@@ -355,8 +387,8 @@ export function IcicleMosaicClient({
                     sel
                       ? "var(--chakra-colors-accent)"
                       : hi
-                      ? "var(--chakra-colors-accent)"
-                      : "var(--chakra-colors-bg-panel)"
+                        ? "var(--chakra-colors-accent)"
+                        : "var(--chakra-colors-bg-panel)"
                   }
                   strokeWidth={sel ? 2 : hi ? 2 : 1}
                   opacity={dimmed ? 0.2 : 1}
@@ -459,7 +491,9 @@ function buildTree(rows: PathRow[]): TreeNode {
     parent.children.push(node);
   }
   const sortChildren = (n: TreeNode) => {
-    n.children.sort((a, b) => b.n - a.n || a.category.localeCompare(b.category));
+    n.children.sort(
+      (a, b) => b.n - a.n || a.category.localeCompare(b.category),
+    );
     n.children.forEach(sortChildren);
   };
   sortChildren(root);
@@ -517,7 +551,12 @@ function collapseTail(node: TreeNode, k: number) {
   }
 }
 
-function layoutTree(root: TreeNode, width: number, height: number, levels: number): LayoutRect[] {
+function layoutTree(
+  root: TreeNode,
+  width: number,
+  height: number,
+  levels: number,
+): LayoutRect[] {
   const rects: LayoutRect[] = [];
   const levelHeight = height / Math.max(1, levels);
   const total = root.children.reduce((a, c) => a + c.n, 0) || 1;
@@ -542,4 +581,3 @@ function layoutTree(root: TreeNode, width: number, height: number, levels: numbe
   recurse(root, 0, width, total);
   return rects;
 }
-

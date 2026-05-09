@@ -41,8 +41,8 @@ export function Dashboard() {
           </Heading>
           <Text fontSize="sm" color="fg.muted">
             Understand agent trajectories by steps taken. Each step in the
-            graphs is one action: a tool call, user/assistant
-            observation, or thought.
+            graphs is one action: a tool call, user/assistant observation, or
+            thought.
           </Text>
         </Box>
         <TrajectoryStatsPanel />
@@ -64,7 +64,7 @@ export function Dashboard() {
         >
           <TrajectoryPanel
             title="Step Icicle"
-            subtitle="step depth (rows) · width = share of trajectories taking this path"
+            subtitle="step depth (rows) · width = share of trajectories · Click a node to filter the path"
           >
             <StepIcicle />
           </TrajectoryPanel>
@@ -77,7 +77,7 @@ export function Dashboard() {
         >
           <TrajectoryPanel
             title="Outcome Sankey"
-            subtitle="i-th tool call → outcome · click a ribbon · top 10 per column"
+            subtitle="i-th tool call → outcome · click a ribbon"
             right={<SankeyDepthSlider />}
           >
             <OutcomeSankey />
