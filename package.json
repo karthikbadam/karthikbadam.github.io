@@ -16,12 +16,12 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@any_table/core": "^0.2.0",
-    "@any_table/react": "^0.2.0",
     "@chakra-ui/react": "^3.32.0",
     "@duckdb/duckdb-wasm": "^1.30.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@any_table/core": "^0.2.0",
+    "@any_table/react": "^0.2.0",
     "@kvis/packed-radial-tree": "file:/./src/lib/kvis-packed-radial-tree-1.0.0.tgz",
     "@mdx-js/react": "^3.1.0",
     "@mdx-js/rollup": "^3.1.0",
