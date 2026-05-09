@@ -259,49 +259,62 @@ interface FeaturedCardProps {
   image: string | undefined;
 }
 
-const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
-  <Stack
-    borderWidth="1.5px"
-    borderColor="gray.muted"
-    borderRadius="xl"
-    _hover={{
-      transform: "translateY(-4px)",
-      shadow: "xl",
-      shadowColor: "gray.muted",
-    }}
-    transition="all 0.3s"
-    h="100%"
-    overflow="hidden"
-  >
-    <Image
-      src={`/images/${image}`}
-      alt={post.title}
-      objectFit="cover"
-      width="100%"
-      height="200px"
-    />
-    <Stack gap={2} flex="1" px={4} pt={2} pb={4}>
-      <Heading size="sm" fontWeight="medium" css={{ wordBreak: "break-word" }}>
-        {post.title}
-        {post.date && (
-          <Text as="span" fontWeight="normal" color="fg.muted" fontSize="xs">
-            {" "}
-            • {post.date.month} {post.date.year}
-          </Text>
+const FeaturedCard = ({ post, image }: FeaturedCardProps) => {
+  const base = image?.replace(/\.(png|jpe?g)$/i, "");
+  const srcSet = base
+    ? `/images/thumbs/${base}-720.webp 1x, /images/thumbs/${base}-1440.webp 2x`
+    : undefined;
+  return (
+    <Stack
+      borderWidth="1.5px"
+      borderColor="gray.muted"
+      borderRadius="xl"
+      _hover={{
+        transform: "translateY(-4px)",
+        shadow: "xl",
+        shadowColor: "gray.muted",
+      }}
+      transition="all 0.3s"
+      h="100%"
+      overflow="hidden"
+    >
+      <Image
+        src={`/images/${image}`}
+        srcSet={srcSet}
+        alt={post.title}
+        objectFit="cover"
+        width="100%"
+        height="200px"
+        decoding="async"
+        loading="lazy"
+      />
+      <Stack gap={2} flex="1" px={4} pt={2} pb={4}>
+        <Heading
+          size="sm"
+          fontWeight="medium"
+          css={{ wordBreak: "break-word" }}
+        >
+          {post.title}
+          {post.date && (
+            <Text as="span" fontWeight="normal" color="fg.muted" fontSize="xs">
+              {" "}
+              • {post.date.month} {post.date.year}
+            </Text>
+          )}
+        </Heading>
+        <Text fontSize="xs" lineClamp={3} color="fg.muted">
+          {post.abstract}
+        </Text>
+        {post.tags && post.tags.length > 0 && (
+          <HStack gap={1.5} flexWrap="wrap" pt={1}>
+            {post.tags.map((tag, i) => (
+              <Tag.Root key={`${tag}-${i}`} size="sm" variant="subtle">
+                <Tag.Label>{tag}</Tag.Label>
+              </Tag.Root>
+            ))}
+          </HStack>
         )}
-      </Heading>
-      <Text fontSize="xs" lineClamp={3} color="fg.muted">
-        {post.abstract}
-      </Text>
-      {post.tags && post.tags.length > 0 && (
-        <HStack gap={1.5} flexWrap="wrap" pt={1}>
-          {post.tags.map((tag, i) => (
-            <Tag.Root key={`${tag}-${i}`} size="sm" variant="subtle">
-              <Tag.Label>{tag}</Tag.Label>
-            </Tag.Root>
-          ))}
-        </HStack>
-      )}
+      </Stack>
     </Stack>
-  </Stack>
-);
+  );
+};
