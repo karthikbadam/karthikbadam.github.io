@@ -272,6 +272,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
     transition="all 0.3s"
     h="100%"
     overflow="hidden"
+    p={4}
   >
     <Image
       src={`/images/${image}`}
@@ -280,7 +281,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
       width="100%"
       height="200px"
     />
-    <Stack gap={2} flex="1" px={4} pt={2} pb={4}>
+    <Stack gap={2} flex="1">
       <Heading size="sm" fontWeight="medium" css={{ wordBreak: "break-word" }}>
         {post.title}
         {post.date && (
