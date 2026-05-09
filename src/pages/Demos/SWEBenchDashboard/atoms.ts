@@ -51,8 +51,8 @@ export const initializeSWEBenchAtom = atom(null, async (get, set) => {
       preagg: { enabled: false },
     });
     vg.coordinator(coord).databaseConnector(connector);
-    await connector.getDuckDB();
     set(coordinatorAtom, coord);
+    await connector.getDuckDB();
 
     set(loadingStateAtom, {
       status: "loading-parquet",

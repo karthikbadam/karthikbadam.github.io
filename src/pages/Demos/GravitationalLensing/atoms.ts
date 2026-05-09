@@ -102,8 +102,8 @@ export const initializeLensingAtom = atom(null, async (get, set) => {
       preagg: { enabled: false },
     });
     vg.coordinator(coord).databaseConnector(connector);
-    await connector.getDuckDB();
     set(coordinatorAtom, coord);
+    await connector.getDuckDB();
 
     const gridQuery = `
       CREATE TABLE IF NOT EXISTS source_grid AS
