@@ -72,7 +72,7 @@ export function LandingScreen() {
     loading: localLoading,
     refresh,
   } = useLocalSessions();
-  const isLoading = state.status === "loading" || localLoading;
+  const sessionLoading = state.status === "loading";
 
   // Config state for new session
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -86,20 +86,20 @@ export function LandingScreen() {
 
   const openLive = useCallback(
     (id: string) => {
-      if (isLoading) return;
+      if (sessionLoading) return;
       navigate(`/latent-insights/${id}`, { replace: true });
       loadLiveSession(id);
     },
-    [isLoading, navigate, loadLiveSession],
+    [sessionLoading, navigate, loadLiveSession],
   );
 
   const openSaved = useCallback(
     (id: string) => {
-      if (isLoading) return;
+      if (sessionLoading) return;
       navigate(`/latent-insights/${id}`, { replace: true });
       loadSavedSession(id);
     },
-    [isLoading, navigate, loadSavedSession],
+    [sessionLoading, navigate, loadSavedSession],
   );
 
   const handleFileSelect = useCallback(
@@ -241,11 +241,18 @@ export function LandingScreen() {
           </Flex>
 
           {/* Live sessions */}
-          {localSessions.length > 0 && (
+          {(localSessions.length > 0 || localLoading) && (
             <VStack gap={2} w="100%" alignItems="flex-start">
-              <Text fontSize="xs" color="fg.muted" fontFamily="mono">
-                Live sessions
-              </Text>
+              <Flex gap={2} align="center">
+                <Text fontSize="xs" color="fg.muted" fontFamily="mono">
+                  Live sessions
+                </Text>
+                {localLoading && (
+                  <Text fontSize="2xs" color="fg.muted" fontFamily="mono">
+                    loading…
+                  </Text>
+                )}
+              </Flex>
               {localSessions.map((s) => (
                 <Box
                   key={s.id}
@@ -256,11 +263,11 @@ export function LandingScreen() {
                   borderColor="gray.600"
                   borderRadius="md"
                   textAlign="left"
-                  cursor={isLoading ? "wait" : "pointer"}
+                  cursor={sessionLoading ? "wait" : "pointer"}
                   _hover={{ borderColor: "fg.muted" }}
                   transition="border-color 0.15s"
                   onClick={() => openLive(s.id)}
-                  opacity={isLoading ? 0.5 : 1}
+                  opacity={sessionLoading ? 0.5 : 1}
                 >
                   <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
                     {s.dataset_path?.split("/").pop() ?? s.id.slice(0, SESSION_ID_PREVIEW_LENGTH)}
@@ -292,11 +299,11 @@ export function LandingScreen() {
                 borderColor="gray.600"
                 borderRadius="md"
                 textAlign="left"
-                cursor={isLoading ? "wait" : "pointer"}
+                cursor={sessionLoading ? "wait" : "pointer"}
                 _hover={{ borderColor: "fg.muted" }}
                 transition="border-color 0.15s"
                 onClick={() => openSaved(s.id)}
-                opacity={isLoading ? 0.5 : 1}
+                opacity={sessionLoading ? 0.5 : 1}
               >
                 <Text fontSize="xs" fontFamily="mono" fontWeight="bold">
                   {s.dataset}
