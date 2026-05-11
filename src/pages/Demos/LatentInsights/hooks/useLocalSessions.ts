@@ -23,6 +23,7 @@ function deriveSessionStatus(
 export function useLocalSessions() {
   const [sessions, setSessions] = useState<LocalSession[]>([]);
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -49,6 +50,7 @@ export function useLocalSessions() {
       // server not reachable
     } finally {
       setLoading(false);
+      setReady(true);
     }
   }, []);
 
@@ -56,5 +58,5 @@ export function useLocalSessions() {
     refresh();
   }, [refresh]);
 
-  return { sessions, loading, refresh };
+  return { sessions, loading, ready, refresh };
 }

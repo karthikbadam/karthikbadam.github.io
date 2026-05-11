@@ -70,9 +70,11 @@ export function LandingScreen() {
   const {
     sessions: localSessions,
     loading: localLoading,
+    ready: sessionsReady,
     refresh,
   } = useLocalSessions();
   const sessionLoading = state.status === "loading";
+  const uploadDisabled = !sessionsReady;
 
   // Config state for new session
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -206,19 +208,27 @@ export function LandingScreen() {
               border="1px solid"
               borderColor={pendingFile ? "fg.muted" : "gray.600"}
               borderRadius="md"
-              cursor="pointer"
+              cursor={uploadDisabled ? "wait" : "pointer"}
               fontSize="xs"
               fontFamily="mono"
               color={pendingFile ? "fg" : "fg.muted"}
-              _hover={{ borderColor: "fg.muted" }}
+              _hover={uploadDisabled ? undefined : { borderColor: "fg.muted" }}
               transition="border-color 0.15s"
+              opacity={uploadDisabled ? 0.5 : 1}
+              pointerEvents={uploadDisabled ? "none" : undefined}
+              aria-disabled={uploadDisabled}
             >
-              {pendingFile ? pendingFile.name : "Select CSV"}
+              {uploadDisabled
+                ? "Connecting…"
+                : pendingFile
+                  ? pendingFile.name
+                  : "Select CSV"}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".csv"
                 onChange={handleFileSelect}
+                disabled={uploadDisabled}
                 style={{ display: "none" }}
               />
             </Box>
