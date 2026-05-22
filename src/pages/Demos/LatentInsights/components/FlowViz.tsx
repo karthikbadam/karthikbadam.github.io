@@ -321,7 +321,7 @@ export const FlowViz: React.FC = () => {
               </feMerge>
             </filter>
           </defs>
-          {columns.map((col) => {
+          {columns.map((col, ci) => {
             const threadColor = getThreadColor(col.threadId, threadIds, isDark);
             const startStatusFill = getStatusFill(col.status, isDark);
             const startFill = startStatusFill
@@ -332,9 +332,9 @@ export const FlowViz: React.FC = () => {
               : threadColor;
             const startSel = isSelected("thread", col.threadId);
 
+            const threadNumber = ci + 1;
             return (
               <g key={col.threadId}>
-                {/* Start marker — START label + thread ID stacked */}
                 <rect
                   x={col.x}
                   y={col.startY}
@@ -369,7 +369,7 @@ export const FlowViz: React.FC = () => {
                       dominantBaseline="central"
                       style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
                     >
-                      {col.threadId.slice(0, 6)}
+                      {`THREAD ${threadNumber}`}
                     </text>
                   </>
                 )}
@@ -506,7 +506,7 @@ export const FlowViz: React.FC = () => {
                   const needsHuman = col.status === "waiting";
                   const endLabel = useFullNames
                     ? col.status.toUpperCase()
-                    : col.status === "complete" ? "OK"
+                    : col.status === "complete" ? "DONE"
                       : col.status === "waiting" ? "WT"
                       : col.status === "error" ? "ER"
                       : col.status.slice(0, 2).toUpperCase();
@@ -611,7 +611,7 @@ export const FlowViz: React.FC = () => {
             ["SC", "Scope"], ["FO", "Forage"], ["FR", "Frame"],
             ["IN", "Interrogate"], ["SY", "Synthesize"],
             ["HI", "Human Input"], ["WH", "Wait/Human"],
-            ["OK", "Complete"], ["WT", "Waiting"], ["ER", "Error"],
+            ["WT", "Waiting"], ["ER", "Error"],
           ].map(([abbr, label]) => (
             <Text key={abbr} fontSize="2xs" fontFamily="mono" color="fg.muted" lineHeight="1.2">
               <Text as="span" fontWeight="bold" color="fg.subtle">{abbr}</Text> {label}

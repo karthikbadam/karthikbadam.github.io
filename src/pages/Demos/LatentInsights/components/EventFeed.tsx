@@ -7,7 +7,7 @@ import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { MarkdownContent } from "./MarkdownContent";
 import { ReplyInput } from "./ReplyInput";
 import { FeedEntry } from "../types";
-import { THREAD_ID_PREVIEW_LENGTH, SCROLL_BOTTOM_THRESHOLD } from "../config";
+import { SCROLL_BOTTOM_THRESHOLD } from "../config";
 import {
   getThreadColor,
   getMoveColor,
@@ -200,7 +200,8 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
     const dimColor = isDark ? "#888" : "#666";
     const mutedColor = isDark ? "#555" : "#aaa";
 
-    const tid = entry.thread_id.slice(0, THREAD_ID_PREVIEW_LENGTH);
+    const threadIdx = threadIds.indexOf(entry.thread_id);
+    const tid = threadIdx >= 0 ? `T${threadIdx + 1}` : "";
     const duration =
       entry.message && /^\d/.test(entry.message) ? entry.message : "";
     const textContent =
@@ -249,7 +250,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             else onExpand(entry.id, entry);
           }}
         >
-          {/* Thread ID pill (or "session" for session-level rows) */}
+          {/* Thread pill (or "session" for session-level rows) */}
           <Box
             flexShrink={0}
             px="5px"
@@ -257,6 +258,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             borderRadius="3px"
             border="1px solid"
             borderColor={isDark ? "whiteAlpha.100" : "blackAlpha.100"}
+            title={entry.thread_id || "session"}
           >
             <Text
               as="span"

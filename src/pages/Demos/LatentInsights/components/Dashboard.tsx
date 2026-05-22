@@ -18,7 +18,6 @@ import { CommandBar } from "./CommandBar";
 import {
   EventFeed,
   FeedDownloadButton,
-  FeedMetrics,
   SessionMetricsPanel,
 } from "./EventFeed";
 import { FIXED_THREAD_W, FlowViz, ReplayButton } from "./FlowViz";
@@ -322,12 +321,7 @@ export function Dashboard() {
             <PanelHeader
               title="Agent Actions"
               hint="click a row to expand"
-              action={
-                <Flex align="center" gap={3}>
-                  <FeedMetrics />
-                  <FeedDownloadButton />
-                </Flex>
-              }
+              action={<FeedDownloadButton />}
             />
             <Box flex={1} minW={0} maxW="100%" overflow="hidden">
               <EventFeed />
