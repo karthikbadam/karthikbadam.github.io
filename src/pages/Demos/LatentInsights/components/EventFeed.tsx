@@ -207,7 +207,10 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
       entry.content ??
       entry.response_text ??
       entry.sql ??
-      entry.full_message ??
+      // step_start's full_message holds the long worker instruction —
+      // not useful as a one-line preview, and the expanded view shows
+      // it in full. Skip it so the collapsed row stays readable.
+      (entry.event_type === "step_start" ? null : entry.full_message) ??
       "";
     const previewText =
       textContent !== "" ? textContent : duration ? "" : entry.message ?? "";
@@ -222,7 +225,6 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         minW={0}
         maxW="100%"
         w="100%"
-        cursor={!isExpanded && expandable ? "pointer" : "default"}
         borderTop={isExpanded ? "1px solid" : undefined}
         borderBottom={isExpanded ? "1px solid" : undefined}
         borderTopColor={
@@ -237,9 +239,19 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             : undefined
         }
         borderRadius="sm"
-        onClick={() => !isExpanded && expandable && onExpand(entry.id, entry)}
       >
-        <Flex gap="6px" align="center" minW={0} w="100%">
+        <Flex
+          gap="6px"
+          align="center"
+          minW={0}
+          w="100%"
+          cursor={expandable ? "pointer" : "default"}
+          onClick={() => {
+            if (!expandable) return;
+            if (isExpanded) onCollapse();
+            else onExpand(entry.id, entry);
+          }}
+        >
           {/* Thread ID pill (or "session" for session-level rows) */}
           <Box
             flexShrink={0}
