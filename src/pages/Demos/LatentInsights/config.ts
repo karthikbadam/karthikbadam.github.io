@@ -70,32 +70,20 @@ export const MOVE_COLORS_DARK: Record<string, MoveColor> = {
 };
 
 export const MOVE_COLORS_LIGHT: Record<string, MoveColor> = {
-  SCOPE:       { fg: "#2d1140", bg: "#ddd0ed" },
-  FORAGE:      { fg: "#13233b", bg: "#cfdef3" },
-  FRAME:       { fg: "#09304a", bg: "#cae5ec" },
-  INTERROGATE: { fg: "#3d2707", bg: "#ecdcb8" },
-  SYNTHESIZE:  { fg: "#153110", bg: "#d4e0c4" },
-  ERROR:       { fg: "#4a131f", bg: "#ebc7d0" },
-  HUMAN_INPUT:        { fg: "#5a3d12", bg: "#f1e0bd" },
-  WAITING_FOR_HUMAN:  { fg: "#444444", bg: "#e8e8e8" },
-  DONE:               { fg: "#254820", bg: "#dceedb" },
-  STUCK:              { fg: "#74212f", bg: "#f0d6dc" },
-  UNKNOWN:     { fg: "#3a3a3a", bg: "#d8d8d8" },
+  SCOPE:       { fg: "#2d1140", bg: "#c7b4e0" },
+  FORAGE:      { fg: "#13233b", bg: "#a5c1ea" },
+  FRAME:       { fg: "#09304a", bg: "#a5d3de" },
+  INTERROGATE: { fg: "#3d2707", bg: "#e0c890" },
+  SYNTHESIZE:  { fg: "#153110", bg: "#b8caa3" },
+  ERROR:       { fg: "#4a131f", bg: "#de9fae" },
+  HUMAN_INPUT:        { fg: "#5a3d12", bg: "#e5cd9b" },
+  WAITING_FOR_HUMAN:  { fg: "#3a3a3a", bg: "#d6d6d6" },
+  DONE:               { fg: "#254820", bg: "#b8d8a8" },
+  STUCK:              { fg: "#74212f", bg: "#d9aab5" },
+  UNKNOWN:     { fg: "#3a3a3a", bg: "#c8c8c8" },
 };
 
-export const MOVE_BADGE_COLORS_LIGHT: Record<string, MoveColor> = {
-  SCOPE:       { fg: "#ffffff", bg: "#7a5cad" },
-  FORAGE:      { fg: "#ffffff", bg: "#3f6ab0" },
-  FRAME:       { fg: "#ffffff", bg: "#3d8a9c" },
-  INTERROGATE: { fg: "#ffffff", bg: "#a87528" },
-  SYNTHESIZE:  { fg: "#ffffff", bg: "#4b8240" },
-  ERROR:       { fg: "#ffffff", bg: "#b3475a" },
-  HUMAN_INPUT:        { fg: "#ffffff", bg: "#c39139" },
-  WAITING_FOR_HUMAN:  { fg: "#3a3a3a", bg: "#dddddd" },
-  DONE:               { fg: "#ffffff", bg: "#3a7a44" },
-  STUCK:              { fg: "#ffffff", bg: "#a83646" },
-  UNKNOWN:     { fg: "#ffffff", bg: "#777777" },
-};
+export const MOVE_BADGE_COLORS_LIGHT = MOVE_COLORS_LIGHT;
 
 // Neutral gray fill for running/waiting/unknown state
 export const NEUTRAL_FILL_DARK = { fg: "#bbbbbb", bg: "#3a3a3a" };

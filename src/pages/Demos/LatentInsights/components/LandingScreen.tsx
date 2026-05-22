@@ -80,7 +80,7 @@ export function LandingScreen() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [questionSource, setQuestionSource] = useState<QuestionSource>("scout");
   const [scoutContext, setScoutContext] = useState("");
-  const [seedThreads, setSeedThreads] = useState(3);
+  const [seedThreads, setSeedThreads] = useState(6);
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
   const [questionInput, setQuestionInput] = useState("");
   const [starting, setStarting] = useState(false);

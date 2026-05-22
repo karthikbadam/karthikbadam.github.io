@@ -1,5 +1,6 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { LuPlay, LuSquare, LuRotateCcw } from "react-icons/lu";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
@@ -166,10 +167,28 @@ export const FlowViz: React.FC = () => {
 
   const flowThreads = useMemo(() => deriveFlowThreads(feedEntries), [feedEntries]);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const isDark = useColorModeValue(false, true);
   const selectedStroke = useColorModeValue("#000", "#fff");
+
+  const {
+    tooltipData,
+    tooltipLeft,
+    tooltipTop,
+    showTooltip,
+    hideTooltip,
+  } = useTooltip<{
+    stepNumber: number;
+    moveFull: string;
+    assessment: string;
+    instruction: string;
+  }>();
+
+  const { containerRef, containerBounds, TooltipInPortal } = useTooltipInPortal({
+    scroll: true,
+    detectBounds: true,
+  });
 
   const layout = useMemo(() => {
     if (!flowThreads.length) return null;
@@ -248,7 +267,17 @@ export const FlowViz: React.FC = () => {
         .flow-pulse { animation: flow-pulse 2s ease-in-out infinite; }
       `}</style>
 
-      <Box ref={scrollRef} flex={1} overflow="auto" px={2} minH={0}>
+      <Box
+        ref={(el: HTMLDivElement | null) => {
+          scrollRef.current = el;
+          containerRef(el);
+        }}
+        flex={1}
+        overflow="auto"
+        px={2}
+        minH={0}
+        position="relative"
+      >
         <svg
           width={svgW}
           height={svgH}
@@ -357,10 +386,6 @@ export const FlowViz: React.FC = () => {
                     .split("_")
                     .map((w) => w ? w[0].toUpperCase() + w.slice(1) : w)
                     .join(" ");
-                  const tipParts = [`Step ${step.stepNumber} · ${moveFull}`];
-                  if (step.assessment) tipParts.push(`Assessment: ${step.assessment}`);
-                  if (step.instruction) tipParts.push(`Instruction: ${step.instruction}`);
-                  const tip = tipParts.join("\n\n");
 
                   return (
                     <g key={`s-${step.stepNumber}`}>
@@ -378,9 +403,20 @@ export const FlowViz: React.FC = () => {
                         className={isRunningTip ? "flow-pulse" : undefined}
                         style={{ cursor: "pointer" }}
                         onClick={() => selectNode({ type: "step", threadId: col.threadId, stepNumber: step.stepNumber })}
-                      >
-                        <title>{tip}</title>
-                      </rect>
+                        onMouseMove={(event) => {
+                          showTooltip({
+                            tooltipData: {
+                              stepNumber: step.stepNumber,
+                              moveFull,
+                              assessment: step.assessment ?? "",
+                              instruction: step.instruction ?? "",
+                            },
+                            tooltipLeft: event.clientX - containerBounds.left,
+                            tooltipTop: event.clientY - containerBounds.top,
+                          });
+                        }}
+                        onMouseLeave={hideTooltip}
+                      />
                       {step.w > 22 && label ? (
                         <text
                           x={step.x + step.w / 2}
@@ -476,6 +512,55 @@ export const FlowViz: React.FC = () => {
             );
           })}
         </svg>
+        {tooltipData && (
+          <TooltipInPortal
+            left={tooltipLeft}
+            top={tooltipTop}
+            style={{
+              position: "absolute",
+              background: isDark ? "#1f1f1f" : "#ffffff",
+              color: isDark ? "#e8e8e8" : "#222222",
+              border: `1px solid ${isDark ? "#3a3a3a" : "#d0d0d0"}`,
+              padding: "8px 10px",
+              borderRadius: "4px",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
+              fontSize: "11px",
+              fontFamily: "monospace",
+              lineHeight: 1.4,
+              pointerEvents: "none",
+              maxWidth: "340px",
+              zIndex: 10,
+            }}
+          >
+            <Box fontWeight="semibold" mb={1}>
+              Step {tooltipData.stepNumber} · {tooltipData.moveFull}
+            </Box>
+            <Box
+              css={{
+                display: "-webkit-box",
+                WebkitLineClamp: 10,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {tooltipData.assessment && (
+                <Box mb={1}>
+                  <Box opacity={0.6} fontSize="10px">assessment</Box>
+                  {tooltipData.assessment}
+                </Box>
+              )}
+              {tooltipData.instruction && (
+                <Box>
+                  <Box opacity={0.6} fontSize="10px">instruction</Box>
+                  {tooltipData.instruction}
+                </Box>
+              )}
+            </Box>
+            <Box opacity={0.5} fontSize="10px" mt={1}>
+              click for full details
+            </Box>
+          </TooltipInPortal>
+        )}
       </Box>
 
       {/* Legend — only shown when using abbreviations */}

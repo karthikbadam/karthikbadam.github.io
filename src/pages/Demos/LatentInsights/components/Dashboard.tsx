@@ -85,7 +85,7 @@ function SchemaSummaryPanel({ markdown }: { markdown: string }) {
       flexDirection="column"
     >
       <PanelHeader
-        title="Dataset summary"
+        title="Dataset Summary"
         hint={`click to ${open ? "collapse" : "expand"}`}
         onClick={() => setOpen((v) => !v)}
       />
@@ -320,7 +320,7 @@ export function Dashboard() {
             minH={0}
           >
             <PanelHeader
-              title="Feed of agent actions across threads"
+              title="Agent Actions"
               hint="click a row to expand"
               action={
                 <Flex align="center" gap={3}>
