@@ -463,7 +463,7 @@ export const FlowViz: React.FC = () => {
                           : evt.agent
                             ? evt.agent[0].toUpperCase() + evt.agent.slice(1)
                             : "Worker";
-                        const evKind = evt.type === "tool_call" ? "SQL" : evt.type === "human_message" ? "Message" : "Reasoning";
+                        const evKind = evt.type === "tool_call" ? "SQL" : evt.type === "human_message" ? "Message" : "Response";
                         return (
                           <rect
                             key={`e-${evt.eventIndex}`}
