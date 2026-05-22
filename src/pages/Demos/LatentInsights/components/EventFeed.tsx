@@ -1,6 +1,6 @@
 import { Box, Code, Flex, Text } from "@chakra-ui/react";
 import React, { useRef, useEffect, useMemo, useCallback, useState } from "react";
-import { LuDownload, LuX } from "react-icons/lu";
+import { LuChevronUp, LuDownload } from "react-icons/lu";
 import { useAtomValue, useSetAtom } from "jotai";
 import { allFeedEntriesAtom, feedEntriesAtom, metaAtom, selectNodeAtom, stateAtom } from "../atoms";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
@@ -173,6 +173,7 @@ function getTypeLabel(eventType: string): string {
     case "thread_resumed":       return "resumed";
     case "thread_complete":      return "done";
     case "thread_waiting":       return "waiting";
+    case "step_start":           return "plan";
     case "llm_call":             return "llm";
     case "tool_call":            return "sql";
     case "step_complete":        return "step done";
@@ -222,13 +223,8 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         maxW="100%"
         w="100%"
         cursor={!isExpanded && expandable ? "pointer" : "default"}
-        bg={
-          isExpanded
-            ? isDark ? "whiteAlpha.100" : "blackAlpha.50"
-            : undefined
-        }
-        borderLeft="2px solid"
-        borderLeftColor={isExpanded ? threadColor : "transparent"}
+        borderTop={isExpanded ? "2px solid" : undefined}
+        borderTopColor={isExpanded ? threadColor : undefined}
         _hover={
           !isExpanded && expandable
             ? { bg: isDark ? "whiteAlpha.50" : "blackAlpha.50" }
@@ -343,11 +339,13 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
                 flexShrink={0}
                 display="inline-flex"
                 alignItems="center"
-                justifyContent="center"
-                w="20px"
-                h="20px"
+                gap="3px"
+                px="6px"
+                py="1px"
                 borderRadius="3px"
                 color={dimColor}
+                fontSize="2xs"
+                fontFamily="mono"
                 _hover={{
                   color: "fg",
                   bg: isDark ? "whiteAlpha.200" : "blackAlpha.100",
@@ -358,7 +356,8 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
                   onCollapse();
                 }}
               >
-                <LuX size={12} />
+                <LuChevronUp size={11} />
+                collapse
               </Box>
             </>
           )}
@@ -667,6 +666,37 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
     );
   }
 
+  if (entry.event_type === "step_start") {
+    return (
+      <Box>
+        {entry.assessment && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              assessment
+            </Text>
+            <MarkdownContent content={entry.assessment} />
+          </Box>
+        )}
+        {entry.rationale && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              rationale
+            </Text>
+            <MarkdownContent content={entry.rationale} />
+          </Box>
+        )}
+        {entry.instruction && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              instruction
+            </Text>
+            <MarkdownContent content={entry.instruction} />
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
   if (entry.full_message) return <MarkdownContent content={entry.full_message} />;
   return null;
 };
@@ -728,7 +758,9 @@ function aggregateMetrics(entries: FeedEntry[]): {
   let unpricedTokens = 0;
 
   for (const e of entries) {
-    if (e.event_type !== "llm_call") continue;
+    // step_start carries the coordinator's call metrics (the coordinator
+    // no longer emits a separate llm_call); count both row types.
+    if (e.event_type !== "llm_call" && e.event_type !== "step_start") continue;
     const i = e.input_tokens ?? 0;
     const o = e.output_tokens ?? 0;
     if (i === 0 && o === 0) continue;

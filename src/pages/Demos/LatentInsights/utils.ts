@@ -47,6 +47,9 @@ export function hasExpandableContent(entry: FeedEntry): boolean {
     entry.content ||
     entry.scout_questions ||
     entry.source_threads ||
+    entry.assessment ||
+    entry.rationale ||
+    entry.instruction ||
     entry.event_type === "thread_waiting" ||
     entry.event_type === "thread_start" ||
     entry.event_type === "thread_resumed" ||
