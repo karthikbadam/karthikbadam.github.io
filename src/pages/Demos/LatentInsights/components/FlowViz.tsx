@@ -41,6 +41,7 @@ interface FlowStep {
   events: FlowEvent[];
   instruction?: string;
   assessment?: string;
+  rationale?: string;
 }
 interface FlowThread {
   id: string;
@@ -122,6 +123,7 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
         const step = ensureStep(t, e.step_number, e.move ?? "");
         step.instruction = e.instruction ?? "";
         step.assessment = e.assessment ?? "";
+        step.rationale = e.rationale ?? "";
       }
       continue;
     }
@@ -253,6 +255,7 @@ export const FlowViz: React.FC = () => {
           move: step.move,
           instruction: step.instruction ?? "",
           assessment: step.assessment ?? "",
+          rationale: step.rationale ?? "",
           isHumanTouchpoint,
           events,
         };
@@ -457,8 +460,9 @@ export const FlowViz: React.FC = () => {
                         onClick={() => selectNode({ type: "step", threadId: col.threadId, stepNumber: step.stepNumber })}
                         onMouseMove={(event) => {
                           const sections: { label: string; text: string }[] = [];
-                          if (step.assessment) sections.push({ label: "assessment", text: step.assessment ?? "" });
-                          if (step.instruction) sections.push({ label: "instruction", text: step.instruction ?? "" });
+                          if (step.assessment) sections.push({ label: "assessment", text: step.assessment });
+                          if (step.rationale) sections.push({ label: "rationale", text: step.rationale });
+                          if (step.instruction) sections.push({ label: "instruction", text: step.instruction });
                           showTooltip({
                             tooltipData: {
                               title: `Step ${step.stepNumber} · ${moveFull} · Coordinator`,
