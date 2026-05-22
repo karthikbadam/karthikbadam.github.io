@@ -86,12 +86,12 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
       continue;
     }
     if (e.event_type === "thread_waiting") {
+      // Status alone — the "WT" end marker conveys waiting visually.
+      // Don't materialize a WAITING_FOR_HUMAN step: thread_waiting's
+      // step_number often collides with the last real step (e.g. a step
+      // that errored out and triggered the waiting transition).
       const t = ensureThread(e.thread_id);
-      if (!t) continue;
-      t.status = "waiting";
-      if (e.step_number !== undefined) {
-        ensureStep(t, e.step_number, e.move ?? "WAITING_FOR_HUMAN");
-      }
+      if (t) t.status = "waiting";
       continue;
     }
     if (e.event_type === "step_start" && e.step_number !== undefined) {
