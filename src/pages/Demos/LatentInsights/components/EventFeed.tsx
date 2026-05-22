@@ -850,6 +850,80 @@ export const FeedMetrics: React.FC = () => {
   );
 };
 
+// --- Per-model session metrics panel (rendered below FlowViz) ---
+
+export const SessionMetricsPanel: React.FC = () => {
+  const entries = useAtomValue(feedEntriesAtom);
+  const metrics = useMemo(() => aggregateMetrics(entries), [entries]);
+
+  if (metrics.totalInput === 0 && metrics.totalOutput === 0) return null;
+
+  const rows = Array.from(metrics.perModel.entries()).sort(
+    (a, b) => (b[1].cost ?? 0) - (a[1].cost ?? 0),
+  );
+  const costSuffix =
+    metrics.unpricedTokens > 0 && metrics.totalCost > 0 ? "+" : "";
+
+  return (
+    <Box px={2} pb={2} fontFamily="mono" fontSize="2xs">
+      <Flex
+        align="baseline"
+        justify="space-between"
+        color="fg.muted"
+        mb={1}
+      >
+        <Text as="span">
+          {formatTokens(metrics.totalInput)} in • {formatTokens(metrics.totalOutput)} out
+        </Text>
+        <Text as="span" color="fg">
+          {metrics.totalCost > 0 || metrics.unpricedTokens === 0
+            ? formatCost(metrics.totalCost) + costSuffix
+            : "—"}
+        </Text>
+      </Flex>
+      <Box
+        as="table"
+        w="100%"
+        css={{
+          borderCollapse: "collapse",
+          "& td": { padding: "2px 0", verticalAlign: "baseline" },
+        }}
+      >
+        <tbody>
+          {rows.map(([model, t]) => (
+            <Box as="tr" key={model} color="fg.muted">
+              <Box
+                as="td"
+                color="fg"
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: 0,
+                }}
+                title={model}
+              >
+                {model}
+              </Box>
+              <Box as="td" textAlign="right" pl={2} whiteSpace="nowrap">
+                {t.calls} • {formatTokens(t.input)}↓ {formatTokens(t.output)}↑
+              </Box>
+              <Box as="td" textAlign="right" pl={2} color="fg" whiteSpace="nowrap">
+                {t.cost !== null ? formatCost(t.cost) : "—"}
+              </Box>
+            </Box>
+          ))}
+        </tbody>
+      </Box>
+      {metrics.unpricedTokens > 0 && (
+        <Text color="fg.subtle" mt={1}>
+          {formatTokens(metrics.unpricedTokens)} tokens unpriced
+        </Text>
+      )}
+    </Box>
+  );
+};
+
 // --- JSONL download button (rendered in the feed panel header) ---
 
 export const FeedDownloadButton: React.FC = () => {

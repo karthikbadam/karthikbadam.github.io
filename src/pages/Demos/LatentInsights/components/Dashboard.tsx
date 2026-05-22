@@ -15,7 +15,12 @@ import {
 import { FEATURED_SESSIONS, GITHUB_REPO_URL, THREAD_GAP } from "../config";
 import { MarkdownContent } from "./MarkdownContent";
 import { CommandBar } from "./CommandBar";
-import { EventFeed, FeedDownloadButton, FeedMetrics } from "./EventFeed";
+import {
+  EventFeed,
+  FeedDownloadButton,
+  FeedMetrics,
+  SessionMetricsPanel,
+} from "./EventFeed";
 import { FIXED_THREAD_W, FlowViz, ReplayButton } from "./FlowViz";
 import { LandingScreen } from "./LandingScreen";
 
@@ -263,6 +268,7 @@ export function Dashboard() {
             <Box flex={1} minH={0} overflow="hidden">
               <FlowViz />
             </Box>
+            <SessionMetricsPanel />
           </PanelContainer>
 
           {/* Command bar below graph -- live sessions only */}

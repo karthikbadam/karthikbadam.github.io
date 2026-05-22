@@ -1,5 +1,5 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
-import React, { useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { LuPlay, LuSquare, LuRotateCcw } from "react-icons/lu";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
