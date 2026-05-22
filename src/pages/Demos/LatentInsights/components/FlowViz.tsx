@@ -354,6 +354,11 @@ export const FlowViz: React.FC = () => {
                     : moveUp.replace(/ /g, "").slice(0, 2);
                   const isRunningTip =
                     col.status === "running" && step === col.steps[col.steps.length - 1];
+                  // Cap glow at one per column. When the thread is waiting,
+                  // the WT end marker owns the glow; otherwise the last
+                  // human-touchpoint step gets it.
+                  const shouldGlow =
+                    step.isHumanTouchpoint && col.status !== "waiting";
 
                   return (
                     <g key={`s-${step.stepNumber}`}>
@@ -366,7 +371,7 @@ export const FlowViz: React.FC = () => {
                         rx={RX}
                         stroke={sel ? selectedStroke : "none"}
                         strokeWidth={sel ? 1.5 : 0}
-                        filter={step.isHumanTouchpoint ? "url(#human-glow)" : undefined}
+                        filter={shouldGlow ? "url(#human-glow)" : undefined}
                         className={isRunningTip ? "flow-pulse" : undefined}
                         style={{ cursor: "pointer" }}
                         onClick={() => selectNode({ type: "step", threadId: col.threadId, stepNumber: step.stepNumber })}
@@ -420,6 +425,7 @@ export const FlowViz: React.FC = () => {
                   const endStatusFill = getStatusFill(col.status, isDark);
                   if (!endStatusFill) return null;
                   const endSel = isSelected("thread_end", col.threadId);
+                  const needsHuman = col.status === "waiting";
                   const endLabel = useFullNames
                     ? col.status.toUpperCase()
                     : col.status === "complete" ? "OK"
@@ -437,9 +443,14 @@ export const FlowViz: React.FC = () => {
                         rx={RX}
                         stroke={endSel ? selectedStroke : "none"}
                         strokeWidth={endSel ? 1.5 : 0}
+                        filter={needsHuman ? "url(#human-glow)" : undefined}
                         style={{ cursor: "pointer" }}
                         onClick={() => selectNode({ type: "thread_end", threadId: col.threadId, threadStatus: col.status })}
-                      />
+                      >
+                        {needsHuman && (
+                          <title>Waiting for your reply — click to focus the reply input</title>
+                        )}
+                      </rect>
                       {col.w > 22 && (
                         <text
                           x={col.x + col.w / 2}
