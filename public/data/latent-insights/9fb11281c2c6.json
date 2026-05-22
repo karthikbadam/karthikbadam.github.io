@@ -1,0 +1,43 @@
+{
+  "id": "9fb11281c2c6",
+  "dataset_path": "data/uploads/planets.csv",
+  "created_at": "2026-05-22T22:24:46.158021+00:00",
+  "scout_questions": [
+    {
+      "question": "Does the detection method used correlate with the orbital period or mass of the exoplanet, and if so, what does this imply about the limitations or biases of each detection technique?",
+      "motivation": "The 'method' column is highly skewed, and 'orbital_period' and 'mass' have significant variability and sparsity. Understanding if certain methods are better at finding planets with specific characteristics could reveal biases in our exoplanet census.",
+      "entry_point": "Group exoplanets by 'method' and calculate the mean/median 'orbital_period' and 'mass' for each group. Visualize these comparisons using box plots or bar charts.",
+      "difficulty": "moderate"
+    },
+    {
+      "question": "Given the sparsity of 'mass' data, is there a systematic bias in which planets have their mass measured, potentially favoring planets detected by certain methods or those with particular orbital characteristics?",
+      "motivation": "The 'mass' column is only 50% complete. Investigating whether the missing data is randomly distributed or concentrated among planets detected by specific methods or with certain orbital periods is crucial for understanding the completeness of our mass measurements.",
+      "entry_point": "Compare the distribution of 'method' and 'orbital_period' for planets with and without a recorded 'mass'.",
+      "difficulty": "moderate"
+    },
+    {
+      "question": "How has the distribution of detected exoplanet properties (e.g., orbital period, mass, distance) evolved over time, and do the dominant detection methods explain observed shifts?",
+      "motivation": "The 'year' column shows a concentration in recent years, while 'orbital_period' and 'distance' have wide spreads. Examining trends over time, especially in conjunction with the rise of 'Transit' and 'Radial Velocity' methods, could reveal how our observational capabilities have shaped our understanding of exoplanets.",
+      "entry_point": "Create scatter plots of 'orbital_period' and 'mass' against 'year', colored by 'method'. Analyze the trends and look for changes in the distribution of properties over time.",
+      "difficulty": "deep"
+    },
+    {
+      "question": "Are planets with higher 'number' (i.e., part of multi-planet systems) preferentially detected by certain 'method's, or do they exhibit different 'orbital_period' or 'mass' characteristics?",
+      "motivation": "The 'number' column shows a clear preference for single-planet systems, but multi-planet systems exist. Investigating if these systems are easier to detect via specific methods or if they have distinct physical properties could shed light on planet formation and system dynamics.",
+      "entry_point": "Analyze the relationship between 'number' and 'method', and between 'number' and 'orbital_period'/'mass'. Look for significant differences in the distributions for systems with different numbers of planets.",
+      "difficulty": "moderate"
+    },
+    {
+      "question": "Are the extreme outliers in 'orbital_period' and 'distance' associated with specific detection methods, or are they genuine rare phenomena that our current detection strategies are capable of finding across the board?",
+      "motivation": "Both 'orbital_period' and 'distance' have very large standard deviations relative to their means, indicating extreme values. Determining if these outliers are artifacts of specific detection methods or if they represent a broader range of planetary systems is important for understanding the full spectrum of exoplanets.",
+      "entry_point": "Identify planets with 'orbital_period' or 'distance' values in the top/bottom percentiles and examine their associated 'method'.",
+      "difficulty": "simple"
+    },
+    {
+      "question": "Is there a relationship between the 'distance' of a planet and its 'orbital_period' or 'mass', and could this relationship be influenced by the detection method, potentially indicating observational biases for detecting certain types of planets at different distances?",
+      "motivation": "Both 'distance' and 'orbital_period' have wide distributions and sparsity. Understanding if planets further away are systematically different in their orbital periods or masses, and if this is a function of the detection method, could reveal biases in our exoplanet surveys.",
+      "entry_point": "Create scatter plots of 'orbital_period' vs. 'distance' and 'mass' vs. 'distance', colored by 'method'. Look for observable correlations or lack thereof.",
+      "difficulty": "deep"
+    }
+  ]
+}
