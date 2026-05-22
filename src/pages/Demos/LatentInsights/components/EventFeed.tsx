@@ -29,6 +29,7 @@ export const EventFeed: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef<string | null>(null);
   expandedIdRef.current = expandedId;
+  const lastScrolledTargetRef = useRef<string | null>(null);
 
   const threadIds = useMemo(() => {
     const seen = new Set<string>();
@@ -61,10 +62,14 @@ export const EventFeed: React.FC = () => {
       feedInitiatedRef.current = false;
       return;
     }
+    if (!selectedNode) {
+      lastScrolledTargetRef.current = null;
+      return;
+    }
     let targetId = selectedNodeToFeedId(selectedNode);
     if (!targetId) return;
     if (
-      selectedNode?.type === "step" &&
+      selectedNode.type === "step" &&
       selectedNode.threadId &&
       selectedNode.stepNumber !== undefined
     ) {
@@ -81,6 +86,13 @@ export const EventFeed: React.FC = () => {
       );
       if (match) targetId = match.id;
     }
+    // Only scroll once per selection. New live entries shouldn't yank
+    // the feed back to the previously-selected row.
+    if (lastScrolledTargetRef.current === targetId) {
+      setExpandedId(targetId);
+      return;
+    }
+    lastScrolledTargetRef.current = targetId;
     setExpandedId(targetId);
     autoScrollRef.current = false;
     requestAnimationFrame(() => {
