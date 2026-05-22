@@ -811,7 +811,7 @@ export const FeedMetrics: React.FC = () => {
   for (const [model, t] of Array.from(metrics.perModel.entries())) {
     const costStr = t.cost !== null ? formatCost(t.cost) : "—";
     tooltipLines.push(
-      `${model}: ${t.calls} calls · ${formatTokens(t.input)} in · ${formatTokens(t.output)} out · ${costStr}`,
+      `${model}: ${t.calls} calls • ${formatTokens(t.input)} in • ${formatTokens(t.output)} out • ${costStr}`,
     );
   }
   if (metrics.unpricedTokens > 0) {
@@ -836,11 +836,11 @@ export const FeedMetrics: React.FC = () => {
       <Text as="span">
         {formatTokens(metrics.totalInput)} in
       </Text>
-      <Text as="span" color="fg.subtle">·</Text>
+      <Text as="span" color="fg.subtle">•</Text>
       <Text as="span">
         {formatTokens(metrics.totalOutput)} out
       </Text>
-      <Text as="span" color="fg.subtle">·</Text>
+      <Text as="span" color="fg.subtle">•</Text>
       <Text as="span">
         {metrics.totalCost > 0 || metrics.unpricedTokens === 0
           ? formatCost(metrics.totalCost) + costSuffix
