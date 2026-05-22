@@ -560,6 +560,153 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
   return null;
 };
 
+// --- Session metrics: aggregated tokens + estimated cost ---
+
+// Prices in USD per 1M tokens. Update as providers change rates.
+// Keys are normalized model names (provider prefix and date/tag suffix stripped).
+const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  // Anthropic
+  "claude-opus-4-7":     { input: 15,   output: 75 },
+  "claude-opus-4-6":     { input: 15,   output: 75 },
+  "claude-opus-4-5":     { input: 15,   output: 75 },
+  "claude-opus-4":       { input: 15,   output: 75 },
+  "claude-sonnet-4-6":   { input: 3,    output: 15 },
+  "claude-sonnet-4-5":   { input: 3,    output: 15 },
+  "claude-sonnet-4":     { input: 3,    output: 15 },
+  "claude-haiku-4-5":    { input: 1,    output: 5 },
+  "claude-3-7-sonnet":   { input: 3,    output: 15 },
+  "claude-3-5-sonnet":   { input: 3,    output: 15 },
+  "claude-3-5-haiku":    { input: 0.8,  output: 4 },
+  "claude-3-opus":       { input: 15,   output: 75 },
+  // OpenAI
+  "gpt-5":               { input: 1.25, output: 10 },
+  "gpt-4.1":             { input: 2,    output: 8 },
+  "gpt-4o":              { input: 2.5,  output: 10 },
+  "gpt-4o-mini":         { input: 0.15, output: 0.6 },
+  // OSS (typical OpenRouter pricing)
+  "gpt-oss-20b":         { input: 0.05, output: 0.2 },
+  "gpt-oss-120b":        { input: 0.15, output: 0.6 },
+};
+
+function normalizeModel(m: string): string {
+  let n = m.split("/").pop() ?? m;     // strip provider prefix
+  n = n.split(":")[0];                  // strip ":nitro" / ":beta"
+  n = n.replace(/-\d{8}$/, "");         // strip date suffix
+  n = n.replace(/-latest$/, "");
+  return n.toLowerCase();
+}
+
+interface ModelTotals {
+  input: number;
+  output: number;
+  calls: number;
+  cost: number | null;
+}
+
+function aggregateMetrics(entries: FeedEntry[]): {
+  totalInput: number;
+  totalOutput: number;
+  totalCost: number;
+  unpricedTokens: number;
+  perModel: Map<string, ModelTotals>;
+} {
+  const perModel = new Map<string, ModelTotals>();
+  let totalInput = 0;
+  let totalOutput = 0;
+  let totalCost = 0;
+  let unpricedTokens = 0;
+
+  for (const e of entries) {
+    if (e.event_type !== "llm_call") continue;
+    const i = e.input_tokens ?? 0;
+    const o = e.output_tokens ?? 0;
+    if (i === 0 && o === 0) continue;
+    totalInput += i;
+    totalOutput += o;
+
+    const key = e.model ? normalizeModel(e.model) : "unknown";
+    const price = MODEL_PRICING[key] ?? null;
+    const callCost = price
+      ? (i * price.input + o * price.output) / 1_000_000
+      : null;
+    if (callCost !== null) totalCost += callCost;
+    else unpricedTokens += i + o;
+
+    const t = perModel.get(key) ?? { input: 0, output: 0, calls: 0, cost: price ? 0 : null };
+    t.input += i;
+    t.output += o;
+    t.calls += 1;
+    if (price && t.cost !== null) t.cost += callCost!;
+    perModel.set(key, t);
+  }
+
+  return { totalInput, totalOutput, totalCost, unpricedTokens, perModel };
+}
+
+function formatTokens(n: number): string {
+  if (n === 0) return "0";
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10_000 ? 1 : 0)}k`;
+  return `${(n / 1_000_000).toFixed(n < 10_000_000 ? 2 : 1)}M`;
+}
+
+function formatCost(c: number): string {
+  if (c === 0) return "$0";
+  if (c < 0.01) return "<$0.01";
+  if (c < 1) return `$${c.toFixed(2)}`;
+  if (c < 100) return `$${c.toFixed(2)}`;
+  return `$${c.toFixed(0)}`;
+}
+
+export const FeedMetrics: React.FC = () => {
+  const entries = useAtomValue(feedEntriesAtom);
+  const metrics = useMemo(() => aggregateMetrics(entries), [entries]);
+
+  if (metrics.totalInput === 0 && metrics.totalOutput === 0) return null;
+
+  const tooltipLines: string[] = [];
+  for (const [model, t] of Array.from(metrics.perModel.entries())) {
+    const costStr = t.cost !== null ? formatCost(t.cost) : "—";
+    tooltipLines.push(
+      `${model}: ${t.calls} calls · ${formatTokens(t.input)} in · ${formatTokens(t.output)} out · ${costStr}`,
+    );
+  }
+  if (metrics.unpricedTokens > 0) {
+    tooltipLines.push(
+      `* unpriced models: ${formatTokens(metrics.unpricedTokens)} tokens not counted toward cost`,
+    );
+  }
+  const title = tooltipLines.join("\n");
+
+  const costSuffix =
+    metrics.unpricedTokens > 0 && metrics.totalCost > 0 ? "+" : "";
+
+  return (
+    <Flex
+      align="center"
+      gap={2}
+      fontSize="2xs"
+      fontFamily="mono"
+      color="fg.muted"
+      title={title}
+    >
+      <Text as="span">
+        {formatTokens(metrics.totalInput)} in
+      </Text>
+      <Text as="span" color="fg.subtle">·</Text>
+      <Text as="span">
+        {formatTokens(metrics.totalOutput)} out
+      </Text>
+      <Text as="span" color="fg.subtle">·</Text>
+      <Text as="span">
+        {metrics.totalCost > 0 || metrics.unpricedTokens === 0
+          ? formatCost(metrics.totalCost) + costSuffix
+          : "—"}
+      </Text>
+    </Flex>
+  );
+};
+
 // --- JSONL download button (rendered in the feed panel header) ---
 
 export const FeedDownloadButton: React.FC = () => {

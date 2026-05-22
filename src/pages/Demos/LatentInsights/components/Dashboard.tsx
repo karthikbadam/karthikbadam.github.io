@@ -15,7 +15,7 @@ import {
 import { FEATURED_SESSIONS, GITHUB_REPO_URL } from "../config";
 import { MarkdownContent } from "./MarkdownContent";
 import { CommandBar } from "./CommandBar";
-import { EventFeed, FeedDownloadButton } from "./EventFeed";
+import { EventFeed, FeedDownloadButton, FeedMetrics } from "./EventFeed";
 import { FlowViz } from "./FlowViz";
 import { LandingScreen } from "./LandingScreen";
 
@@ -280,7 +280,12 @@ export function Dashboard() {
             <PanelHeader
               title="Feed of agent actions across threads"
               hint="click a row to expand"
-              action={<FeedDownloadButton />}
+              action={
+                <Flex align="center" gap={3}>
+                  <FeedMetrics />
+                  <FeedDownloadButton />
+                </Flex>
+              }
             />
             <Box flex={1} minW={0} maxW="100%" overflow="hidden">
               <EventFeed />
