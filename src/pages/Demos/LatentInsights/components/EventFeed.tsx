@@ -940,12 +940,12 @@ export const FeedDownloadButton: React.FC = () => {
 
   const onClick = () => {
     if (disabled) return;
-    const lines = entries.map((e) => JSON.stringify(e)).join("\n");
-    const blob = new Blob([lines], { type: "application/x-ndjson" });
+    const payload = JSON.stringify(entries, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${meta?.id ?? "session"}.feed.jsonl`;
+    a.download = `${meta?.id ?? "session"}.feed.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -971,12 +971,12 @@ export const FeedDownloadButton: React.FC = () => {
           ? { color: "fg", bg: isDark ? "whiteAlpha.100" : "blackAlpha.50" }
           : undefined
       }
-      aria-label="Download feed as JSONL"
-      title={disabled ? "No entries to download" : "Download feed as .jsonl"}
+      aria-label="Download feed as JSON"
+      title={disabled ? "No entries to download" : "Download feed as .feed.json"}
       onClick={onClick}
     >
       <LuDownload size={11} />
-      jsonl
+      feed.json
     </Box>
   );
 };

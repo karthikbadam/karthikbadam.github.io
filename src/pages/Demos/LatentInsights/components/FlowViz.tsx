@@ -46,6 +46,8 @@ interface FlowThread {
   id: string;
   status: string;
   steps: FlowStep[];
+  seedQuestion?: string;
+  endText?: string;
 }
 
 // Group flat feed entries into thread → step → events, in insertion order.
@@ -83,7 +85,10 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
   for (const e of entries) {
     if (e.event_type === "thread_start") {
       const t = ensureThread(e.thread_id);
-      if (t && e.thread_status) t.status = e.thread_status;
+      if (t) {
+        if (e.thread_status) t.status = e.thread_status;
+        t.seedQuestion = e.seed_question ?? e.full_message ?? "";
+      }
       continue;
     }
     if (e.event_type === "thread_resumed") {
@@ -93,7 +98,10 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
     }
     if (e.event_type === "thread_complete") {
       const t = ensureThread(e.thread_id);
-      if (t) t.status = "complete";
+      if (t) {
+        t.status = "complete";
+        t.endText = e.summary ?? e.full_message ?? "";
+      }
       continue;
     }
     if (e.event_type === "thread_waiting") {
@@ -102,7 +110,10 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
       // step_number often collides with the last real step (e.g. a step
       // that errored out and triggered the waiting transition).
       const t = ensureThread(e.thread_id);
-      if (t) t.status = "waiting";
+      if (t) {
+        t.status = "waiting";
+        t.endText = e.full_message ?? e.message ?? "";
+      }
       continue;
     }
     if (e.event_type === "step_start" && e.step_number !== undefined) {
@@ -252,7 +263,18 @@ export const FlowViz: React.FC = () => {
       if (showEnd) y += MARKER_H + STEP_GAP;
 
       if (y > maxH) maxH = y;
-      return { threadId: thread.id, x, w: threadW, status: thread.status, startY, endY, showEnd, steps };
+      return {
+        threadId: thread.id,
+        x,
+        w: threadW,
+        status: thread.status,
+        seedQuestion: thread.seedQuestion ?? "",
+        endText: thread.endText ?? "",
+        startY,
+        endY,
+        showEnd,
+        steps,
+      };
     });
 
     return { columns, svgW, svgH: maxH + TOP_PAD, threadW };
@@ -346,6 +368,19 @@ export const FlowViz: React.FC = () => {
                   strokeWidth={startSel ? 1.5 : 0}
                   style={{ cursor: "pointer" }}
                   onClick={() => selectNode({ type: "thread", threadId: col.threadId })}
+                  onMouseMove={(event) => {
+                    const sections: { label: string; text: string }[] = [];
+                    if (col.seedQuestion) sections.push({ label: "seed question", text: col.seedQuestion });
+                    showTooltip({
+                      tooltipData: {
+                        title: `Thread ${threadNumber} · Start`,
+                        sections,
+                      },
+                      tooltipLeft: event.clientX - containerBounds.left,
+                      tooltipTop: event.clientY - containerBounds.top,
+                    });
+                  }}
+                  onMouseLeave={hideTooltip}
                 />
                 {col.w > 24 && (
                   <>
@@ -524,11 +559,32 @@ export const FlowViz: React.FC = () => {
                         filter={needsHuman ? "url(#human-glow)" : undefined}
                         style={{ cursor: "pointer" }}
                         onClick={() => selectNode({ type: "thread_end", threadId: col.threadId, threadStatus: col.status })}
-                      >
-                        {needsHuman && (
-                          <title>Waiting for your reply — click to focus the reply input</title>
-                        )}
-                      </rect>
+                        onMouseMove={(event) => {
+                          const statusLabel = col.status === "complete"
+                            ? "Done"
+                            : col.status === "waiting"
+                              ? "Waiting for human"
+                              : col.status === "error"
+                                ? "Error"
+                                : col.status;
+                          const sections: { label: string; text: string }[] = [];
+                          if (col.endText) {
+                            sections.push({
+                              label: col.status === "complete" ? "summary" : col.status === "waiting" ? "question" : "details",
+                              text: col.endText,
+                            });
+                          }
+                          showTooltip({
+                            tooltipData: {
+                              title: `Thread ${threadNumber} · ${statusLabel}`,
+                              sections,
+                            },
+                            tooltipLeft: event.clientX - containerBounds.left,
+                            tooltipTop: event.clientY - containerBounds.top,
+                          });
+                        }}
+                        onMouseLeave={hideTooltip}
+                      />
                       {col.w > 22 && (
                         <text
                           x={col.x + col.w / 2}
