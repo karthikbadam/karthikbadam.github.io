@@ -36,6 +36,8 @@ interface FlowStep {
   step_number: number;
   move: string;
   events: FlowEvent[];
+  instruction?: string;
+  assessment?: string;
 }
 interface FlowThread {
   id: string;
@@ -102,7 +104,11 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
     }
     if (e.event_type === "step_start" && e.step_number !== undefined) {
       const t = ensureThread(e.thread_id);
-      if (t) ensureStep(t, e.step_number, e.move ?? "");
+      if (t) {
+        const step = ensureStep(t, e.step_number, e.move ?? "");
+        step.instruction = e.instruction ?? "";
+        step.assessment = e.assessment ?? "";
+      }
       continue;
     }
     if (e.event_type === "human_message" && e.step_number !== undefined) {
@@ -198,6 +204,8 @@ export const FlowViz: React.FC = () => {
           x, y: stepY, w: threadW, h: STEP_H,
           stepNumber: step.step_number,
           move: step.move,
+          instruction: step.instruction ?? "",
+          assessment: step.assessment ?? "",
           isHumanTouchpoint,
           events,
         };
@@ -344,6 +352,16 @@ export const FlowViz: React.FC = () => {
                   const shouldGlow =
                     step.isHumanTouchpoint && col.status !== "waiting";
 
+                  const moveFull = (step.move ?? "")
+                    .toLowerCase()
+                    .split("_")
+                    .map((w) => w ? w[0].toUpperCase() + w.slice(1) : w)
+                    .join(" ");
+                  const tipParts = [`Step ${step.stepNumber} · ${moveFull}`];
+                  if (step.assessment) tipParts.push(`Assessment: ${step.assessment}`);
+                  if (step.instruction) tipParts.push(`Instruction: ${step.instruction}`);
+                  const tip = tipParts.join("\n\n");
+
                   return (
                     <g key={`s-${step.stepNumber}`}>
                       <rect
@@ -360,7 +378,9 @@ export const FlowViz: React.FC = () => {
                         className={isRunningTip ? "flow-pulse" : undefined}
                         style={{ cursor: "pointer" }}
                         onClick={() => selectNode({ type: "step", threadId: col.threadId, stepNumber: step.stepNumber })}
-                      />
+                      >
+                        <title>{tip}</title>
+                      </rect>
                       {step.w > 22 && label ? (
                         <text
                           x={step.x + step.w / 2}

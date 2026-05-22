@@ -138,7 +138,7 @@ export const SOURCE_OPTIONS: { value: QuestionSource; label: string }[] = [
 // --- Featured sessions ---
 
 export const FEATURED_SESSIONS = [
-  { id: "846f0bbfefc0", dataset: "cars.csv",              description: "10 threads · 60 steps" },
   { id: "a59dfbbd0fee", dataset: "exoplanets-nasa.csv",   description: "8 threads · 4 waiting" },
   { id: "746fa2380425", dataset: "star_classification.csv", description: "8 threads · 3 waiting" },
+  { id: "846f0bbfefc0", dataset: "cars.csv",              description: "10 threads · 60 steps" },
 ] as const;

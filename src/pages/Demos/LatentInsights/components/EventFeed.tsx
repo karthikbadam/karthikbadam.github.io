@@ -217,8 +217,8 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
       <Box
         data-entry-id={entry.id}
         px={2}
-        py={isExpanded ? 2 : "3px"}
-        my={isExpanded ? 2 : 0}
+        py={1}
+        my={isExpanded ? 1 : 0}
         minW={0}
         maxW="100%"
         w="100%"
@@ -382,9 +382,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
           <Box
             mt={2}
             pt={2}
-            pl={1}
-            borderTop="1px solid"
-            borderColor={isDark ? "whiteAlpha.200" : "blackAlpha.200"}
+            pl={2}
           >
             <ExpandedContent entry={entry} />
           </Box>
