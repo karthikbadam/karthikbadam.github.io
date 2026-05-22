@@ -100,7 +100,7 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
       const t = ensureThread(e.thread_id);
       if (t) {
         t.status = "complete";
-        t.endText = e.summary ?? e.full_message ?? "";
+        t.endText = e.full_message ?? e.message ?? "";
       }
       continue;
     }
