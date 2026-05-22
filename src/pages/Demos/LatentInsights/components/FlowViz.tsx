@@ -1,8 +1,15 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LuPlay, LuSquare, LuRotateCcw } from "react-icons/lu";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
-import { useAtomValue, useSetAtom } from "jotai";
-import { feedEntriesAtom, selectNodeAtom, stateAtom } from "../atoms";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import {
+  allFeedEntriesAtom,
+  feedEntriesAtom,
+  replayCursorAtom,
+  selectNodeAtom,
+  stateAtom,
+} from "../atoms";
 import {
   EVENT_GAP,
   EVENT_H,
@@ -480,5 +487,119 @@ export const FlowViz: React.FC = () => {
         </Flex>
       )}
     </Flex>
+  );
+};
+
+// --- Replay button (rendered in the FlowViz panel header) ---
+//
+// Animates a saved feed back through the same atoms the live SSE uses,
+// so the viewer can see the graph + feed + cost chip filling in as if
+// the session were running right now.
+//
+// Total replay duration is targeted at ~REPLAY_TARGET_MS — per-entry
+// delays scale from the real timestamp deltas, clamped so single-tick
+// bursts (synthesized rows that share a timestamp) don't fire faster
+// than the browser can paint and long LLM pauses don't stall the demo.
+
+const REPLAY_TARGET_MS = 45_000;
+const REPLAY_MIN_STEP_MS = 30;
+const REPLAY_MAX_STEP_MS = 1200;
+
+export const ReplayButton: React.FC = () => {
+  const entries = useAtomValue(allFeedEntriesAtom);
+  const [cursor, setCursor] = useAtom(replayCursorAtom);
+  const mode = useAtomValue(stateAtom).mode;
+  const isDark = useColorModeValue(false, true);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up the timer on unmount or when entries change underneath us.
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
+
+  // Stop any in-flight replay if the underlying entries change (new session loaded).
+  useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [entries]);
+
+  if (mode !== "saved" || entries.length === 0) return null;
+
+  const total = entries.length;
+  const playing = cursor !== null && cursor < total;
+  const done = cursor !== null && cursor >= total;
+
+  const stop = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setCursor(null);
+  };
+
+  const start = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    const first = entries[0]?.timestamp ?? 0;
+    const last = entries[entries.length - 1]?.timestamp ?? first;
+    const totalDeltaMs = Math.max(1, (last - first) * 1000);
+    const scale = REPLAY_TARGET_MS / totalDeltaMs;
+
+    setCursor(0);
+    let i = 0;
+    const tick = () => {
+      i += 1;
+      setCursor(i);
+      if (i >= total) {
+        timerRef.current = null;
+        return;
+      }
+      const dtMs = Math.max(0, (entries[i].timestamp - entries[i - 1].timestamp) * 1000);
+      const delay = Math.max(
+        REPLAY_MIN_STEP_MS,
+        Math.min(REPLAY_MAX_STEP_MS, dtMs * scale),
+      );
+      timerRef.current = setTimeout(tick, delay);
+    };
+    timerRef.current = setTimeout(tick, 100);
+  };
+
+  const onClick = playing ? stop : start;
+  const Icon = playing ? LuSquare : done ? LuRotateCcw : LuPlay;
+  const label = playing
+    ? `stop (${cursor}/${total})`
+    : done
+      ? "replay again"
+      : "replay";
+
+  return (
+    <Box
+      as="button"
+      display="inline-flex"
+      alignItems="center"
+      gap="4px"
+      px="6px"
+      py="2px"
+      fontSize="2xs"
+      fontFamily="mono"
+      color={playing ? "fg" : "fg.muted"}
+      borderRadius="3px"
+      cursor="pointer"
+      _hover={{
+        color: "fg",
+        bg: isDark ? "whiteAlpha.100" : "blackAlpha.50",
+      }}
+      aria-label={playing ? "Stop replay" : done ? "Replay again" : "Replay session"}
+      title={
+        playing
+          ? "Stop playback — restores the full feed"
+          : "Replay this saved session as if it were streaming live"
+      }
+      onClick={onClick}
+    >
+      <Icon size={11} />
+      {label}
+    </Box>
   );
 };

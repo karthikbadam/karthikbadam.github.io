@@ -58,6 +58,7 @@ function reducer(
         meta: action.meta,
         feedEntries: action.entries,
         error: null,
+        selectedNode: null,
       };
 
     case "LOAD_ERROR":
@@ -100,7 +101,20 @@ export const stateAtom = atomWithReducer<LatentInsightsState, Action>(
 );
 
 export const metaAtom = atom((get) => get(stateAtom).meta);
-export const feedEntriesAtom = atom((get) => get(stateAtom).feedEntries);
+export const allFeedEntriesAtom = atom((get) => get(stateAtom).feedEntries);
+
+// Replay cursor: null = show every entry (default). When a number, the
+// visible feed is truncated to the first N entries — used by the
+// replay button on saved sessions to animate the stream filling in.
+export const replayCursorAtom = atom<number | null>(null);
+
+export const feedEntriesAtom = atom((get) => {
+  const entries = get(stateAtom).feedEntries;
+  const cursor = get(replayCursorAtom);
+  if (cursor === null) return entries;
+  return entries.slice(0, Math.min(cursor, entries.length));
+});
+
 export const selectedNodeAtom = atom((get) => get(stateAtom).selectedNode);
 export const schemaSummaryAtom = atom((get) => {
   const entries = get(stateAtom).feedEntries;
@@ -220,6 +234,7 @@ export const loadSavedSessionAtom = atom(
   null,
   async (_get, set, sessionId: string) => {
     set(cleanupSSEAtom);
+    set(replayCursorAtom, null);
     set(stateAtom, { type: "LOAD_START" });
     try {
       // Saved sessions ship as a SessionResponse snapshot (for metadata)
@@ -243,6 +258,7 @@ export const loadLiveSessionAtom = atom(
   null,
   async (_get, set, sessionId: string) => {
     set(cleanupSSEAtom);
+    set(replayCursorAtom, null);
     set(stateAtom, { type: "LOAD_START" });
     try {
       const { meta, entries } = await fetchMetaAndFeed(

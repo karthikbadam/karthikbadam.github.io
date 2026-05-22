@@ -2,7 +2,7 @@ import { Box, Code, Flex, Text } from "@chakra-ui/react";
 import React, { useRef, useEffect, useMemo, useCallback, useState } from "react";
 import { LuDownload, LuX } from "react-icons/lu";
 import { useAtomValue, useSetAtom } from "jotai";
-import { feedEntriesAtom, metaAtom, selectNodeAtom, stateAtom } from "../atoms";
+import { allFeedEntriesAtom, feedEntriesAtom, metaAtom, selectNodeAtom, stateAtom } from "../atoms";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { MarkdownContent } from "./MarkdownContent";
 import { ReplyInput } from "./ReplyInput";
@@ -821,7 +821,9 @@ export const FeedMetrics: React.FC = () => {
 // --- JSONL download button (rendered in the feed panel header) ---
 
 export const FeedDownloadButton: React.FC = () => {
-  const entries = useAtomValue(feedEntriesAtom);
+  // Download always grabs the full feed, even when the replay cursor
+  // is truncating the visible slice.
+  const entries = useAtomValue(allFeedEntriesAtom);
   const meta = useAtomValue(metaAtom);
   const isDark = useColorModeValue(false, true);
   const disabled = entries.length === 0;

@@ -16,7 +16,7 @@ import { FEATURED_SESSIONS, GITHUB_REPO_URL } from "../config";
 import { MarkdownContent } from "./MarkdownContent";
 import { CommandBar } from "./CommandBar";
 import { EventFeed, FeedDownloadButton, FeedMetrics } from "./EventFeed";
-import { FlowViz } from "./FlowViz";
+import { FlowViz, ReplayButton } from "./FlowViz";
 import { LandingScreen } from "./LandingScreen";
 
 interface PanelHeaderProps {
@@ -236,6 +236,7 @@ export function Dashboard() {
             <PanelHeader
               title={`Dataset ${datasetFileName} (${threadCount} threads)`}
               hint="click a node to inspect"
+              action={<ReplayButton />}
             />
             <Box flex={1} minH={0} overflow="hidden">
               <FlowViz />
