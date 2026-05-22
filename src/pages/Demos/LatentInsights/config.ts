@@ -69,18 +69,21 @@ export const MOVE_COLORS_DARK: Record<string, MoveColor> = {
   UNKNOWN:     { fg: "#cccccc", bg: "#555555" },
 };
 
+// Light-mode pills use saturated bgs with white text so the move labels
+// read clearly against the page background. Dark-mode pills keep their
+// pale-fg-on-dark-bg style (subtle on the dark page).
 export const MOVE_COLORS_LIGHT: Record<string, MoveColor> = {
-  SCOPE:       { fg: "#2d1140", bg: "#a68fc6" },    // darker fg and bg
-  FORAGE:      { fg: "#13233b", bg: "#a3b8d9" },
-  FRAME:       { fg: "#09304a", bg: "#8abdcd" },
-  INTERROGATE: { fg: "#3d2707", bg: "#d4bc8a" },
-  SYNTHESIZE:  { fg: "#153110", bg: "#a7b598" },
-  ERROR:       { fg: "#4a131f", bg: "#d095a4" },
-  HUMAN_INPUT:        { fg: "#5a3d12", bg: "#e8d5a8" },
-  WAITING_FOR_HUMAN:  { fg: "#444444", bg: "#e0e0e0" },
-  DONE:               { fg: "#254820", bg: "#d8ecce" },
-  STUCK:              { fg: "#74212f", bg: "#f5d2d8" },
-  UNKNOWN:     { fg: "#222222", bg: "#bbbbbb" },
+  SCOPE:       { fg: "#ffffff", bg: "#7a5cad" },
+  FORAGE:      { fg: "#ffffff", bg: "#3f6ab0" },
+  FRAME:       { fg: "#ffffff", bg: "#3d8a9c" },
+  INTERROGATE: { fg: "#ffffff", bg: "#a87528" },
+  SYNTHESIZE:  { fg: "#ffffff", bg: "#4b8240" },
+  ERROR:       { fg: "#ffffff", bg: "#b3475a" },
+  HUMAN_INPUT:        { fg: "#ffffff", bg: "#c39139" },
+  WAITING_FOR_HUMAN:  { fg: "#3a3a3a", bg: "#dddddd" },
+  DONE:               { fg: "#ffffff", bg: "#3a7a44" },
+  STUCK:              { fg: "#ffffff", bg: "#a83646" },
+  UNKNOWN:     { fg: "#ffffff", bg: "#777777" },
 };
 
 // Neutral gray fill for running/waiting/unknown state

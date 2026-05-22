@@ -49,15 +49,16 @@ function PanelHeader({ title, hint, onClick, action }: PanelHeaderProps) {
       pt={2}
       mb={2}
       gap={2}
+      role={clickable ? "button" : undefined}
+      cursor={clickable ? "pointer" : "default"}
+      onClick={onClick}
     >
       <Text
-        as={clickable ? "button" : "div"}
+        as="div"
         fontSize="xs"
         fontWeight="semibold"
         color="accent"
         textAlign="left"
-        cursor={clickable ? "pointer" : "default"}
-        onClick={onClick}
         minW={0}
       >
         {title}
@@ -67,7 +68,14 @@ function PanelHeader({ title, hint, onClick, action }: PanelHeaderProps) {
           </Text>
         )}
       </Text>
-      {action && <Box flexShrink={0}>{action}</Box>}
+      {action && (
+        <Box
+          flexShrink={0}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        >
+          {action}
+        </Box>
+      )}
     </Flex>
   );
 }
