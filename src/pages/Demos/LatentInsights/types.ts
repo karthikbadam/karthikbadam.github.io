@@ -8,7 +8,10 @@ export type WaitReason =
 
 export type FeedEventType =
   | "schema_summary_ready"
+  | "session_ready"
+  | "scout_done"
   | "thread_start"
+  | "thread_resumed"
   | "step_start"
   | "llm_call"
   | "tool_call"
@@ -16,7 +19,7 @@ export type FeedEventType =
   | "human_message"
   | "thread_complete"
   | "thread_waiting"
-  | "thread_resumed";
+  | "synthesis_start";
 
 // Single render-ready row. Mirrors the backend's FeedEntry schema.
 // Both saved-mode JSON files and live SSE events deliver this exact shape.
@@ -49,15 +52,25 @@ export interface FeedEntry {
   content?: string | null;
   target?: string | null;
 
-  // thread_start / thread_complete / thread_waiting
+  // thread_start / thread_complete / thread_waiting / thread_resumed
   seed_question?: string | null;
   motivation?: string | null;
+  entry_point?: string | null;
   thread_status?: string | null;
   reason?: WaitReason | string | null;
   running_summary?: string | null;
+  from_step?: number | null;
 
-  // schema_summary_ready
+  // schema_summary_ready / session_ready / scout_done
   schema_summary_markdown?: string | null;
+  dataset_path?: string | null;
+  scout_questions?: ScoutQuestion[] | null;
+  question_source?: string | null;
+  question_count?: number | null;
+
+  // synthesis_start
+  source_threads?: string[] | null;
+  synthesis_thread?: string | null;
 
   // step_start coordinator extras
   instruction?: string | null;

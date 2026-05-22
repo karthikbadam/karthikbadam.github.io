@@ -45,8 +45,12 @@ export function hasExpandableContent(entry: FeedEntry): boolean {
     entry.response_text ||
     entry.response_tables ||
     entry.content ||
+    entry.scout_questions ||
+    entry.source_threads ||
     entry.event_type === "thread_waiting" ||
-    entry.event_type === "thread_start"
+    entry.event_type === "thread_start" ||
+    entry.event_type === "thread_resumed" ||
+    entry.event_type === "session_ready"
   );
 }
 
@@ -54,9 +58,12 @@ export function hasExpandableContent(entry: FeedEntry): boolean {
 //
 // Feed ids follow the backend's scheme:
 //   schema:{session_id}
-//   thread:{tid}:start | :complete | :waiting
-//   step:{tid}:{N}            (HUMAN_INPUT — single row)
+//   scout:{session_id}
+//   session:{session_id}:ready
+//   synthesis:{session_id}:{thread_id}
+//   thread:{tid}:start | :complete | :waiting | :resumed:{N}
 //   step:{tid}:{N}:start | :complete
+//   human:{tid}:{N}            (HUMAN_INPUT — single row)
 //   ev:{tid}:{N}:{I}
 
 export function feedEntryToSelectedNode(entry: FeedEntry): SelectedNode | null {
@@ -72,7 +79,7 @@ export function feedEntryToSelectedNode(entry: FeedEntry): SelectedNode | null {
       return { type: "thread_end", threadId, threadStatus: "waiting" };
     return { type: "thread", threadId };
   }
-  if (kind === "step") {
+  if (kind === "step" || kind === "human") {
     const threadId = parts[1];
     const stepNumber = Number(parts[2]);
     if (!threadId || Number.isNaN(stepNumber)) return null;

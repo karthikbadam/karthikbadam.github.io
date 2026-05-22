@@ -83,14 +83,31 @@ function sessionToFeed(session) {
     out.push({ ...e, feed_index: idx++ });
   };
 
+  const sessionTs = session.created_at
+    ? new Date(session.created_at).getTime() / 1000
+    : 0;
+
   if (session.schema_summary) {
     emit({
       id: `schema:${session.id}`,
       event_type: "schema_summary_ready",
       thread_id: "",
-      timestamp: session.created_at ? new Date(session.created_at).getTime() / 1000 : 0,
-      message: "Schema summary ready",
+      timestamp: sessionTs,
+      message: "Dataset profiled.",
       schema_summary_markdown: formatSchemaSummary(session.schema_summary),
+      dataset_path: session.dataset_path ?? null,
+    });
+  }
+
+  if (session.scout_questions && session.scout_questions.length) {
+    emit({
+      id: `scout:${session.id}`,
+      event_type: "scout_done",
+      thread_id: "",
+      timestamp: sessionTs,
+      message: `Scout found ${session.scout_questions.length} questions`,
+      scout_questions: session.scout_questions,
+      question_count: session.scout_questions.length,
     });
   }
 

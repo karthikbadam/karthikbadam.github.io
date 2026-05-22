@@ -75,6 +75,11 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
       if (t && e.thread_status) t.status = e.thread_status;
       continue;
     }
+    if (e.event_type === "thread_resumed") {
+      const t = ensureThread(e.thread_id);
+      if (t) t.status = "running";
+      continue;
+    }
     if (e.event_type === "thread_complete") {
       const t = ensureThread(e.thread_id);
       if (t) t.status = "complete";
@@ -186,11 +191,10 @@ export const FlowViz: React.FC = () => {
       y += START_MARKER_H + STEP_GAP;
 
       const steps = thread.steps.map((step) => {
-        const isTwoLine =
+        const isHumanTouchpoint =
           step.move === "HUMAN_INPUT" || step.move === "WAITING_FOR_HUMAN";
-        const h = isTwoLine ? STEP_H * 2 : STEP_H;
         const stepY = y;
-        y += h + STEP_GAP;
+        y += STEP_H + STEP_GAP;
         const evtW = threadW * EVENT_WIDTH_RATIO;
         const evtX = x + (threadW - evtW) / 2;
         const events = step.events.map((evt) => {
@@ -200,10 +204,10 @@ export const FlowViz: React.FC = () => {
         });
         y += STEP_GAP;
         return {
-          x, y: stepY, w: threadW, h,
+          x, y: stepY, w: threadW, h: STEP_H,
           stepNumber: step.step_number,
           move: step.move,
-          isTwoLine,
+          isHumanTouchpoint,
           events,
         };
       });
@@ -250,8 +254,28 @@ export const FlowViz: React.FC = () => {
           width={svgW}
           height={svgH}
           viewBox={`0 0 ${svgW} ${svgH}`}
-          style={{ display: "block", userSelect: "none" }}
+          style={{ display: "block", userSelect: "none", overflow: "visible" }}
         >
+          <defs>
+            {/* Warm amber halo behind human-touchpoint steps so they
+                read as "person in the loop" even at column widths where
+                a label barely fits. */}
+            <filter
+              id="human-glow"
+              x="-60%"
+              y="-60%"
+              width="220%"
+              height="220%"
+            >
+              <feGaussianBlur stdDeviation="3.5" result="blur" />
+              <feFlood floodColor={isDark ? "#f0b95a" : "#d4912a"} floodOpacity="0.75" />
+              <feComposite in2="blur" operator="in" result="glow" />
+              <feMerge>
+                <feMergeNode in="glow" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
           {columns.map((col) => {
             const threadColor = getThreadColor(col.threadId, threadIds, isDark);
             const startStatusFill = getStatusFill(col.status, isDark);
@@ -315,10 +339,14 @@ export const FlowViz: React.FC = () => {
                       : getMoveColor(step.move, isDark);
                   const moveUp = (step.move ?? "").toUpperCase().replace(/_/g, " ");
                   const label = useFullNames
-                    ? moveUp
+                    ? moveUp === "HUMAN INPUT" ? "HUMAN"
+                      : moveUp === "WAITING FOR HUMAN" ? "WAITING"
+                      : moveUp
                     : moveUp === "HUMAN INPUT" ? "HI"
                     : moveUp === "WAITING FOR HUMAN" ? "WH"
                     : moveUp.replace(/ /g, "").slice(0, 2);
+                  const isRunningTip =
+                    col.status === "running" && step === col.steps[col.steps.length - 1];
 
                   return (
                     <g key={`s-${step.stepNumber}`}>
@@ -331,33 +359,12 @@ export const FlowViz: React.FC = () => {
                         rx={RX}
                         stroke={sel ? selectedStroke : "none"}
                         strokeWidth={sel ? 1.5 : 0}
-                        className={col.status === "running" && step === col.steps[col.steps.length - 1] ? "flow-pulse" : undefined}
+                        filter={step.isHumanTouchpoint ? "url(#human-glow)" : undefined}
+                        className={isRunningTip ? "flow-pulse" : undefined}
                         style={{ cursor: "pointer" }}
                         onClick={() => selectNode({ type: "step", threadId: col.threadId, stepNumber: step.stepNumber })}
                       />
-                      {step.w > 22 && label && step.isTwoLine ? (
-                        // Two-line label for taller nodes
-                        (() => {
-                          const words = label.split(" ");
-                          const mid = Math.ceil(words.length / 2);
-                          const line1 = words.slice(0, mid).join(" ");
-                          const line2 = words.slice(mid).join(" ");
-                          return (
-                            <text
-                              x={step.x + step.w / 2}
-                              y={step.y + step.h / 2 - 6}
-                              fill={moveColor.fg}
-                              fontFamily="Poppins, sans-serif"
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
-                            >
-                              <tspan x={step.x + step.w / 2} dy={0}>{line1}</tspan>
-                              <tspan x={step.x + step.w / 2} dy={13}>{line2}</tspan>
-                            </text>
-                          );
-                        })()
-                      ) : step.w > 22 && label ? (
+                      {step.w > 22 && label ? (
                         <text
                           x={step.x + step.w / 2}
                           y={step.y + step.h / 2}

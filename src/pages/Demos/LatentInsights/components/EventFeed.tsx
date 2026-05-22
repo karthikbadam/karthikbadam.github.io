@@ -166,14 +166,19 @@ interface FeedRowProps {
 
 function getTypeLabel(eventType: string): string {
   switch (eventType) {
-    case "thread_start":    return "start";
-    case "thread_complete": return "done";
-    case "thread_waiting":  return "waiting";
-    case "llm_call":        return "llm";
-    case "tool_call":       return "sql";
-    case "step_complete":   return "step done";
-    case "human_message":   return "msg";
-    default:                return "";
+    case "schema_summary_ready": return "schema";
+    case "session_ready":        return "ready";
+    case "scout_done":           return "scout";
+    case "thread_start":         return "start";
+    case "thread_resumed":       return "resumed";
+    case "thread_complete":      return "done";
+    case "thread_waiting":       return "waiting";
+    case "llm_call":             return "llm";
+    case "tool_call":            return "sql";
+    case "step_complete":        return "step done";
+    case "human_message":        return "msg";
+    case "synthesis_start":      return "synthesis";
+    default:                     return "";
   }
 }
 
@@ -233,7 +238,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         onClick={() => !isExpanded && expandable && onExpand(entry.id, entry)}
       >
         <Flex gap="6px" align="center" minW={0} w="100%">
-          {/* Thread ID pill */}
+          {/* Thread ID pill (or "session" for session-level rows) */}
           <Box
             flexShrink={0}
             px="5px"
@@ -242,8 +247,13 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             border="1px solid"
             borderColor={isDark ? "whiteAlpha.100" : "blackAlpha.100"}
           >
-            <Text as="span" color={threadColor} fontWeight="medium">
-              {tid}
+            <Text
+              as="span"
+              color={entry.thread_id ? threadColor : mutedColor}
+              fontWeight="medium"
+              fontStyle={entry.thread_id ? "normal" : "italic"}
+            >
+              {entry.thread_id ? tid : "session"}
             </Text>
           </Box>
 
@@ -489,20 +499,121 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
     );
   }
 
-  if (entry.event_type === "thread_start" && entry.thread_status === "running") {
+  if (entry.event_type === "scout_done" && entry.scout_questions) {
     return (
       <Box>
-        {entry.full_message && (
+        <Text fontSize="2xs" color="fg.muted" mb={1}>
+          {entry.scout_questions.length} seed question
+          {entry.scout_questions.length === 1 ? "" : "s"}
+        </Text>
+        {entry.scout_questions.map((q, i) => (
+          <Box
+            key={i}
+            mb={2}
+            pl={2}
+            borderLeft="2px solid"
+            borderColor="border.muted"
+          >
+            <Text fontSize="xs" fontWeight="semibold" mb={0.5}>
+              {q.question}
+            </Text>
+            {q.motivation && (
+              <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+                {q.motivation}
+              </Text>
+            )}
+            {q.entry_point && (
+              <Text fontSize="2xs" color="fg.subtle" fontStyle="italic">
+                entry: {q.entry_point}
+              </Text>
+            )}
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
+  if (entry.event_type === "synthesis_start" && entry.source_threads) {
+    return (
+      <Box>
+        <Text fontSize="2xs" color="fg.muted" mb={1}>
+          Synthesizing {entry.source_threads.length} thread finding
+          {entry.source_threads.length === 1 ? "" : "s"}
+        </Text>
+        <Flex gap={1} flexWrap="wrap">
+          {entry.source_threads.map((tid) => (
+            <Text
+              key={tid}
+              as="span"
+              fontFamily="mono"
+              fontSize="2xs"
+              px="5px"
+              py="1px"
+              borderRadius="3px"
+              border="1px solid"
+              borderColor="border.muted"
+            >
+              {tid.slice(0, 6)}
+            </Text>
+          ))}
+        </Flex>
+      </Box>
+    );
+  }
+
+  if (entry.event_type === "thread_resumed") {
+    return (
+      <Text fontSize="2xs" fontFamily="mono" color="fg.muted">
+        Thread resumed
+        {entry.from_step !== null && entry.from_step !== undefined
+          ? ` at step ${entry.from_step}`
+          : ""}
+        .
+      </Text>
+    );
+  }
+
+  if (entry.event_type === "session_ready") {
+    return (
+      <Text fontSize="2xs" fontFamily="mono" color="fg.muted">
+        Profiling complete. Waiting for the first human question.
+      </Text>
+    );
+  }
+
+  if (entry.event_type === "thread_start") {
+    const question = entry.seed_question ?? entry.full_message ?? "";
+    return (
+      <Box>
+        {question && (
           <Box mb={2}>
-            <MarkdownContent content={entry.full_message} />
+            <MarkdownContent content={question} />
           </Box>
         )}
-        <ReplyInput
-          threadId={entry.thread_id}
-          label="Send direction to running thread"
-          placeholder="Guide this thread…"
-          onClose={() => {}}
-        />
+        {entry.motivation && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              motivation
+            </Text>
+            <MarkdownContent content={entry.motivation} />
+          </Box>
+        )}
+        {entry.entry_point && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              entry point
+            </Text>
+            <MarkdownContent content={entry.entry_point} />
+          </Box>
+        )}
+        {entry.thread_status === "running" && (
+          <ReplyInput
+            threadId={entry.thread_id}
+            label="Send direction to running thread"
+            placeholder="Guide this thread…"
+            onClose={() => {}}
+          />
+        )}
       </Box>
     );
   }
