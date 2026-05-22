@@ -260,7 +260,7 @@ export function Dashboard() {
         <Flex
           flexShrink={0}
           w={{ base: "100%", md: `${leftWidth}px` }}
-          maxW={{ base: "100%", md: "50vw" }}
+          maxW={{ base: "100%", md: "calc(50vw - 24px)" }}
           minW={0}
           minH={{ base: "50vh", md: "100%" }}
           h={{ md: "100%" }}
