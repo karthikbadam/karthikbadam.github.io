@@ -195,16 +195,33 @@ export function Dashboard() {
           back
         </Box>
         <VStack gap={0} align="flex-start" flex={1} minW={0}>
-          <Heading
-            as="h1"
-            size="md"
-            color="accent"
-            fontFamily="mono"
-            fontWeight="600"
-            lineHeight="1.1"
-          >
-            Latent Insights
-          </Heading>
+          <Flex align="baseline" gap={2} minW={0} maxW="100%">
+            <Heading
+              as="h1"
+              size="md"
+              color="accent"
+              fontFamily="mono"
+              fontWeight="600"
+              lineHeight="1.1"
+              flexShrink={0}
+            >
+              Latent Insights
+            </Heading>
+            <Text
+              as="span"
+              fontSize="sm"
+              fontFamily="mono"
+              color="fg.muted"
+              lineHeight="1.1"
+              overflow="hidden"
+              textOverflow="ellipsis"
+              whiteSpace="nowrap"
+              minW={0}
+              title={meta.dataset_path ?? datasetFileName}
+            >
+              · {datasetFileName} ({threadCount} threads)
+            </Text>
+          </Flex>
           <Text
             fontSize="xs"
             color="fg.muted"
@@ -264,7 +281,7 @@ export function Dashboard() {
             flex={1}
           >
             <PanelHeader
-              title={`Dataset ${datasetFileName} (${threadCount} threads)`}
+              title="Agent Flow"
               hint="click a node to inspect"
               action={<ReplayButton />}
             />
