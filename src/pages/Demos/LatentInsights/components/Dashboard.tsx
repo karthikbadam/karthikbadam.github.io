@@ -120,7 +120,7 @@ export function Dashboard() {
     const n = Math.max(threadCount, 1);
     const natural =
       n * FIXED_THREAD_W + (n - 1) * THREAD_GAP + LEFT_PANEL_PADDING;
-    return `clamp(${MIN_LEFT_W}px, ${natural}px, 50vw)`;
+    return Math.max(MIN_LEFT_W, natural);
   }, [threadCount]);
 
   useEffect(() => {
@@ -259,7 +259,8 @@ export function Dashboard() {
       >
         <Flex
           flexShrink={0}
-          w={{ base: "100%", md: leftWidth }}
+          w={{ base: "100%", md: `${leftWidth}px` }}
+          maxW={{ base: "100%", md: "50vw" }}
           minW={0}
           minH={{ base: "50vh", md: "100%" }}
           h={{ md: "100%" }}
