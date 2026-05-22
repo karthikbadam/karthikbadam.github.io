@@ -875,40 +875,23 @@ export const SessionMetricsPanel: React.FC = () => {
   return (
     <Box px={2} pb={2} fontFamily="mono" fontSize="2xs">
       {rows.map(([model, t]) => (
-        <Flex
+        <Box
           key={model}
-          align="baseline"
-          gap={2}
           color="fg.muted"
           py="2px"
-          minW={0}
+          title={model}
         >
-          <Text
-            as="span"
-            color="fg"
-            flex="1 1 0%"
-            minW={0}
-            overflow="hidden"
-            textOverflow="ellipsis"
-            whiteSpace="nowrap"
-            title={model}
-          >
-            {model}
+          <Text as="span" color="fg.subtle">Model: </Text>
+          <Text as="span" color="fg">{model}</Text>
+          <Text as="span">, {t.calls} turns, </Text>
+          <Text as="span">
+            {formatTokens(t.input + t.output)} tokens ({formatTokens(t.input)} in / {formatTokens(t.output)} out)
           </Text>
-          <Text as="span" flexShrink={0} whiteSpace="nowrap">
-            {t.calls} • {formatTokens(t.input)}↓ {formatTokens(t.output)}↑
-          </Text>
-          <Text
-            as="span"
-            color="fg"
-            flexShrink={0}
-            whiteSpace="nowrap"
-            minW="44px"
-            textAlign="right"
-          >
+          <Text as="span">, cost </Text>
+          <Text as="span" color="fg">
             {t.cost !== null ? formatCost(t.cost) : "—"}
           </Text>
-        </Flex>
+        </Box>
       ))}
       {showTotal && (
         <Flex

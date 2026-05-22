@@ -466,7 +466,8 @@ export const FlowViz: React.FC = () => {
         <Flex
           px={2}
           py={1}
-          gap={4}
+          columnGap={4}
+          rowGap="2px"
           flexWrap="wrap"
           borderTop="1px solid"
           borderColor="gray.subtle"
