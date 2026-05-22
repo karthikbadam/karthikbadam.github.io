@@ -241,6 +241,23 @@ async function fetchMetaAndFeed(
   return { meta, entries };
 }
 
+function metaFromFeed(sessionId: string, entries: FeedEntry[]): SessionMeta {
+  const schema = entries.find((e) => e.event_type === "schema_summary_ready");
+  const scout = entries.find((e) => e.event_type === "scout_done");
+  let earliest = 0;
+  for (const e of entries) {
+    if (e.timestamp && (earliest === 0 || e.timestamp < earliest)) {
+      earliest = e.timestamp;
+    }
+  }
+  return {
+    id: sessionId,
+    dataset_path: schema?.dataset_path ?? null,
+    created_at: earliest ? new Date(earliest * 1000).toISOString() : null,
+    scout_questions: scout?.scout_questions ?? null,
+  };
+}
+
 export const loadSavedSessionAtom = atom(
   null,
   async (_get, set, sessionId: string) => {
@@ -248,13 +265,10 @@ export const loadSavedSessionAtom = atom(
     set(replayCursorAtom, null);
     set(stateAtom, { type: "LOAD_START" });
     try {
-      // Saved sessions ship as a SessionResponse snapshot (for metadata)
-      // and a flat FeedEntry list. The static host serves both.
-      const { meta, entries } = await fetchMetaAndFeed(
-        sessionId,
-        `/data/latent-insights/${sessionId}.json`,
-        `/data/latent-insights/${sessionId}.feed.json`,
-      );
+      const res = await fetch(`/data/latent-insights/${sessionId}.feed.json`);
+      if (!res.ok) throw new Error(`Feed not found (${res.status})`);
+      const entries: FeedEntry[] = await res.json();
+      const meta = metaFromFeed(sessionId, entries);
       set(stateAtom, { type: "LOAD_DONE", meta, entries, mode: "saved" });
     } catch (e) {
       set(stateAtom, {
