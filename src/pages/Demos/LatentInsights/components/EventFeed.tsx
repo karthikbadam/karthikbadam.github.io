@@ -1,7 +1,8 @@
 import { Box, Code, Flex, Text } from "@chakra-ui/react";
 import React, { useRef, useEffect, useMemo, useCallback, useState } from "react";
+import { LuDownload, LuX } from "react-icons/lu";
 import { useAtomValue, useSetAtom } from "jotai";
-import { feedEntriesAtom, selectNodeAtom, stateAtom } from "../atoms";
+import { feedEntriesAtom, metaAtom, selectNodeAtom, stateAtom } from "../atoms";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { MarkdownContent } from "./MarkdownContent";
 import { ReplyInput } from "./ReplyInput";
@@ -19,7 +20,7 @@ export const EventFeed: React.FC = () => {
   const state = useAtomValue(stateAtom);
   const feedEntries = useAtomValue(feedEntriesAtom);
   const selectNode = useSetAtom(selectNodeAtom);
-  const { session, selectedNode } = state;
+  const { selectedNode } = state;
 
   const isDark = useColorModeValue(false, true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -29,10 +30,17 @@ export const EventFeed: React.FC = () => {
   const expandedIdRef = useRef<string | null>(null);
   expandedIdRef.current = expandedId;
 
-  const threadIds = useMemo(
-    () => session?.threads?.map((t) => t.id) ?? [],
-    [session],
-  );
+  const threadIds = useMemo(() => {
+    const seen = new Set<string>();
+    const ids: string[] = [];
+    for (const e of feedEntries) {
+      if (e.thread_id && !seen.has(e.thread_id)) {
+        seen.add(e.thread_id);
+        ids.push(e.thread_id);
+      }
+    }
+    return ids;
+  }, [feedEntries]);
 
   // Auto-scroll to bottom as new entries arrive
   useEffect(() => {
@@ -41,14 +49,34 @@ export const EventFeed: React.FC = () => {
     }
   }, [feedEntries.length]);
 
-  // Scroll selected entry into view
+  // Scroll selected entry into view, with a fallback for step selections
+  // that don't have a matching primary id (e.g., a step that has only
+  // step_complete, no step_start).
   useEffect(() => {
     if (feedInitiatedRef.current) {
       feedInitiatedRef.current = false;
       return;
     }
-    const targetId = selectedNodeToFeedId(selectedNode);
+    let targetId = selectedNodeToFeedId(selectedNode);
     if (!targetId) return;
+    if (
+      selectedNode?.type === "step" &&
+      selectedNode.threadId &&
+      selectedNode.stepNumber !== undefined
+    ) {
+      const tid = selectedNode.threadId;
+      const sn = selectedNode.stepNumber;
+      const match = feedEntries.find(
+        (e) =>
+          e.thread_id === tid &&
+          e.step_number === sn &&
+          (e.event_type === "step_start" ||
+            e.event_type === "step_complete" ||
+            e.event_type === "human_message" ||
+            e.event_type === "thread_waiting"),
+      );
+      if (match) targetId = match.id;
+    }
     setExpandedId(targetId);
     autoScrollRef.current = false;
     requestAnimationFrame(() => {
@@ -66,7 +94,7 @@ export const EventFeed: React.FC = () => {
         container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       }, 120);
     });
-  }, [selectedNode]);
+  }, [selectedNode, feedEntries]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -75,15 +103,20 @@ export const EventFeed: React.FC = () => {
       el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_BOTTOM_THRESHOLD;
   }, []);
 
-  const toggleExpand = useCallback(
+  const expand = useCallback(
     (id: string, entry: FeedEntry) => {
       feedInitiatedRef.current = true;
-      const next = expandedIdRef.current === id ? null : id;
-      setExpandedId(next);
-      selectNode(next ? feedEntryToSelectedNode(entry) : null);
+      setExpandedId(id);
+      selectNode(feedEntryToSelectedNode(entry));
     },
     [selectNode],
   );
+
+  const collapse = useCallback(() => {
+    feedInitiatedRef.current = true;
+    setExpandedId(null);
+    selectNode(null);
+  }, [selectNode]);
 
   return (
     <Flex direction="column" h="100%" minW={0} maxW="100%" overflow="hidden">
@@ -113,7 +146,8 @@ export const EventFeed: React.FC = () => {
             threadIds={threadIds}
             isDark={isDark}
             isExpanded={expandedId === entry.id}
-            onToggle={toggleExpand}
+            onExpand={expand}
+            onCollapse={collapse}
           />
         ))}
       </Box>
@@ -126,7 +160,8 @@ interface FeedRowProps {
   threadIds: string[];
   isDark: boolean;
   isExpanded: boolean;
-  onToggle: (id: string, entry: FeedEntry) => void;
+  onExpand: (id: string, entry: FeedEntry) => void;
+  onCollapse: () => void;
 }
 
 function getTypeLabel(eventType: string): string {
@@ -152,34 +187,50 @@ const WAITING_HEADERS: Record<string, string> = {
 };
 
 const FeedRow: React.FC<FeedRowProps> = React.memo(
-  ({ entry, threadIds, isDark, isExpanded, onToggle }) => {
+  ({ entry, threadIds, isDark, isExpanded, onExpand, onCollapse }) => {
     const threadColor = getThreadColor(entry.thread_id, threadIds, isDark);
-    const moveColor = getMoveColor(entry.move, isDark);
+    const moveColor = getMoveColor(entry.move ?? undefined, isDark);
     const expandable = hasExpandableContent(entry);
     const dimColor = isDark ? "#888" : "#666";
     const mutedColor = isDark ? "#555" : "#aaa";
 
     const tid = entry.thread_id.slice(0, THREAD_ID_PREVIEW_LENGTH);
-    const duration = entry.message && /^\d/.test(entry.message) ? entry.message : "";
+    const duration =
+      entry.message && /^\d/.test(entry.message) ? entry.message : "";
     const textContent =
-      entry.content ?? entry.response ?? entry.sql ?? entry.full_message ?? "";
-    const previewText = textContent !== ""
-      ? textContent
-      : (duration ? "" : (entry.message ?? ""));
+      entry.content ??
+      entry.response_text ??
+      entry.sql ??
+      entry.full_message ??
+      "";
+    const previewText =
+      textContent !== "" ? textContent : duration ? "" : entry.message ?? "";
     const typeHint = getTypeLabel(entry.event_type);
 
     return (
       <Box
         data-entry-id={entry.id}
         px={2}
-        py="3px"
+        py={isExpanded ? 2 : "3px"}
+        my={isExpanded ? 2 : 0}
         minW={0}
         maxW="100%"
         w="100%"
-        cursor={expandable ? "pointer" : "default"}
-        _hover={expandable ? { bg: isDark ? "whiteAlpha.50" : "blackAlpha.50" } : undefined}
+        cursor={!isExpanded && expandable ? "pointer" : "default"}
+        bg={
+          isExpanded
+            ? isDark ? "whiteAlpha.100" : "blackAlpha.50"
+            : undefined
+        }
+        borderLeft="2px solid"
+        borderLeftColor={isExpanded ? threadColor : "transparent"}
+        _hover={
+          !isExpanded && expandable
+            ? { bg: isDark ? "whiteAlpha.50" : "blackAlpha.50" }
+            : undefined
+        }
         borderRadius="sm"
-        onClick={() => expandable && onToggle(entry.id, entry)}
+        onClick={() => !isExpanded && expandable && onExpand(entry.id, entry)}
       >
         <Flex gap="6px" align="center" minW={0} w="100%">
           {/* Thread ID pill */}
@@ -272,10 +323,45 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
               </Text>
             </Box>
           )}
+
+          {/* Explicit collapse button — only when expanded */}
+          {isExpanded && (
+            <>
+              <Box flex="1 1 0%" />
+              <Box
+                as="button"
+                flexShrink={0}
+                display="inline-flex"
+                alignItems="center"
+                justifyContent="center"
+                w="20px"
+                h="20px"
+                borderRadius="3px"
+                color={dimColor}
+                _hover={{
+                  color: "fg",
+                  bg: isDark ? "whiteAlpha.200" : "blackAlpha.100",
+                }}
+                aria-label="Collapse"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onCollapse();
+                }}
+              >
+                <LuX size={12} />
+              </Box>
+            </>
+          )}
         </Flex>
 
         {isExpanded && (
-          <Box mt={1} mb={2} pl={1}>
+          <Box
+            mt={2}
+            pt={2}
+            pl={1}
+            borderTop="1px solid"
+            borderColor={isDark ? "whiteAlpha.200" : "blackAlpha.200"}
+          >
             <ExpandedContent entry={entry} />
           </Box>
         )}
@@ -333,7 +419,7 @@ const JsonTable: React.FC<{ data: unknown[]; label?: string }> = ({ data, label 
 
 const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
   if (entry.event_type === "thread_waiting") {
-    const reason = entry.reason ?? undefined;
+    const reason = (entry.reason as string | undefined) ?? undefined;
     const header = reason ? WAITING_HEADERS[reason] : undefined;
     return (
       <Box>
@@ -461,9 +547,9 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
   if (entry.event_type === "llm_call") {
     return (
       <Box>
-        {entry.response && <MarkdownContent content={entry.response} />}
-        {entry.tables &&
-          Object.entries(entry.tables).map(([key, rows]) => (
+        {entry.response_text && <MarkdownContent content={entry.response_text} />}
+        {entry.response_tables &&
+          Object.entries(entry.response_tables).map(([key, rows]) => (
             <JsonTable key={key} data={rows} label={key} />
           ))}
       </Box>
@@ -472,4 +558,55 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
 
   if (entry.full_message) return <MarkdownContent content={entry.full_message} />;
   return null;
+};
+
+// --- JSONL download button (rendered in the feed panel header) ---
+
+export const FeedDownloadButton: React.FC = () => {
+  const entries = useAtomValue(feedEntriesAtom);
+  const meta = useAtomValue(metaAtom);
+  const isDark = useColorModeValue(false, true);
+  const disabled = entries.length === 0;
+
+  const onClick = () => {
+    if (disabled) return;
+    const lines = entries.map((e) => JSON.stringify(e)).join("\n");
+    const blob = new Blob([lines], { type: "application/x-ndjson" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${meta?.id ?? "session"}.feed.jsonl`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Box
+      as="button"
+      display="inline-flex"
+      alignItems="center"
+      gap="4px"
+      px="6px"
+      py="2px"
+      fontSize="2xs"
+      fontFamily="mono"
+      color="fg.muted"
+      borderRadius="3px"
+      cursor={disabled ? "not-allowed" : "pointer"}
+      opacity={disabled ? 0.4 : 1}
+      _hover={
+        !disabled
+          ? { color: "fg", bg: isDark ? "whiteAlpha.100" : "blackAlpha.50" }
+          : undefined
+      }
+      aria-label="Download feed as JSONL"
+      title={disabled ? "No entries to download" : "Download feed as .jsonl"}
+      onClick={onClick}
+    >
+      <LuDownload size={11} />
+      jsonl
+    </Box>
+  );
 };

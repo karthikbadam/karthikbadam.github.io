@@ -4,9 +4,11 @@ import type { CommandMode, QuestionSource } from "./types";
 
 // --- API ---
 
-export const API_BASE = import.meta.env.DEV
-  ? "http://localhost:8000/api"
-  : "https://latent-insights-service-production.up.railway.app/api";
+export const API_BASE =
+  (import.meta.env.VITE_API_BASE as string | undefined) ??
+  (import.meta.env.DEV
+    ? "http://localhost:8000/api"
+    : "https://latent-insights-service-production.up.railway.app/api");
 
 export const GITHUB_REPO_URL =
   "https://github.com/karthikbadam/latent-insights-service";

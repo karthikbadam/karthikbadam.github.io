@@ -2,7 +2,7 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useAtomValue, useSetAtom } from "jotai";
-import { selectNodeAtom, stateAtom } from "../atoms";
+import { feedEntriesAtom, selectNodeAtom, stateAtom } from "../atoms";
 import {
   EVENT_GAP,
   EVENT_H,
@@ -15,11 +15,108 @@ import {
   TOP_PAD,
 } from "../config";
 import { getMoveColor, getThreadColor } from "../utils";
+import type { FeedEntry } from "../types";
 
 const RX = 4;
 const MIN_THREAD_W = 35;
 const MAX_THREAD_W = 110;
 const FULL_NAME_THRESHOLD = 72;
+
+interface FlowEvent {
+  type: "llm_call" | "tool_call" | "human_message";
+  eventIndex: number;
+}
+interface FlowStep {
+  step_number: number;
+  move: string;
+  events: FlowEvent[];
+}
+interface FlowThread {
+  id: string;
+  status: string;
+  steps: FlowStep[];
+}
+
+// Group flat feed entries into thread → step → events, in insertion order.
+// Relies on backend feed_index ordering — no sorting, no timestamp math.
+function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
+  const threads = new Map<string, FlowThread>();
+  const stepIndex = new Map<string, Map<number, FlowStep>>();
+
+  const ensureThread = (id: string): FlowThread | null => {
+    if (!id) return null;
+    let t = threads.get(id);
+    if (!t) {
+      t = { id, status: "running", steps: [] };
+      threads.set(id, t);
+      stepIndex.set(id, new Map());
+    }
+    return t;
+  };
+
+  const ensureStep = (
+    t: FlowThread,
+    stepNumber: number,
+    move: string,
+  ): FlowStep => {
+    const cache = stepIndex.get(t.id)!;
+    let step = cache.get(stepNumber);
+    if (!step) {
+      step = { step_number: stepNumber, move, events: [] };
+      t.steps.push(step);
+      cache.set(stepNumber, step);
+    }
+    return step;
+  };
+
+  for (const e of entries) {
+    if (e.event_type === "thread_start") {
+      const t = ensureThread(e.thread_id);
+      if (t && e.thread_status) t.status = e.thread_status;
+      continue;
+    }
+    if (e.event_type === "thread_complete") {
+      const t = ensureThread(e.thread_id);
+      if (t) t.status = "complete";
+      continue;
+    }
+    if (e.event_type === "thread_waiting") {
+      const t = ensureThread(e.thread_id);
+      if (!t) continue;
+      t.status = "waiting";
+      if (e.step_number !== undefined) {
+        ensureStep(t, e.step_number, e.move ?? "WAITING_FOR_HUMAN");
+      }
+      continue;
+    }
+    if (e.event_type === "step_start" && e.step_number !== undefined) {
+      const t = ensureThread(e.thread_id);
+      if (t) ensureStep(t, e.step_number, e.move ?? "");
+      continue;
+    }
+    if (e.event_type === "human_message" && e.step_number !== undefined) {
+      const t = ensureThread(e.thread_id);
+      if (t) ensureStep(t, e.step_number, e.move ?? "HUMAN_INPUT");
+      continue;
+    }
+    if (
+      (e.event_type === "llm_call" || e.event_type === "tool_call") &&
+      e.step_number !== undefined
+    ) {
+      const t = ensureThread(e.thread_id);
+      if (!t) continue;
+      const step = stepIndex.get(t.id)!.get(e.step_number);
+      if (!step) continue;
+      // Pull eventIndex from "ev:tid:N:I" so it matches the feed id.
+      const parts = e.id.split(":");
+      const eventIndex =
+        parts[0] === "ev" ? Number(parts[3]) : step.events.length;
+      step.events.push({ type: e.event_type, eventIndex });
+    }
+  }
+
+  return Array.from(threads.values());
+}
 
 // Status-based fill for markers when thread is in a terminal/waiting state.
 // Returns { bg, fg } for the rect + label.
@@ -46,9 +143,11 @@ function getStatusFill(
 }
 
 export const FlowViz: React.FC = () => {
-  const state = useAtomValue(stateAtom);
+  const selectedNode = useAtomValue(stateAtom).selectedNode;
+  const feedEntries = useAtomValue(feedEntriesAtom);
   const selectNode = useSetAtom(selectNodeAtom);
-  const { session, selectedNode } = state;
+
+  const flowThreads = useMemo(() => deriveFlowThreads(feedEntries), [feedEntries]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(400);
@@ -67,8 +166,8 @@ export const FlowViz: React.FC = () => {
   const selectedStroke = useColorModeValue("#000", "#fff");
 
   const layout = useMemo(() => {
-    if (!session?.threads?.length) return null;
-    const threads = session.threads;
+    if (!flowThreads.length) return null;
+    const threads = flowThreads;
     const n = threads.length;
 
     const totalGaps = (n - 1) * THREAD_GAP;
@@ -94,10 +193,10 @@ export const FlowViz: React.FC = () => {
         y += h + STEP_GAP;
         const evtW = threadW * EVENT_WIDTH_RATIO;
         const evtX = x + (threadW - evtW) / 2;
-        const events = step.events.map((evt, ei) => {
+        const events = step.events.map((evt) => {
           const eY = y;
           y += EVENT_H + EVENT_GAP;
-          return { x: evtX, y: eY, w: evtW, h: EVENT_H, type: evt.type, eventIndex: ei };
+          return { x: evtX, y: eY, w: evtW, h: EVENT_H, type: evt.type, eventIndex: evt.eventIndex };
         });
         y += STEP_GAP;
         return {
@@ -118,7 +217,7 @@ export const FlowViz: React.FC = () => {
     });
 
     return { columns, svgW, svgH: maxH + TOP_PAD, threadW };
-  }, [session, containerWidth]);
+  }, [flowThreads, containerWidth]);
 
   const isSelected = useCallback(
     (type: string, threadId?: string, stepNumber?: number, eventIndex?: number): boolean => {
@@ -133,7 +232,7 @@ export const FlowViz: React.FC = () => {
     [selectedNode],
   );
 
-  if (!session || !layout) return null;
+  if (!layout) return null;
 
   const { columns, svgW, svgH, threadW } = layout;
   const useFullNames = threadW >= FULL_NAME_THRESHOLD;
@@ -276,9 +375,6 @@ export const FlowViz: React.FC = () => {
                       {step.events.map((evt) => {
                         const eSel = isSelected("event", col.threadId, step.stepNumber, evt.eventIndex);
                         const isHuman = evt.type === "human_message";
-                        // Human messages share the same rectangle geometry as
-                        // other events so the timeline stays uniform — they're
-                        // distinguished by a subtle accent stroke + fill tint.
                         const opacity = isHuman ? 1 : evt.type === "tool_call" ? 0.75 : 0.55;
                         const fill = isHuman
                           ? (isDark ? "#d6c5a8" : "#7a5e2a")

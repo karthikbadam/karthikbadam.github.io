@@ -5,15 +5,17 @@ import { useParams } from "react-router-dom";
 import { PanelContainer } from "../../../../components/PanelContainer";
 import { useAtomValue, useSetAtom } from "jotai";
 import {
+  feedEntriesAtom,
   loadLiveSessionAtom,
   loadSavedSessionAtom,
+  metaAtom,
+  schemaSummaryAtom,
   stateAtom,
 } from "../atoms";
 import { FEATURED_SESSIONS, GITHUB_REPO_URL } from "../config";
-import { formatSchemaSummary } from "../utils";
 import { MarkdownContent } from "./MarkdownContent";
 import { CommandBar } from "./CommandBar";
-import { EventFeed } from "./EventFeed";
+import { EventFeed, FeedDownloadButton } from "./EventFeed";
 import { FlowViz } from "./FlowViz";
 import { LandingScreen } from "./LandingScreen";
 
@@ -21,36 +23,44 @@ interface PanelHeaderProps {
   title: string;
   hint?: string;
   onClick?: () => void;
+  action?: React.ReactNode;
 }
 
-function PanelHeader({ title, hint, onClick }: PanelHeaderProps) {
+function PanelHeader({ title, hint, onClick, action }: PanelHeaderProps) {
   const clickable = !!onClick;
   return (
-    <Text
-      as={clickable ? "button" : "div"}
-      fontSize="xs"
-      fontWeight="semibold"
-      color="accent"
-      mb={2}
+    <Flex
+      align="center"
+      justify="space-between"
       px={2}
       pt={2}
-      textAlign="left"
-      cursor={clickable ? "pointer" : "default"}
-      onClick={onClick}
+      mb={2}
+      gap={2}
     >
-      {title}
-      {hint && (
-        <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
-          • {hint}
-        </Text>
-      )}
-    </Text>
+      <Text
+        as={clickable ? "button" : "div"}
+        fontSize="xs"
+        fontWeight="semibold"
+        color="accent"
+        textAlign="left"
+        cursor={clickable ? "pointer" : "default"}
+        onClick={onClick}
+        minW={0}
+      >
+        {title}
+        {hint && (
+          <Text as="span" fontWeight="normal" color="fg.muted" ml={1}>
+            • {hint}
+          </Text>
+        )}
+      </Text>
+      {action && <Box flexShrink={0}>{action}</Box>}
+    </Flex>
   );
 }
 
-function SchemaSummaryPanel({ summary }: { summary: string }) {
+function SchemaSummaryPanel({ markdown }: { markdown: string }) {
   const [open, setOpen] = useState(false);
-  const formatted = useMemo(() => formatSchemaSummary(summary), [summary]);
   return (
     <PanelContainer
       p={0}
@@ -65,7 +75,7 @@ function SchemaSummaryPanel({ summary }: { summary: string }) {
       />
       {open && (
         <Box px={2} pb={2} maxH="260px" overflowY="auto">
-          <MarkdownContent content={formatted} />
+          <MarkdownContent content={markdown} />
         </Box>
       )}
     </PanelContainer>
@@ -74,15 +84,25 @@ function SchemaSummaryPanel({ summary }: { summary: string }) {
 
 export function Dashboard() {
   const state = useAtomValue(stateAtom);
+  const meta = useAtomValue(metaAtom);
+  const schemaMarkdown = useAtomValue(schemaSummaryAtom);
+  const feedEntries = useAtomValue(feedEntriesAtom);
   const loadLiveSession = useSetAtom(loadLiveSessionAtom);
   const loadSavedSession = useSetAtom(loadSavedSessionAtom);
-  const { session } = state;
   const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
   const didAutoLoad = useRef(false);
 
+  const threadCount = useMemo(() => {
+    const seen = new Set<string>();
+    for (const e of feedEntries) {
+      if (e.event_type === "thread_start" && e.thread_id) seen.add(e.thread_id);
+    }
+    return seen.size;
+  }, [feedEntries]);
+
   useEffect(() => {
     if (didAutoLoad.current) return;
-    if (urlSessionId && !session && state.status === "idle") {
+    if (urlSessionId && !meta && state.status === "idle") {
       didAutoLoad.current = true;
       const isFeatured = FEATURED_SESSIONS.some((s) => s.id === urlSessionId);
       if (isFeatured) {
@@ -91,7 +111,7 @@ export function Dashboard() {
         loadLiveSession(urlSessionId);
       }
     }
-  }, [urlSessionId, session, state.status, loadLiveSession, loadSavedSession]);
+  }, [urlSessionId, meta, state.status, loadLiveSession, loadSavedSession]);
 
   if (state.status === "loading") {
     return (
@@ -109,13 +129,12 @@ export function Dashboard() {
     );
   }
 
-  if (!session) {
+  if (!meta) {
     return <LandingScreen />;
   }
 
   const datasetFileName =
-    session.dataset_path?.split("/").pop()?.trim() ?? "Dataset";
-  const threadCountForTitle = session.threads?.length ?? 0;
+    meta.dataset_path?.split("/").pop()?.trim() ?? "Dataset";
   const isLive = state.mode === "live";
 
   return (
@@ -215,7 +234,7 @@ export function Dashboard() {
             flex={1}
           >
             <PanelHeader
-              title={`Dataset ${datasetFileName} (${threadCountForTitle} threads)`}
+              title={`Dataset ${datasetFileName} (${threadCount} threads)`}
               hint="click a node to inspect"
             />
             <Box flex={1} minH={0} overflow="hidden">
@@ -226,7 +245,7 @@ export function Dashboard() {
           {/* Command bar below graph -- live sessions only */}
           {isLive && (
             <CommandBar
-              sessionId={session.id}
+              sessionId={meta.id}
               selectedThreadId={state.selectedNode?.threadId}
             />
           )}
@@ -243,9 +262,9 @@ export function Dashboard() {
           data-feed-panel
         >
           {/* Dataset summary as its own panel (only when available) */}
-          {session.schema_summary && (
+          {schemaMarkdown && (
             <Box flexShrink={0}>
-              <SchemaSummaryPanel summary={session.schema_summary} />
+              <SchemaSummaryPanel markdown={schemaMarkdown} />
             </Box>
           )}
 
@@ -261,6 +280,7 @@ export function Dashboard() {
             <PanelHeader
               title="Feed of agent actions across threads"
               hint="click a row to expand"
+              action={<FeedDownloadButton />}
             />
             <Box flex={1} minW={0} maxW="100%" overflow="hidden">
               <EventFeed />

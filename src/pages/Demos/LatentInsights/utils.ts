@@ -1,6 +1,8 @@
-// Pure helper functions extracted from context and components
+// Pure helpers — colors and id<->selection mapping. All derivation
+// (LLM JSON parsing, schema formatting, feed building, timestamp sorting)
+// now lives on the backend; the frontend just renders.
 
-import type { FeedEntry, SelectedNode, SessionResponse } from "./types";
+import type { FeedEntry, SelectedNode } from "./types";
 import {
   THREAD_SHADES_DARK,
   THREAD_SHADES_LIGHT,
@@ -24,7 +26,7 @@ export function getThreadColor(
 }
 
 export function getMoveColor(
-  move: string | undefined,
+  move: string | null | undefined,
   isDark: boolean,
 ): MoveColor {
   const table = isDark ? MOVE_COLORS_DARK : MOVE_COLORS_LIGHT;
@@ -33,145 +35,75 @@ export function getMoveColor(
   return table[move.toUpperCase()] ?? neutral;
 }
 
-// --- JSON response parsing ---
-
-export function tryParseJsonResponse(
-  raw: string,
-): { text: string; tables?: Record<string, unknown[]> } {
-  try {
-    const obj = JSON.parse(raw);
-    const tables: Record<string, unknown[]> = {};
-    for (const key of Object.keys(obj)) {
-      if (
-        Array.isArray(obj[key]) &&
-        obj[key].length > 0 &&
-        typeof obj[key][0] === "object"
-      ) {
-        tables[key] = obj[key];
-      }
-    }
-    const text = obj.summary ?? obj.assessment ?? "";
-    return { text, tables: Object.keys(tables).length > 0 ? tables : undefined };
-  } catch {
-    const summaryMatch = raw.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (summaryMatch)
-      return {
-        text: summaryMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"'),
-      };
-    return { text: raw };
-  }
-}
-
-// --- Column profiles → markdown table ---
-// Backend returns schema summary with a "Column profiles" section containing
-// pipe-separated column descriptions with no newlines, like:
-//   pl_name | VARCHAR | 6150/6150 | 6150 unique. Top: ... hostname | VARCHAR | ...
-// We detect this pattern and reformat it as a markdown table.
-
-const DUCKDB_TYPES = [
-  "VARCHAR", "BIGINT", "INTEGER", "DOUBLE", "FLOAT", "BOOLEAN",
-  "DATE", "TIMESTAMP", "TEXT", "SMALLINT", "TINYINT", "DECIMAL",
-  "BLOB", "UUID", "TIME", "INTERVAL", "JSON",
-];
-
-function formatColumnProfiles(text: string): string {
-  // Split into column entries using the pattern: <name> | <TYPE> |
-  const typeAlt = DUCKDB_TYPES.join("|");
-  const pattern = new RegExp(
-    `(\\w+)\\s*\\|\\s*(${typeAlt})\\s*\\|\\s*([^|]+?)\\s*\\|\\s*`,
-    "g",
-  );
-  const entries: { name: string; type: string; count: string; desc: string }[] = [];
-  let lastIdx = 0;
-  const matches: RegExpExecArray[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = pattern.exec(text)) !== null) {
-    matches.push(m);
-  }
-  if (matches.length < 2) return text; // not enough to reformat
-
-  for (let i = 0; i < matches.length; i++) {
-    const cur = matches[i];
-    const next = matches[i + 1];
-    const descStart = cur.index + cur[0].length;
-    const descEnd = next ? next.index : text.length;
-    const desc = text.slice(descStart, descEnd).trim();
-    entries.push({
-      name: cur[1],
-      type: cur[2],
-      count: cur[3].trim(),
-      desc: desc.replace(/\|/g, "\\|").replace(/\n/g, " "),
-    });
-    lastIdx = descEnd;
-  }
-
-  const header = "| Column | Type | Count | Profile |\n|---|---|---|---|";
-  const rows = entries.map(
-    (e) => `| \`${e.name}\` | ${e.type} | ${e.count} | ${e.desc} |`,
-  );
-  return [header, ...rows].join("\n") + text.slice(lastIdx);
-}
-
-export function formatSchemaSummary(raw: string): string {
-  if (!raw) return raw;
-  // Show only the column profiles section — the preceding dataset info
-  // (Table/Rows/Columns) is already visible elsewhere in the header.
-  const match = raw.match(/Column profiles[:\s]*/i);
-  if (!match) return raw;
-  const after = raw.slice(match.index! + match[0].length);
-  return formatColumnProfiles(after);
-}
-
-// --- Selection mapping ---
+// --- Expanded-row affordance ---
 
 export function hasExpandableContent(entry: FeedEntry): boolean {
   return !!(
     entry.full_message ||
     entry.sql ||
     entry.tool_result ||
-    entry.response ||
-    entry.tables ||
+    entry.response_text ||
+    entry.response_tables ||
     entry.content ||
     entry.event_type === "thread_waiting" ||
     entry.event_type === "thread_start"
   );
 }
 
+// --- Graph node <-> feed id mapping ---
+//
+// Feed ids follow the backend's scheme:
+//   schema:{session_id}
+//   thread:{tid}:start | :complete | :waiting
+//   step:{tid}:{N}            (HUMAN_INPUT — single row)
+//   step:{tid}:{N}:start | :complete
+//   ev:{tid}:{N}:{I}
+
 export function feedEntryToSelectedNode(entry: FeedEntry): SelectedNode | null {
-  const id = entry.id;
-  if (id.startsWith("ts:")) return { type: "thread", threadId: id.slice(3) };
-  if (id.startsWith("tc:"))
-    return { type: "thread_end", threadId: id.slice(3), threadStatus: "complete" };
-  if (id.startsWith("tw:"))
-    return { type: "thread_end", threadId: id.slice(3), threadStatus: "waiting" };
-  if (id.startsWith("ss:") || id.startsWith("sc:")) {
-    const parts = id.slice(3).split(":");
-    return { type: "step", threadId: parts[0], stepNumber: Number(parts[1]) };
+  const parts = entry.id.split(":");
+  const kind = parts[0];
+
+  if (kind === "thread") {
+    const threadId = parts[1];
+    if (!threadId) return null;
+    if (parts[2] === "complete")
+      return { type: "thread_end", threadId, threadStatus: "complete" };
+    if (parts[2] === "waiting")
+      return { type: "thread_end", threadId, threadStatus: "waiting" };
+    return { type: "thread", threadId };
   }
-  if (id.startsWith("ev:")) {
-    const parts = id.slice(3).split(":");
+  if (kind === "step") {
+    const threadId = parts[1];
+    const stepNumber = Number(parts[2]);
+    if (!threadId || Number.isNaN(stepNumber)) return null;
+    return { type: "step", threadId, stepNumber };
+  }
+  if (kind === "ev") {
     return {
       type: "event",
-      threadId: parts[0],
-      stepNumber: Number(parts[1]),
-      eventIndex: Number(parts[2]),
+      threadId: parts[1],
+      stepNumber: Number(parts[2]),
+      eventIndex: Number(parts[3]),
     };
   }
   return null;
 }
 
+// Returns a primary feed id for a graph selection. Callers should fall
+// back to searching by (thread_id, step_number) if the exact row was
+// filtered out (e.g., a step has only step_complete, no step_start).
 export function selectedNodeToFeedId(node: SelectedNode | null): string | null {
   if (!node || !node.threadId) return null;
   switch (node.type) {
     case "thread":
-      return `ts:${node.threadId}`;
+      return `thread:${node.threadId}:start`;
     case "thread_end":
       return node.threadStatus === "waiting"
-        ? `tw:${node.threadId}`
-        : `tc:${node.threadId}`;
+        ? `thread:${node.threadId}:waiting`
+        : `thread:${node.threadId}:complete`;
     case "step":
       return node.stepNumber !== undefined
-        ? `ss:${node.threadId}:${node.stepNumber}`
+        ? `step:${node.threadId}:${node.stepNumber}:start`
         : null;
     case "event":
       return node.stepNumber !== undefined && node.eventIndex !== undefined
@@ -180,176 +112,4 @@ export function selectedNodeToFeedId(node: SelectedNode | null): string | null {
     default:
       return null;
   }
-}
-
-// --- Build feed entries from a session snapshot ---
-
-function formatDuration(ms: number | null | undefined): string {
-  return ms ? `${(ms / 1000).toFixed(1)}s` : "";
-}
-
-export function buildFeedFromSession(session: SessionResponse): FeedEntry[] {
-  const entries: FeedEntry[] = [];
-  if (!session.threads) return entries;
-
-  for (const thread of session.threads) {
-    const firstEventTs = thread.steps[0]?.events[0]?.timestamp;
-    const threadStartTs = firstEventTs
-      ? firstEventTs - 0.01
-      : new Date(thread.updated_at).getTime() / 1000 - 1000;
-
-    const seed = thread.seed_question ?? "";
-    entries.push({
-      id: `ts:${thread.id}`,
-      event_type: "thread_start",
-      thread_id: thread.id,
-      message: seed,
-      timestamp: threadStartTs,
-      thread_status: thread.status,
-      full_message: seed + (thread.motivation ? `\n\n${thread.motivation}` : ""),
-    });
-
-    // Running cursor: tracks the last known timestamp so steps without
-    // events or started_at (HUMAN_INPUT, WAITING_FOR_HUMAN) inherit a
-    // correct chronological position from their neighbors.
-    let cursor = threadStartTs;
-
-    for (const step of thread.steps) {
-      // Skip temporary placeholder steps from message_injected
-      if (step.step_number < 0) continue;
-
-      const stepTs =
-        step.started_at ?? step.events[0]?.timestamp ?? cursor + 0.001;
-
-      // HUMAN_INPUT step — first-class human message (no sub-events)
-      if (step.move === "HUMAN_INPUT") {
-        entries.push({
-          id: `ss:${thread.id}:${step.step_number}`,
-          event_type: "human_message",
-          thread_id: thread.id,
-          message: step.result || "",
-          timestamp: stepTs,
-          step_number: step.step_number,
-          move: step.move,
-          agent: step.instruction === "session" ? "broadcast" : "user",
-          content: step.result ?? "",
-          target: (step.instruction as "thread" | "session") ?? "thread",
-          thread_status: thread.status,
-        });
-        cursor = stepTs;
-        continue;
-      }
-
-      // WAITING_FOR_HUMAN step — terminal waiting state as a step
-      if (step.move === "WAITING_FOR_HUMAN") {
-        const parts: string[] = [];
-        if (thread.running_summary) parts.push(thread.running_summary);
-        if (step.result) parts.push(step.result);
-        if (step.instruction) parts.push(step.instruction);
-        entries.push({
-          id: `tw:${thread.id}`,
-          event_type: "thread_waiting",
-          thread_id: thread.id,
-          message: thread.error ?? step.result ?? "",
-          timestamp: stepTs,
-          step_number: step.step_number,
-          move: step.move,
-          thread_status: "waiting",
-          reason: (thread.error as FeedEntry["reason"]) ?? null,
-          full_message: parts.length ? parts.join("\n\n") : undefined,
-        });
-        cursor = stepTs;
-        continue;
-      }
-
-      entries.push({
-        id: `ss:${thread.id}:${step.step_number}`,
-        event_type: "step_start",
-        thread_id: thread.id,
-        message: "",
-        timestamp: stepTs,
-        step_number: step.step_number,
-        move: step.move,
-        thread_status: thread.status,
-        full_message: step.instruction ?? undefined,
-      });
-
-      step.events.forEach((evt, ei) => {
-        const base = {
-          id: `ev:${thread.id}:${step.step_number}:${ei}`,
-          thread_id: thread.id,
-          message: formatDuration(evt.duration_ms),
-          timestamp: evt.timestamp,
-          step_number: step.step_number,
-          move: step.move,
-          thread_status: thread.status,
-        };
-
-        if (evt.type === "tool_call" || evt.sql) {
-          entries.push({
-            ...base,
-            event_type: "tool_call",
-            agent: evt.agent ?? "worker",
-            sql: evt.sql ?? undefined,
-            tool_result: evt.tool_result ?? undefined,
-          });
-        } else if (evt.type === "human_message") {
-          entries.push({
-            ...base,
-            event_type: "human_message",
-            agent: evt.target === "session" ? "broadcast" : "user",
-            content: evt.content ?? "",
-            target: evt.target ?? "thread",
-          });
-        } else {
-          const parsed = evt.response ? tryParseJsonResponse(evt.response) : null;
-          entries.push({
-            ...base,
-            event_type: "llm_call",
-            agent: evt.agent ?? undefined,
-            response: parsed?.text ?? undefined,
-            tables: parsed?.tables,
-            full_message: parsed?.text
-              ? undefined
-              : `LLM call${evt.agent ? ` (${evt.agent})` : ""}`,
-          });
-        }
-      });
-
-      // Advance cursor past this step's events
-      const lastEvtTs =
-        step.events[step.events.length - 1]?.timestamp ?? stepTs;
-      cursor = lastEvtTs;
-
-      if (step.result) {
-        entries.push({
-          id: `sc:${thread.id}:${step.step_number}`,
-          event_type: "step_complete",
-          thread_id: thread.id,
-          message: step.result,
-          timestamp: lastEvtTs + 0.001,
-          step_number: step.step_number,
-          move: step.move,
-          thread_status: thread.status,
-          full_message: step.result,
-        });
-        cursor = lastEvtTs + 0.001;
-      }
-    }
-
-    if (thread.status === "complete") {
-      entries.push({
-        id: `tc:${thread.id}`,
-        event_type: "thread_complete",
-        thread_id: thread.id,
-        message: "",
-        timestamp: new Date(thread.updated_at).getTime() / 1000,
-        thread_status: "complete",
-        full_message: thread.summary ?? undefined,
-      });
-    }
-  }
-
-  entries.sort((a, b) => a.timestamp - b.timestamp);
-  return entries;
 }
