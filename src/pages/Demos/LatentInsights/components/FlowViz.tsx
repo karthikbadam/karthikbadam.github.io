@@ -32,6 +32,8 @@ const FULL_NAME_THRESHOLD = 72;
 interface FlowEvent {
   type: "llm_call" | "tool_call" | "human_message";
   eventIndex: number;
+  agent: string;
+  text: string;
 }
 interface FlowStep {
   step_number: number;
@@ -125,11 +127,19 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
       if (!t) continue;
       const step = stepIndex.get(t.id)!.get(e.step_number);
       if (!step) continue;
-      // Pull eventIndex from "ev:tid:N:I" so it matches the feed id.
       const parts = e.id.split(":");
       const eventIndex =
         parts[0] === "ev" ? Number(parts[3]) : step.events.length;
-      step.events.push({ type: e.event_type, eventIndex });
+      const text =
+        e.event_type === "tool_call"
+          ? e.sql ?? e.message ?? ""
+          : e.response_text ?? e.message ?? e.full_message ?? "";
+      step.events.push({
+        type: e.event_type,
+        eventIndex,
+        agent: e.agent ?? "worker",
+        text,
+      });
     }
   }
 
@@ -179,10 +189,8 @@ export const FlowViz: React.FC = () => {
     showTooltip,
     hideTooltip,
   } = useTooltip<{
-    stepNumber: number;
-    moveFull: string;
-    assessment: string;
-    instruction: string;
+    title: string;
+    sections: { label: string; text: string }[];
   }>();
 
   const { containerRef, containerBounds, TooltipInPortal } = useTooltipInPortal({
@@ -216,7 +224,16 @@ export const FlowViz: React.FC = () => {
         const events = step.events.map((evt) => {
           const eY = y;
           y += EVENT_H + EVENT_GAP;
-          return { x: evtX, y: eY, w: evtW, h: EVENT_H, type: evt.type, eventIndex: evt.eventIndex };
+          return {
+            x: evtX,
+            y: eY,
+            w: evtW,
+            h: EVENT_H,
+            type: evt.type,
+            eventIndex: evt.eventIndex,
+            agent: evt.agent,
+            text: evt.text,
+          };
         });
         y += STEP_GAP;
         return {
@@ -404,12 +421,13 @@ export const FlowViz: React.FC = () => {
                         style={{ cursor: "pointer" }}
                         onClick={() => selectNode({ type: "step", threadId: col.threadId, stepNumber: step.stepNumber })}
                         onMouseMove={(event) => {
+                          const sections: { label: string; text: string }[] = [];
+                          if (step.assessment) sections.push({ label: "assessment", text: step.assessment ?? "" });
+                          if (step.instruction) sections.push({ label: "instruction", text: step.instruction ?? "" });
                           showTooltip({
                             tooltipData: {
-                              stepNumber: step.stepNumber,
-                              moveFull,
-                              assessment: step.assessment ?? "",
-                              instruction: step.instruction ?? "",
+                              title: `Step ${step.stepNumber} · ${moveFull} · Coordinator`,
+                              sections,
                             },
                             tooltipLeft: event.clientX - containerBounds.left,
                             tooltipTop: event.clientY - containerBounds.top,
@@ -440,6 +458,12 @@ export const FlowViz: React.FC = () => {
                           ? (isDark ? "#d6c5a8" : "#7a5e2a")
                           : moveColor.bg;
                         const humanStroke = isDark ? "#f0e2c4" : "#5a4318";
+                        const evAgent = isHuman
+                          ? "Human"
+                          : evt.agent
+                            ? evt.agent[0].toUpperCase() + evt.agent.slice(1)
+                            : "Worker";
+                        const evKind = evt.type === "tool_call" ? "SQL" : evt.type === "human_message" ? "Message" : "Reasoning";
                         return (
                           <rect
                             key={`e-${evt.eventIndex}`}
@@ -454,6 +478,19 @@ export const FlowViz: React.FC = () => {
                             strokeWidth={eSel ? 1 : isHuman ? 0.75 : 0}
                             style={{ cursor: "pointer" }}
                             onClick={() => selectNode({ type: "event", threadId: col.threadId, stepNumber: step.stepNumber, eventIndex: evt.eventIndex })}
+                            onMouseMove={(event) => {
+                              const sections: { label: string; text: string }[] = [];
+                              if (evt.text) sections.push({ label: evKind.toLowerCase(), text: evt.text });
+                              showTooltip({
+                                tooltipData: {
+                                  title: `Step ${step.stepNumber} · ${moveFull} · ${evAgent} · ${evKind}`,
+                                  sections,
+                                },
+                                tooltipLeft: event.clientX - containerBounds.left,
+                                tooltipTop: event.clientY - containerBounds.top,
+                              });
+                            }}
+                            onMouseLeave={hideTooltip}
                           />
                         );
                       })}
@@ -533,7 +570,7 @@ export const FlowViz: React.FC = () => {
             }}
           >
             <Box fontWeight="semibold" mb={1}>
-              Step {tooltipData.stepNumber} · {tooltipData.moveFull}
+              {tooltipData.title}
             </Box>
             <Box
               css={{
@@ -543,18 +580,12 @@ export const FlowViz: React.FC = () => {
                 overflow: "hidden",
               }}
             >
-              {tooltipData.assessment && (
-                <Box mb={1}>
-                  <Box opacity={0.6} fontSize="10px">assessment</Box>
-                  {tooltipData.assessment}
+              {tooltipData.sections.map((s, i) => (
+                <Box key={i} mb={i < tooltipData.sections.length - 1 ? 1 : 0}>
+                  <Box opacity={0.6} fontSize="10px">{s.label}</Box>
+                  {s.text}
                 </Box>
-              )}
-              {tooltipData.instruction && (
-                <Box>
-                  <Box opacity={0.6} fontSize="10px">instruction</Box>
-                  {tooltipData.instruction}
-                </Box>
-              )}
+              ))}
             </Box>
             <Box opacity={0.5} fontSize="10px" mt={1}>
               click for full details
