@@ -195,7 +195,7 @@ const WAITING_HEADERS: Record<string, string> = {
 const FeedRow: React.FC<FeedRowProps> = React.memo(
   ({ entry, threadIds, isDark, isExpanded, onExpand, onCollapse }) => {
     const threadColor = getThreadColor(entry.thread_id, threadIds, isDark);
-    const moveColor = getMoveColor(entry.move ?? undefined, isDark);
+    const moveColor = getMoveColor(entry.move ?? undefined, isDark, "badge");
     const expandable = hasExpandableContent(entry);
     const dimColor = isDark ? "#888" : "#666";
     const mutedColor = isDark ? "#555" : "#aaa";
@@ -773,8 +773,6 @@ function aggregateMetrics(entries: FeedEntry[]): {
   let unpricedTokens = 0;
 
   for (const e of entries) {
-    // step_start carries the coordinator's call metrics (the coordinator
-    // no longer emits a separate llm_call); count both row types.
     if (e.event_type !== "llm_call" && e.event_type !== "step_start") continue;
     const i = e.input_tokens ?? 0;
     const o = e.output_tokens ?? 0;

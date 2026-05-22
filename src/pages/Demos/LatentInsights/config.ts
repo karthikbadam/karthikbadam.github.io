@@ -69,10 +69,21 @@ export const MOVE_COLORS_DARK: Record<string, MoveColor> = {
   UNKNOWN:     { fg: "#cccccc", bg: "#555555" },
 };
 
-// Light-mode pills use saturated bgs with white text so the move labels
-// read clearly against the page background. Dark-mode pills keep their
-// pale-fg-on-dark-bg style (subtle on the dark page).
 export const MOVE_COLORS_LIGHT: Record<string, MoveColor> = {
+  SCOPE:       { fg: "#2d1140", bg: "#ddd0ed" },
+  FORAGE:      { fg: "#13233b", bg: "#cfdef3" },
+  FRAME:       { fg: "#09304a", bg: "#cae5ec" },
+  INTERROGATE: { fg: "#3d2707", bg: "#ecdcb8" },
+  SYNTHESIZE:  { fg: "#153110", bg: "#d4e0c4" },
+  ERROR:       { fg: "#4a131f", bg: "#ebc7d0" },
+  HUMAN_INPUT:        { fg: "#5a3d12", bg: "#f1e0bd" },
+  WAITING_FOR_HUMAN:  { fg: "#444444", bg: "#e8e8e8" },
+  DONE:               { fg: "#254820", bg: "#dceedb" },
+  STUCK:              { fg: "#74212f", bg: "#f0d6dc" },
+  UNKNOWN:     { fg: "#3a3a3a", bg: "#d8d8d8" },
+};
+
+export const MOVE_BADGE_COLORS_LIGHT: Record<string, MoveColor> = {
   SCOPE:       { fg: "#ffffff", bg: "#7a5cad" },
   FORAGE:      { fg: "#ffffff", bg: "#3f6ab0" },
   FRAME:       { fg: "#ffffff", bg: "#3d8a9c" },

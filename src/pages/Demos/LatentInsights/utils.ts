@@ -8,6 +8,7 @@ import {
   THREAD_SHADES_LIGHT,
   MOVE_COLORS_DARK,
   MOVE_COLORS_LIGHT,
+  MOVE_BADGE_COLORS_LIGHT,
   NEUTRAL_FILL_DARK,
   NEUTRAL_FILL_LIGHT,
   type MoveColor,
@@ -28,8 +29,13 @@ export function getThreadColor(
 export function getMoveColor(
   move: string | null | undefined,
   isDark: boolean,
+  variant: "block" | "badge" = "block",
 ): MoveColor {
-  const table = isDark ? MOVE_COLORS_DARK : MOVE_COLORS_LIGHT;
+  const table = isDark
+    ? MOVE_COLORS_DARK
+    : variant === "badge"
+      ? MOVE_BADGE_COLORS_LIGHT
+      : MOVE_COLORS_LIGHT;
   const neutral = isDark ? NEUTRAL_FILL_DARK : NEUTRAL_FILL_LIGHT;
   if (!move) return neutral;
   return table[move.toUpperCase()] ?? neutral;

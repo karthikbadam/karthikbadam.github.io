@@ -24,12 +24,7 @@ import {
 import { FIXED_THREAD_W, FlowViz, ReplayButton } from "./FlowViz";
 import { LandingScreen } from "./LandingScreen";
 
-// Horizontal padding the FlowViz svg sits inside (matches scrollRef px={2}
-// on each side + PanelContainer's own padding). Used to add some breathing
-// room to the left panel's computed width.
 const LEFT_PANEL_PADDING = 32;
-// Minimum left panel width so the panel isn't squashed when no threads
-// have started yet. Maximum is computed at render against the viewport.
 const MIN_LEFT_W = 240;
 
 interface PanelHeaderProps {
@@ -121,17 +116,10 @@ export function Dashboard() {
     return seen.size;
   }, [feedEntries]);
 
-  // Left-panel width driven by the live thread count. Each thread column
-  // is rendered at FIXED_THREAD_W (see FlowViz). Capped at MAX_LEFT_W —
-  // beyond that, FlowViz's scrollRef handles horizontal scroll. Right
-  // panel takes the remaining width via flex={1}.
   const leftWidth = useMemo(() => {
     const n = Math.max(threadCount, 1);
     const natural =
       n * FIXED_THREAD_W + (n - 1) * THREAD_GAP + LEFT_PANEL_PADDING;
-    // Caps at half the viewport — the feed (the analyst's main read
-    // surface) always keeps the other half. Past the cap, FlowViz
-    // scrolls horizontally inside its own panel.
     return `clamp(${MIN_LEFT_W}px, ${natural}px, 50vw)`;
   }, [threadCount]);
 
@@ -269,9 +257,6 @@ export function Dashboard() {
         gap={4}
         minH={0}
       >
-        {/* Left: Flow graph + command bar — width tracks the live thread
-            count, with min/max clamps so it never collapses or starves
-            the right panel. */}
         <Flex
           flexShrink={0}
           w={{ base: "100%", md: leftWidth }}
@@ -308,8 +293,6 @@ export function Dashboard() {
           )}
         </Flex>
 
-        {/* Right: Schema summary (separate panel) + Feed — fills the
-            remaining width left over by the thread-count-sized left panel. */}
         <Flex
           flex={1}
           minW={0}
