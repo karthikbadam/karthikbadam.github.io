@@ -1,5 +1,5 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { LuPlay, LuSquare, LuRotateCcw } from "react-icons/lu";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
@@ -25,8 +25,11 @@ import { getMoveColor, getThreadColor } from "../utils";
 import type { FeedEntry } from "../types";
 
 const RX = 4;
-const MIN_THREAD_W = 35;
-const MAX_THREAD_W = 110;
+// Fixed per-thread column width. The parent panel sizes itself from
+// the live thread count (see Dashboard), so FlowViz no longer needs a
+// natural-width clamp or centering offset — columns are always rendered
+// at this width and either fit the panel or overflow horizontally.
+export const FIXED_THREAD_W = 90;
 const FULL_NAME_THRESHOLD = 72;
 
 interface FlowEvent {
@@ -162,17 +165,6 @@ export const FlowViz: React.FC = () => {
   const flowThreads = useMemo(() => deriveFlowThreads(feedEntries), [feedEntries]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(400);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      if (entry) setContainerWidth(Math.floor(entry.contentRect.width));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   const isDark = useColorModeValue(false, true);
   const selectedStroke = useColorModeValue("#000", "#fff");
@@ -182,16 +174,12 @@ export const FlowViz: React.FC = () => {
     const threads = flowThreads;
     const n = threads.length;
 
-    const totalGaps = (n - 1) * THREAD_GAP;
-    const natural = (containerWidth - totalGaps) / n;
-    const threadW = Math.max(MIN_THREAD_W, Math.min(natural, MAX_THREAD_W));
-    const usedW = n * threadW + totalGaps;
-    const svgW = Math.max(containerWidth, usedW);
-    const xOffset = usedW >= containerWidth ? 0 : (containerWidth - usedW) / 2;
+    const threadW = FIXED_THREAD_W;
+    const svgW = n * threadW + (n - 1) * THREAD_GAP;
 
     let maxH = 0;
     const columns = threads.map((thread, ti) => {
-      const x = xOffset + ti * (threadW + THREAD_GAP);
+      const x = ti * (threadW + THREAD_GAP);
       let y = TOP_PAD;
 
       const startY = y;
@@ -228,7 +216,7 @@ export const FlowViz: React.FC = () => {
     });
 
     return { columns, svgW, svgH: maxH + TOP_PAD, threadW };
-  }, [flowThreads, containerWidth]);
+  }, [flowThreads]);
 
   const isSelected = useCallback(
     (type: string, threadId?: string, stepNumber?: number, eventIndex?: number): boolean => {

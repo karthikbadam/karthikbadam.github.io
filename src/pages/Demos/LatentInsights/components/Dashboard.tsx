@@ -12,12 +12,20 @@ import {
   schemaSummaryAtom,
   stateAtom,
 } from "../atoms";
-import { FEATURED_SESSIONS, GITHUB_REPO_URL } from "../config";
+import { FEATURED_SESSIONS, GITHUB_REPO_URL, THREAD_GAP } from "../config";
 import { MarkdownContent } from "./MarkdownContent";
 import { CommandBar } from "./CommandBar";
 import { EventFeed, FeedDownloadButton, FeedMetrics } from "./EventFeed";
-import { FlowViz, ReplayButton } from "./FlowViz";
+import { FIXED_THREAD_W, FlowViz, ReplayButton } from "./FlowViz";
 import { LandingScreen } from "./LandingScreen";
+
+// Horizontal padding the FlowViz svg sits inside (matches scrollRef px={2}
+// on each side + PanelContainer's own padding). Used to add some breathing
+// room to the left panel's computed width.
+const LEFT_PANEL_PADDING = 32;
+// Minimum left panel width so the panel isn't squashed when no threads
+// have started yet. Maximum is computed at render against the viewport.
+const MIN_LEFT_W = 240;
 
 interface PanelHeaderProps {
   title: string;
@@ -99,6 +107,17 @@ export function Dashboard() {
     }
     return seen.size;
   }, [feedEntries]);
+
+  // Left-panel width driven by the live thread count. Each thread column
+  // is rendered at FIXED_THREAD_W (see FlowViz). Capped at MAX_LEFT_W —
+  // beyond that, FlowViz's scrollRef handles horizontal scroll. Right
+  // panel takes the remaining width via flex={1}.
+  const leftWidth = useMemo(() => {
+    const n = Math.max(threadCount, 1);
+    const natural =
+      n * FIXED_THREAD_W + (n - 1) * THREAD_GAP + LEFT_PANEL_PADDING;
+    return `clamp(${MIN_LEFT_W}px, ${natural}px, min(60vw, 720px))`;
+  }, [threadCount]);
 
   useEffect(() => {
     if (didAutoLoad.current) return;
@@ -217,9 +236,12 @@ export function Dashboard() {
         gap={4}
         minH={0}
       >
-        {/* Left: Flow graph + command bar */}
+        {/* Left: Flow graph + command bar — width tracks the live thread
+            count, with min/max clamps so it never collapses or starves
+            the right panel. */}
         <Flex
-          flex={4}
+          flexShrink={0}
+          w={{ base: "100%", md: leftWidth }}
           minW={0}
           minH={{ base: "50vh", md: "100%" }}
           h={{ md: "100%" }}
@@ -252,9 +274,10 @@ export function Dashboard() {
           )}
         </Flex>
 
-        {/* Right: Schema summary (separate panel) + Feed */}
+        {/* Right: Schema summary (separate panel) + Feed — fills the
+            remaining width left over by the thread-count-sized left panel. */}
         <Flex
-          flex={4}
+          flex={1}
           minW={0}
           minH={{ base: "50vh", md: "100%" }}
           h={{ md: "100%" }}
