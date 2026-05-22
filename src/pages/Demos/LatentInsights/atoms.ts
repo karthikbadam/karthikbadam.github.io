@@ -103,16 +103,27 @@ export const stateAtom = atomWithReducer<LatentInsightsState, Action>(
 export const metaAtom = atom((get) => get(stateAtom).meta);
 export const allFeedEntriesAtom = atom((get) => get(stateAtom).feedEntries);
 
-// Replay cursor: null = show every entry (default). When a number, the
-// visible feed is truncated to the first N entries — used by the
-// replay button on saved sessions to animate the stream filling in.
 export const replayCursorAtom = atom<number | null>(null);
+
+// Entry indices sorted by wall-clock timestamp (feed_index as tiebreak).
+// Replay reveals entries in this order so events from parallel threads
+// interlace as they really happened, instead of all-of-thread-A first.
+export const replayRevealOrderAtom = atom((get) => {
+  const entries = get(stateAtom).feedEntries;
+  return entries
+    .map((e, i) => ({ i, ts: e.timestamp, fi: e.feed_index }))
+    .sort((a, b) => a.ts - b.ts || a.fi - b.fi)
+    .map((x) => x.i);
+});
 
 export const feedEntriesAtom = atom((get) => {
   const entries = get(stateAtom).feedEntries;
   const cursor = get(replayCursorAtom);
   if (cursor === null) return entries;
-  return entries.slice(0, Math.min(cursor, entries.length));
+  const order = get(replayRevealOrderAtom);
+  const cap = Math.min(cursor, entries.length);
+  const visible = new Set(order.slice(0, cap));
+  return entries.filter((_, i) => visible.has(i));
 });
 
 export const selectedNodeAtom = atom((get) => get(stateAtom).selectedNode);

@@ -559,8 +559,12 @@ export const ReplayButton: React.FC = () => {
 
   const start = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    const first = entries[0]?.timestamp ?? 0;
-    const last = entries[entries.length - 1]?.timestamp ?? first;
+    const order = [...entries]
+      .map((e, i) => ({ i, ts: e.timestamp, fi: e.feed_index }))
+      .sort((a, b) => a.ts - b.ts || a.fi - b.fi);
+    const ts = order.map((o) => entries[o.i].timestamp);
+    const first = ts[0] ?? 0;
+    const last = ts[ts.length - 1] ?? first;
     const totalDeltaMs = Math.max(1, (last - first) * 1000);
     const scale = REPLAY_TARGET_MS / totalDeltaMs;
 
@@ -573,7 +577,7 @@ export const ReplayButton: React.FC = () => {
         timerRef.current = null;
         return;
       }
-      const dtMs = Math.max(0, (entries[i].timestamp - entries[i - 1].timestamp) * 1000);
+      const dtMs = Math.max(0, (ts[i] - ts[i - 1]) * 1000);
       const delay = Math.max(
         REPLAY_MIN_STEP_MS,
         Math.min(REPLAY_MAX_STEP_MS, dtMs * scale),
