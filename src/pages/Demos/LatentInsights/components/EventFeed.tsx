@@ -42,11 +42,15 @@ export const EventFeed: React.FC = () => {
     return ids;
   }, [feedEntries]);
 
-  // Auto-scroll to bottom as new entries arrive
+  // Auto-scroll to bottom as new entries arrive. rAF defers to the
+  // frame after the new rows have laid out so scrollHeight is current.
   useEffect(() => {
-    if (autoScrollRef.current && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (!autoScrollRef.current) return;
+    const id = requestAnimationFrame(() => {
+      const el = scrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+    return () => cancelAnimationFrame(id);
   }, [feedEntries.length]);
 
   // Scroll selected entry into view, with a fallback for step selections
