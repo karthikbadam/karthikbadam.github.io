@@ -207,10 +207,7 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
       entry.content ??
       entry.response_text ??
       entry.sql ??
-      // step_start's full_message holds the long worker instruction —
-      // not useful as a one-line preview, and the expanded view shows
-      // it in full. Skip it so the collapsed row stays readable.
-      (entry.event_type === "step_start" ? null : entry.full_message) ??
+      entry.full_message ??
       "";
     const previewText =
       textContent !== "" ? textContent : duration ? "" : entry.message ?? "";
