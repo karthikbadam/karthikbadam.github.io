@@ -121,7 +121,10 @@ export function Dashboard() {
     const n = Math.max(threadCount, 1);
     const natural =
       n * FIXED_THREAD_W + (n - 1) * THREAD_GAP + LEFT_PANEL_PADDING;
-    return `clamp(${MIN_LEFT_W}px, ${natural}px, min(60vw, 720px))`;
+    // Caps at half the viewport — the feed (the analyst's main read
+    // surface) always keeps the other half. Past the cap, FlowViz
+    // scrolls horizontally inside its own panel.
+    return `clamp(${MIN_LEFT_W}px, ${natural}px, 50vw)`;
   }, [threadCount]);
 
   useEffect(() => {

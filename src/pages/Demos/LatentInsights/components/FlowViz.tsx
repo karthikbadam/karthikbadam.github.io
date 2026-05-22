@@ -29,7 +29,7 @@ const RX = 4;
 // the live thread count (see Dashboard), so FlowViz no longer needs a
 // natural-width clamp or centering offset — columns are always rendered
 // at this width and either fit the panel or overflow horizontally.
-export const FIXED_THREAD_W = 90;
+export const FIXED_THREAD_W = 64;
 const FULL_NAME_THRESHOLD = 72;
 
 interface FlowEvent {

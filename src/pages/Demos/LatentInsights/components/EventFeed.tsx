@@ -223,8 +223,14 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
         maxW="100%"
         w="100%"
         cursor={!isExpanded && expandable ? "pointer" : "default"}
-        borderTop={isExpanded ? "2px solid" : undefined}
-        borderTopColor={isExpanded ? threadColor : undefined}
+        borderTop={isExpanded ? "1px solid" : undefined}
+        borderBottom={isExpanded ? "1px solid" : undefined}
+        borderTopColor={
+          isExpanded ? (isDark ? "whiteAlpha.200" : "blackAlpha.200") : undefined
+        }
+        borderBottomColor={
+          isExpanded ? (isDark ? "whiteAlpha.200" : "blackAlpha.200") : undefined
+        }
         _hover={
           !isExpanded && expandable
             ? { bg: isDark ? "whiteAlpha.50" : "blackAlpha.50" }
@@ -864,57 +870,65 @@ export const SessionMetricsPanel: React.FC = () => {
   const costSuffix =
     metrics.unpricedTokens > 0 && metrics.totalCost > 0 ? "+" : "";
 
+  const showTotal = rows.length > 1;
+
   return (
     <Box px={2} pb={2} fontFamily="mono" fontSize="2xs">
-      <Flex
-        align="baseline"
-        justify="space-between"
-        color="fg.muted"
-        mb={1}
-      >
-        <Text as="span">
-          {formatTokens(metrics.totalInput)} in • {formatTokens(metrics.totalOutput)} out
-        </Text>
-        <Text as="span" color="fg">
-          {metrics.totalCost > 0 || metrics.unpricedTokens === 0
-            ? formatCost(metrics.totalCost) + costSuffix
-            : "—"}
-        </Text>
-      </Flex>
-      <Box
-        as="table"
-        w="100%"
-        css={{
-          borderCollapse: "collapse",
-          "& td": { padding: "2px 0", verticalAlign: "baseline" },
-        }}
-      >
-        <tbody>
-          {rows.map(([model, t]) => (
-            <Box as="tr" key={model} color="fg.muted">
-              <Box
-                as="td"
-                color="fg"
-                style={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  maxWidth: 0,
-                }}
-                title={model}
-              >
-                {model}
-              </Box>
-              <Box as="td" textAlign="right" pl={2} whiteSpace="nowrap">
-                {t.calls} • {formatTokens(t.input)}↓ {formatTokens(t.output)}↑
-              </Box>
-              <Box as="td" textAlign="right" pl={2} color="fg" whiteSpace="nowrap">
-                {t.cost !== null ? formatCost(t.cost) : "—"}
-              </Box>
-            </Box>
-          ))}
-        </tbody>
-      </Box>
+      {rows.map(([model, t]) => (
+        <Flex
+          key={model}
+          align="baseline"
+          gap={2}
+          color="fg.muted"
+          py="2px"
+          minW={0}
+        >
+          <Text
+            as="span"
+            color="fg"
+            flex="1 1 0%"
+            minW={0}
+            overflow="hidden"
+            textOverflow="ellipsis"
+            whiteSpace="nowrap"
+            title={model}
+          >
+            {model}
+          </Text>
+          <Text as="span" flexShrink={0} whiteSpace="nowrap">
+            {t.calls} • {formatTokens(t.input)}↓ {formatTokens(t.output)}↑
+          </Text>
+          <Text
+            as="span"
+            color="fg"
+            flexShrink={0}
+            whiteSpace="nowrap"
+            minW="44px"
+            textAlign="right"
+          >
+            {t.cost !== null ? formatCost(t.cost) : "—"}
+          </Text>
+        </Flex>
+      ))}
+      {showTotal && (
+        <Flex
+          align="baseline"
+          justify="flex-end"
+          gap={2}
+          color="fg"
+          pt={1}
+          mt={1}
+          borderTop="1px solid"
+          borderColor={"border.muted"}
+        >
+          <Text as="span">total</Text>
+          <Text as="span" minW="44px" textAlign="right">
+            {metrics.totalCost > 0 || metrics.unpricedTokens === 0
+              ? formatCost(metrics.totalCost) + costSuffix
+              : "—"}
+          </Text>
+        </Flex>
+      )}
       {metrics.unpricedTokens > 0 && (
         <Text color="fg.subtle" mt={1}>
           {formatTokens(metrics.unpricedTokens)} tokens unpriced
