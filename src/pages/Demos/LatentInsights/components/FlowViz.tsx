@@ -165,27 +165,6 @@ export const FlowViz: React.FC = () => {
   const isDark = useColorModeValue(false, true);
   const selectedStroke = useColorModeValue("#000", "#fff");
 
-  useEffect(() => {
-    if (!selectedNode || selectedNode.type !== "step") return;
-    if (!selectedNode.threadId || selectedNode.stepNumber === undefined) return;
-    const key = `${selectedNode.threadId}:${selectedNode.stepNumber}`;
-    const container = scrollRef.current;
-    if (!container) return;
-    const el = container.querySelector(`[data-flow-step="${key}"]`) as SVGRectElement | null;
-    if (!el) return;
-    const cRect = container.getBoundingClientRect();
-    const eRect = el.getBoundingClientRect();
-    const dy =
-      (eRect.top + eRect.height / 2) - (cRect.top + container.clientHeight / 2);
-    const dx =
-      (eRect.left + eRect.width / 2) - (cRect.left + container.clientWidth / 2);
-    container.scrollTo({
-      top: Math.max(0, container.scrollTop + dy),
-      left: Math.max(0, container.scrollLeft + dx),
-      behavior: "smooth",
-    });
-  }, [selectedNode]);
-
   const layout = useMemo(() => {
     if (!flowThreads.length) return null;
     const threads = flowThreads;
