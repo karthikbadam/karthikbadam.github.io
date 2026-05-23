@@ -283,14 +283,6 @@ export function Dashboard() {
             </Box>
             <SessionMetricsPanel />
           </PanelContainer>
-
-          {/* Command bar below graph -- live sessions only */}
-          {isLive && (
-            <CommandBar
-              sessionId={meta.id}
-              selectedThreadId={state.selectedNode?.threadId}
-            />
-          )}
         </Flex>
 
         <Flex
@@ -327,6 +319,14 @@ export function Dashboard() {
               <EventFeed />
             </Box>
           </PanelContainer>
+
+          {/* Command bar — live sessions only */}
+          {isLive && (
+            <CommandBar
+              sessionId={meta.id}
+              selectedThreadId={state.selectedNode?.threadId}
+            />
+          )}
         </Flex>
       </Box>
     </Box>

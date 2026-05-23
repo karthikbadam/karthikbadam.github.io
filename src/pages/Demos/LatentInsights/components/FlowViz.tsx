@@ -26,7 +26,7 @@ import { getMoveColor, getThreadColor } from "../utils";
 import type { FeedEntry } from "../types";
 
 const RX = 4;
-export const FIXED_THREAD_W = 64;
+export const FIXED_THREAD_W = 68;
 const FULL_NAME_THRESHOLD = 72;
 
 interface FlowEvent {
@@ -145,8 +145,8 @@ function deriveFlowThreads(entries: FeedEntry[]): FlowThread[] {
         parts[0] === "ev" ? Number(parts[3]) : step.events.length;
       const text =
         e.event_type === "tool_call"
-          ? e.sql ?? e.message ?? ""
-          : e.response_text ?? e.message ?? e.full_message ?? "";
+          ? (e.sql ?? e.message ?? "")
+          : (e.response_text ?? e.message ?? e.full_message ?? "");
       step.events.push({
         type: e.event_type,
         eventIndex,
@@ -188,28 +188,28 @@ export const FlowViz: React.FC = () => {
   const feedEntries = useAtomValue(feedEntriesAtom);
   const selectNode = useSetAtom(selectNodeAtom);
 
-  const flowThreads = useMemo(() => deriveFlowThreads(feedEntries), [feedEntries]);
+  const flowThreads = useMemo(
+    () => deriveFlowThreads(feedEntries),
+    [feedEntries],
+  );
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const isDark = useColorModeValue(false, true);
   const selectedStroke = useColorModeValue("#000", "#fff");
 
-  const {
-    tooltipData,
-    tooltipLeft,
-    tooltipTop,
-    showTooltip,
-    hideTooltip,
-  } = useTooltip<{
-    title: string;
-    sections: { label: string; text: string }[];
-  }>();
+  const { tooltipData, tooltipLeft, tooltipTop, showTooltip, hideTooltip } =
+    useTooltip<{
+      title: string;
+      sections: { label: string; text: string }[];
+    }>();
 
-  const { containerRef, containerBounds, TooltipInPortal } = useTooltipInPortal({
-    scroll: true,
-    detectBounds: true,
-  });
+  const { containerRef, containerBounds, TooltipInPortal } = useTooltipInPortal(
+    {
+      scroll: true,
+      detectBounds: true,
+    },
+  );
 
   const layout = useMemo(() => {
     if (!flowThreads.length) return null;
@@ -250,7 +250,10 @@ export const FlowViz: React.FC = () => {
         });
         y += STEP_GAP;
         return {
-          x, y: stepY, w: threadW, h: STEP_H,
+          x,
+          y: stepY,
+          w: threadW,
+          h: STEP_H,
           stepNumber: step.step_number,
           move: step.move,
           instruction: step.instruction ?? "",
@@ -284,7 +287,12 @@ export const FlowViz: React.FC = () => {
   }, [flowThreads]);
 
   const isSelected = useCallback(
-    (type: string, threadId?: string, stepNumber?: number, eventIndex?: number): boolean => {
+    (
+      type: string,
+      threadId?: string,
+      stepNumber?: number,
+      eventIndex?: number,
+    ): boolean => {
       if (!selectedNode || selectedNode.type !== type) return false;
       if (type === "session") return true;
       if (selectedNode.threadId !== threadId) return false;
@@ -338,7 +346,10 @@ export const FlowViz: React.FC = () => {
               height="220%"
             >
               <feGaussianBlur stdDeviation="3.5" result="blur" />
-              <feFlood floodColor={isDark ? "#f0b95a" : "#d4912a"} floodOpacity="0.75" />
+              <feFlood
+                floodColor={isDark ? "#f0b95a" : "#d4912a"}
+                floodOpacity="0.75"
+              />
               <feComposite in2="blur" operator="in" result="glow" />
               <feMerge>
                 <feMergeNode in="glow" />
@@ -351,10 +362,10 @@ export const FlowViz: React.FC = () => {
             const startStatusFill = getStatusFill(col.status, isDark);
             const startFill = startStatusFill
               ? startStatusFill.bg
-              : isDark ? "#2a2a2a" : "#f0f0f0";
-            const startFg = startStatusFill
-              ? startStatusFill.fg
-              : threadColor;
+              : isDark
+                ? "#2a2a2a"
+                : "#f0f0f0";
+            const startFg = startStatusFill ? startStatusFill.fg : threadColor;
             const startSel = isSelected("thread", col.threadId);
 
             const threadNumber = ci + 1;
@@ -370,10 +381,16 @@ export const FlowViz: React.FC = () => {
                   stroke={startSel ? selectedStroke : "none"}
                   strokeWidth={startSel ? 1.5 : 0}
                   style={{ cursor: "pointer" }}
-                  onClick={() => selectNode({ type: "thread", threadId: col.threadId })}
+                  onClick={() =>
+                    selectNode({ type: "thread", threadId: col.threadId })
+                  }
                   onMouseMove={(event) => {
                     const sections: { label: string; text: string }[] = [];
-                    if (col.seedQuestion) sections.push({ label: "seed question", text: col.seedQuestion });
+                    if (col.seedQuestion)
+                      sections.push({
+                        label: "seed question",
+                        text: col.seedQuestion,
+                      });
                     showTooltip({
                       tooltipData: {
                         title: `Thread ${threadNumber} · Start`,
@@ -394,7 +411,11 @@ export const FlowViz: React.FC = () => {
                       fontFamily="Poppins, sans-serif"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
+                      style={{
+                        pointerEvents: "none",
+                        fontSize: 11,
+                        fontWeight: 600,
+                      }}
                     >
                       START
                     </text>
@@ -405,7 +426,11 @@ export const FlowViz: React.FC = () => {
                       fontFamily="Poppins, sans-serif"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
+                      style={{
+                        pointerEvents: "none",
+                        fontSize: 11,
+                        fontWeight: 600,
+                      }}
                     >
                       {`THREAD ${threadNumber}`}
                     </text>
@@ -420,16 +445,23 @@ export const FlowViz: React.FC = () => {
                     col.status === "error"
                       ? getStatusFill("error", isDark)!
                       : getMoveColor(step.move, isDark);
-                  const moveUp = (step.move ?? "").toUpperCase().replace(/_/g, " ");
+                  const moveUp = (step.move ?? "")
+                    .toUpperCase()
+                    .replace(/_/g, " ");
                   const label = useFullNames
-                    ? moveUp === "HUMAN INPUT" ? "HUMAN"
-                      : moveUp === "WAITING FOR HUMAN" ? "WAITING"
-                      : moveUp
-                    : moveUp === "HUMAN INPUT" ? "HI"
-                    : moveUp === "WAITING FOR HUMAN" ? "WH"
-                    : moveUp.replace(/ /g, "").slice(0, 2);
+                    ? moveUp === "HUMAN INPUT"
+                      ? "HUMAN"
+                      : moveUp === "WAITING FOR HUMAN"
+                        ? "WAITING"
+                        : moveUp
+                    : moveUp === "HUMAN INPUT"
+                      ? "HI"
+                      : moveUp === "WAITING FOR HUMAN"
+                        ? "WH"
+                        : moveUp.replace(/ /g, "").slice(0, 2);
                   const isRunningTip =
-                    col.status === "running" && step === col.steps[col.steps.length - 1];
+                    col.status === "running" &&
+                    step === col.steps[col.steps.length - 1];
                   // Cap glow at one per column. When the thread is waiting,
                   // the WT end marker owns the glow; otherwise the last
                   // human-touchpoint step gets it.
@@ -439,7 +471,7 @@ export const FlowViz: React.FC = () => {
                   const moveFull = (step.move ?? "")
                     .toLowerCase()
                     .split("_")
-                    .map((w) => w ? w[0].toUpperCase() + w.slice(1) : w)
+                    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
                     .join(" ");
 
                   return (
@@ -457,12 +489,31 @@ export const FlowViz: React.FC = () => {
                         filter={shouldGlow ? "url(#human-glow)" : undefined}
                         className={isRunningTip ? "flow-pulse" : undefined}
                         style={{ cursor: "pointer" }}
-                        onClick={() => selectNode({ type: "step", threadId: col.threadId, stepNumber: step.stepNumber })}
+                        onClick={() =>
+                          selectNode({
+                            type: "step",
+                            threadId: col.threadId,
+                            stepNumber: step.stepNumber,
+                          })
+                        }
                         onMouseMove={(event) => {
-                          const sections: { label: string; text: string }[] = [];
-                          if (step.assessment) sections.push({ label: "assessment", text: step.assessment });
-                          if (step.rationale) sections.push({ label: "rationale", text: step.rationale });
-                          if (step.instruction) sections.push({ label: "instruction", text: step.instruction });
+                          const sections: { label: string; text: string }[] =
+                            [];
+                          if (step.assessment)
+                            sections.push({
+                              label: "assessment",
+                              text: step.assessment,
+                            });
+                          if (step.rationale)
+                            sections.push({
+                              label: "rationale",
+                              text: step.rationale,
+                            });
+                          if (step.instruction)
+                            sections.push({
+                              label: "instruction",
+                              text: step.instruction,
+                            });
                           showTooltip({
                             tooltipData: {
                               title: `Step ${step.stepNumber} · ${moveFull} · Coordinator`,
@@ -482,7 +533,11 @@ export const FlowViz: React.FC = () => {
                           fontFamily="Poppins, sans-serif"
                           textAnchor="middle"
                           dominantBaseline="central"
-                          style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
+                          style={{
+                            pointerEvents: "none",
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
                         >
                           {label}
                         </text>
@@ -490,11 +545,22 @@ export const FlowViz: React.FC = () => {
 
                       {/* Events — colored by step's move */}
                       {step.events.map((evt) => {
-                        const eSel = isSelected("event", col.threadId, step.stepNumber, evt.eventIndex);
+                        const eSel = isSelected(
+                          "event",
+                          col.threadId,
+                          step.stepNumber,
+                          evt.eventIndex,
+                        );
                         const isHuman = evt.type === "human_message";
-                        const opacity = isHuman ? 1 : evt.type === "tool_call" ? 0.75 : 0.55;
+                        const opacity = isHuman
+                          ? 1
+                          : evt.type === "tool_call"
+                            ? 0.75
+                            : 0.55;
                         const fill = isHuman
-                          ? (isDark ? "#d6c5a8" : "#7a5e2a")
+                          ? isDark
+                            ? "#d6c5a8"
+                            : "#7a5e2a"
                           : moveColor.bg;
                         const humanStroke = isDark ? "#f0e2c4" : "#5a4318";
                         const evAgent = isHuman
@@ -502,7 +568,12 @@ export const FlowViz: React.FC = () => {
                           : evt.agent
                             ? evt.agent[0].toUpperCase() + evt.agent.slice(1)
                             : "Worker";
-                        const evKind = evt.type === "tool_call" ? "SQL" : evt.type === "human_message" ? "Message" : "Response";
+                        const evKind =
+                          evt.type === "tool_call"
+                            ? "SQL"
+                            : evt.type === "human_message"
+                              ? "Message"
+                              : "Response";
                         return (
                           <rect
                             key={`e-${evt.eventIndex}`}
@@ -513,19 +584,40 @@ export const FlowViz: React.FC = () => {
                             fill={fill}
                             opacity={opacity}
                             rx={2}
-                            stroke={eSel ? selectedStroke : isHuman ? humanStroke : "none"}
+                            stroke={
+                              eSel
+                                ? selectedStroke
+                                : isHuman
+                                  ? humanStroke
+                                  : "none"
+                            }
                             strokeWidth={eSel ? 1 : isHuman ? 0.75 : 0}
                             style={{ cursor: "pointer" }}
-                            onClick={() => selectNode({ type: "event", threadId: col.threadId, stepNumber: step.stepNumber, eventIndex: evt.eventIndex })}
+                            onClick={() =>
+                              selectNode({
+                                type: "event",
+                                threadId: col.threadId,
+                                stepNumber: step.stepNumber,
+                                eventIndex: evt.eventIndex,
+                              })
+                            }
                             onMouseMove={(event) => {
-                              const sections: { label: string; text: string }[] = [];
-                              if (evt.text) sections.push({ label: evKind.toLowerCase(), text: evt.text });
+                              const sections: {
+                                label: string;
+                                text: string;
+                              }[] = [];
+                              if (evt.text)
+                                sections.push({
+                                  label: evKind.toLowerCase(),
+                                  text: evt.text,
+                                });
                               showTooltip({
                                 tooltipData: {
                                   title: `Step ${step.stepNumber} · ${moveFull} · ${evAgent} · ${evKind}`,
                                   sections,
                                 },
-                                tooltipLeft: event.clientX - containerBounds.left,
+                                tooltipLeft:
+                                  event.clientX - containerBounds.left,
                                 tooltipTop: event.clientY - containerBounds.top,
                               });
                             }}
@@ -538,73 +630,94 @@ export const FlowViz: React.FC = () => {
                 })}
 
                 {/* End marker */}
-                {col.showEnd && (() => {
-                  const endStatusFill = getStatusFill(col.status, isDark);
-                  if (!endStatusFill) return null;
-                  const endSel = isSelected("thread_end", col.threadId);
-                  const needsHuman = col.status === "waiting";
-                  const endLabel = useFullNames
-                    ? col.status.toUpperCase()
-                    : col.status === "complete" ? "DONE"
-                      : col.status === "waiting" ? "WT"
-                      : col.status === "error" ? "ER"
-                      : col.status.slice(0, 2).toUpperCase();
-                  return (
-                    <>
-                      <rect
-                        x={col.x}
-                        y={col.endY}
-                        width={col.w}
-                        height={MARKER_H}
-                        fill={endStatusFill.bg}
-                        rx={RX}
-                        stroke={endSel ? selectedStroke : "none"}
-                        strokeWidth={endSel ? 1.5 : 0}
-                        filter={needsHuman ? "url(#human-glow)" : undefined}
-                        style={{ cursor: "pointer" }}
-                        onClick={() => selectNode({ type: "thread_end", threadId: col.threadId, threadStatus: col.status })}
-                        onMouseMove={(event) => {
-                          const statusLabel = col.status === "complete"
-                            ? "Done"
-                            : col.status === "waiting"
-                              ? "Waiting for human"
-                              : col.status === "error"
-                                ? "Error"
-                                : col.status;
-                          const sections: { label: string; text: string }[] = [];
-                          if (col.endText) {
-                            sections.push({
-                              label: col.status === "complete" ? "summary" : col.status === "waiting" ? "question" : "details",
-                              text: col.endText,
-                            });
+                {col.showEnd &&
+                  (() => {
+                    const endStatusFill = getStatusFill(col.status, isDark);
+                    if (!endStatusFill) return null;
+                    const endSel = isSelected("thread_end", col.threadId);
+                    const needsHuman = col.status === "waiting";
+                    const endLabel = useFullNames
+                      ? col.status.toUpperCase()
+                      : col.status === "complete"
+                        ? "DONE"
+                        : col.status === "waiting"
+                          ? "WT"
+                          : col.status === "error"
+                            ? "ER"
+                            : col.status.slice(0, 2).toUpperCase();
+                    return (
+                      <>
+                        <rect
+                          x={col.x}
+                          y={col.endY}
+                          width={col.w}
+                          height={MARKER_H}
+                          fill={endStatusFill.bg}
+                          rx={RX}
+                          stroke={endSel ? selectedStroke : "none"}
+                          strokeWidth={endSel ? 1.5 : 0}
+                          filter={needsHuman ? "url(#human-glow)" : undefined}
+                          style={{ cursor: "pointer" }}
+                          onClick={() =>
+                            selectNode({
+                              type: "thread_end",
+                              threadId: col.threadId,
+                              threadStatus: col.status,
+                            })
                           }
-                          showTooltip({
-                            tooltipData: {
-                              title: `Thread ${threadNumber} · ${statusLabel}`,
-                              sections,
-                            },
-                            tooltipLeft: event.clientX - containerBounds.left,
-                            tooltipTop: event.clientY - containerBounds.top,
-                          });
-                        }}
-                        onMouseLeave={hideTooltip}
-                      />
-                      {col.w > 22 && (
-                        <text
-                          x={col.x + col.w / 2}
-                          y={col.endY + MARKER_H / 2}
-                          fill={endStatusFill.fg}
-                          fontFamily="Poppins, sans-serif"
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          style={{ pointerEvents: "none", fontSize: 11, fontWeight: 600 }}
-                        >
-                          {endLabel}
-                        </text>
-                      )}
-                    </>
-                  );
-                })()}
+                          onMouseMove={(event) => {
+                            const statusLabel =
+                              col.status === "complete"
+                                ? "Done"
+                                : col.status === "waiting"
+                                  ? "Waiting for human"
+                                  : col.status === "error"
+                                    ? "Error"
+                                    : col.status;
+                            const sections: { label: string; text: string }[] =
+                              [];
+                            if (col.endText) {
+                              sections.push({
+                                label:
+                                  col.status === "complete"
+                                    ? "summary"
+                                    : col.status === "waiting"
+                                      ? "question"
+                                      : "details",
+                                text: col.endText,
+                              });
+                            }
+                            showTooltip({
+                              tooltipData: {
+                                title: `Thread ${threadNumber} · ${statusLabel}`,
+                                sections,
+                              },
+                              tooltipLeft: event.clientX - containerBounds.left,
+                              tooltipTop: event.clientY - containerBounds.top,
+                            });
+                          }}
+                          onMouseLeave={hideTooltip}
+                        />
+                        {col.w > 22 && (
+                          <text
+                            x={col.x + col.w / 2}
+                            y={col.endY + MARKER_H / 2}
+                            fill={endStatusFill.fg}
+                            fontFamily="Poppins, sans-serif"
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            style={{
+                              pointerEvents: "none",
+                              fontSize: 11,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {endLabel}
+                          </text>
+                        )}
+                      </>
+                    );
+                  })()}
               </g>
             );
           })}
@@ -642,7 +755,9 @@ export const FlowViz: React.FC = () => {
             >
               {tooltipData.sections.map((s, i) => (
                 <Box key={i} mb={i < tooltipData.sections.length - 1 ? 1 : 0}>
-                  <Box opacity={0.6} fontSize="10px">{s.label}</Box>
+                  <Box opacity={0.6} fontSize="10px">
+                    {s.label}
+                  </Box>
                   {s.text}
                 </Box>
               ))}
@@ -668,13 +783,25 @@ export const FlowViz: React.FC = () => {
           flexShrink={0}
         >
           {[
-            ["SC", "Scope"], ["FO", "Forage"], ["FR", "Frame"],
-            ["IN", "Interrogate"], ["SY", "Synthesize"],
-            ["HI", "Human Input"], ["WH", "Wait/Human"],
-            ["WT", "Waiting"], ["ER", "Error"],
+            ["SC", "Scope"],
+            ["FO", "Forage"],
+            ["FR", "Frame"],
+            ["IN", "Interrogate"],
+            ["SY", "Synthesize"],
+            ["HI", "Human Input"],
+            ["WT", "Waiting"],
+            ["ER", "Error"],
           ].map(([abbr, label]) => (
-            <Text key={abbr} fontSize="2xs" fontFamily="mono" color="fg.muted" lineHeight="1.2">
-              <Text as="span" fontWeight="bold" color="fg.subtle">{abbr}</Text> {label}
+            <Text
+              key={abbr}
+              fontSize="2xs"
+              fontFamily="mono"
+              lineHeight="1.2"
+            >
+              <Text as="span" fontWeight="bold">
+                {abbr}
+              </Text>{" "}
+              {label}
             </Text>
           ))}
         </Flex>
@@ -706,9 +833,12 @@ export const ReplayButton: React.FC = () => {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clean up the timer on unmount or when entries change underneath us.
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
 
   // Stop any in-flight replay if the underlying entries change (new session loaded).
   useEffect(() => {
@@ -787,7 +917,9 @@ export const ReplayButton: React.FC = () => {
         color: "fg",
         bg: isDark ? "whiteAlpha.100" : "blackAlpha.50",
       }}
-      aria-label={playing ? "Stop replay" : done ? "Replay again" : "Replay session"}
+      aria-label={
+        playing ? "Stop replay" : done ? "Replay again" : "Replay session"
+      }
       title={
         playing
           ? "Stop playback — restores the full feed"
