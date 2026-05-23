@@ -26,8 +26,8 @@ import { getMoveColor, getThreadColor } from "../utils";
 import type { FeedEntry } from "../types";
 
 const RX = 4;
-export const FIXED_THREAD_W = 68;
-const FULL_NAME_THRESHOLD = 68;
+export const FIXED_THREAD_W = 65;
+const FULL_NAME_THRESHOLD = 72;
 
 interface FlowEvent {
   type: "llm_call" | "tool_call" | "human_message";
