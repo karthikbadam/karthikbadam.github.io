@@ -347,7 +347,7 @@ export const FlowViz: React.FC = () => {
             >
               <feGaussianBlur stdDeviation="3.5" result="blur" />
               <feFlood
-                floodColor={isDark ? "#f0b95a" : "#d4912a"}
+                floodColor={isDark ? "#f08bb0" : "#c94d7a"}
                 floodOpacity="0.75"
               />
               <feComposite in2="blur" operator="in" result="glow" />
@@ -559,10 +559,10 @@ export const FlowViz: React.FC = () => {
                             : 0.55;
                         const fill = isHuman
                           ? isDark
-                            ? "#d6c5a8"
-                            : "#7a5e2a"
+                            ? "#e2a8c2"
+                            : "#a83d6a"
                           : moveColor.bg;
-                        const humanStroke = isDark ? "#f0e2c4" : "#5a4318";
+                        const humanStroke = isDark ? "#f4cbdc" : "#5a1f33";
                         const evAgent = isHuman
                           ? "Human"
                           : evt.agent
@@ -798,7 +798,7 @@ export const FlowViz: React.FC = () => {
               fontFamily="mono"
               lineHeight="1.2"
             >
-              <Text as="span" fontWeight="bold">
+              <Text as="span" fontWeight="semibold">
                 {abbr}
               </Text>{" "}
               {label}
