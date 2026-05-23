@@ -4,9 +4,11 @@ import type { CommandMode, QuestionSource } from "./types";
 
 // --- API ---
 
-export const API_BASE = import.meta.env.DEV
-  ? "http://localhost:8000/api"
-  : "https://latent-insights-service-production.up.railway.app/api";
+export const API_BASE =
+  (import.meta.env.VITE_API_BASE as string | undefined) ??
+  (import.meta.env.DEV
+    ? "http://localhost:8000/api"
+    : "https://latent-insights-service-production.up.railway.app/api");
 
 export const GITHUB_REPO_URL =
   "https://github.com/karthikbadam/latent-insights-service";
@@ -60,26 +62,30 @@ export const MOVE_COLORS_DARK: Record<string, MoveColor> = {
   INTERROGATE: { fg: "#ffe0a8", bg: "#564018" },
   SYNTHESIZE:  { fg: "#c5f49d", bg: "#31582b" },
   ERROR:       { fg: "#fcc1c8", bg: "#693945" },
-  HUMAN_INPUT:        { fg: "#f5e6c8", bg: "#4a3920" },
+  HUMAN_INPUT:        { fg: "#fbd5e3", bg: "#5a2238" },
   WAITING_FOR_HUMAN:  { fg: "#d0d0d0", bg: "#3a3a3a" },
+  START:              { fg: "#b6de8a", bg: "#1f3520" },
   DONE:               { fg: "#b6de8a", bg: "#1f3520" },
   STUCK:              { fg: "#f6909c", bg: "#3d1e26" },
   UNKNOWN:     { fg: "#cccccc", bg: "#555555" },
 };
 
 export const MOVE_COLORS_LIGHT: Record<string, MoveColor> = {
-  SCOPE:       { fg: "#2d1140", bg: "#a68fc6" },    // darker fg and bg
-  FORAGE:      { fg: "#13233b", bg: "#a3b8d9" },
-  FRAME:       { fg: "#09304a", bg: "#8abdcd" },
-  INTERROGATE: { fg: "#3d2707", bg: "#d4bc8a" },
-  SYNTHESIZE:  { fg: "#153110", bg: "#a7b598" },
-  ERROR:       { fg: "#4a131f", bg: "#d095a4" },
-  HUMAN_INPUT:        { fg: "#5a3d12", bg: "#e8d5a8" },
-  WAITING_FOR_HUMAN:  { fg: "#444444", bg: "#e0e0e0" },
+  SCOPE:       { fg: "#3d1855", bg: "#c8aee0" },
+  FORAGE:      { fg: "#0d2545", bg: "#a8c4eb" },
+  FRAME:       { fg: "#093450", bg: "#a5d2dc" },
+  INTERROGATE: { fg: "#3a2306", bg: "#e6c785" },
+  SYNTHESIZE:  { fg: "#163818", bg: "#b3cb9b" },
+  ERROR:       { fg: "#561624", bg: "#e3a3b4" },
+  HUMAN_INPUT:        { fg: "#5a1f33", bg: "#ecb0c8" },
+  WAITING_FOR_HUMAN:  { fg: "#2d2d2d", bg: "#cccccc" },
+  START:              { fg: "#254820", bg: "#d8ecce" },
   DONE:               { fg: "#254820", bg: "#d8ecce" },
-  STUCK:              { fg: "#74212f", bg: "#f5d2d8" },
-  UNKNOWN:     { fg: "#222222", bg: "#bbbbbb" },
+  STUCK:              { fg: "#651b27", bg: "#daa6b2" },
+  UNKNOWN:     { fg: "#2d2d2d", bg: "#cfcfcf" },
 };
+
+export const MOVE_BADGE_COLORS_LIGHT = MOVE_COLORS_LIGHT;
 
 // Neutral gray fill for running/waiting/unknown state
 export const NEUTRAL_FILL_DARK = { fg: "#bbbbbb", bg: "#3a3a3a" };
@@ -122,7 +128,7 @@ export const SOURCE_OPTIONS: { value: QuestionSource; label: string }[] = [
 // --- Featured sessions ---
 
 export const FEATURED_SESSIONS = [
-  { id: "846f0bbfefc0", dataset: "cars.csv",              description: "10 threads · 60 steps" },
-  { id: "a59dfbbd0fee", dataset: "exoplanets-nasa.csv",   description: "8 threads · 4 waiting" },
-  { id: "746fa2380425", dataset: "star_classification.csv", description: "8 threads · 3 waiting" },
+  { id: "planets", dataset: "planets.csv", description: "6 threads · 36 steps" },
+  { id: "stars",   dataset: "stars.csv",   description: "10 threads · 84 steps" },
+  { id: "cars",    dataset: "cars.csv",    description: "8 threads · 49 steps" },
 ] as const;

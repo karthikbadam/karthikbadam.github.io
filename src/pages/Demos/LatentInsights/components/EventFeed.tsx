@@ -1,12 +1,13 @@
 import { Box, Code, Flex, Text } from "@chakra-ui/react";
 import React, { useRef, useEffect, useMemo, useCallback, useState } from "react";
+import { LuChevronUp, LuDownload } from "react-icons/lu";
 import { useAtomValue, useSetAtom } from "jotai";
-import { feedEntriesAtom, selectNodeAtom, stateAtom } from "../atoms";
+import { allFeedEntriesAtom, feedEntriesAtom, metaAtom, selectNodeAtom, stateAtom } from "../atoms";
 import { useColorModeValue } from "../../../../components/ui/color-mode";
 import { MarkdownContent } from "./MarkdownContent";
 import { ReplyInput } from "./ReplyInput";
 import { FeedEntry } from "../types";
-import { THREAD_ID_PREVIEW_LENGTH, SCROLL_BOTTOM_THRESHOLD } from "../config";
+import { SCROLL_BOTTOM_THRESHOLD } from "../config";
 import {
   getThreadColor,
   getMoveColor,
@@ -19,7 +20,7 @@ export const EventFeed: React.FC = () => {
   const state = useAtomValue(stateAtom);
   const feedEntries = useAtomValue(feedEntriesAtom);
   const selectNode = useSetAtom(selectNodeAtom);
-  const { session, selectedNode } = state;
+  const { selectedNode } = state;
 
   const isDark = useColorModeValue(false, true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -28,27 +29,70 @@ export const EventFeed: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const expandedIdRef = useRef<string | null>(null);
   expandedIdRef.current = expandedId;
+  const lastScrolledTargetRef = useRef<string | null>(null);
 
-  const threadIds = useMemo(
-    () => session?.threads?.map((t) => t.id) ?? [],
-    [session],
-  );
-
-  // Auto-scroll to bottom as new entries arrive
-  useEffect(() => {
-    if (autoScrollRef.current && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  const threadIds = useMemo(() => {
+    const seen = new Set<string>();
+    const ids: string[] = [];
+    for (const e of feedEntries) {
+      if (e.thread_id && !seen.has(e.thread_id)) {
+        seen.add(e.thread_id);
+        ids.push(e.thread_id);
+      }
     }
+    return ids;
+  }, [feedEntries]);
+
+  // Auto-scroll to bottom as new entries arrive. rAF defers to the
+  // frame after the new rows have laid out so scrollHeight is current.
+  useEffect(() => {
+    if (!autoScrollRef.current) return;
+    const id = requestAnimationFrame(() => {
+      const el = scrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+    return () => cancelAnimationFrame(id);
   }, [feedEntries.length]);
 
-  // Scroll selected entry into view
+  // Scroll selected entry into view, with a fallback for step selections
+  // that don't have a matching primary id (e.g., a step that has only
+  // step_complete, no step_start).
   useEffect(() => {
     if (feedInitiatedRef.current) {
       feedInitiatedRef.current = false;
       return;
     }
-    const targetId = selectedNodeToFeedId(selectedNode);
+    if (!selectedNode) {
+      lastScrolledTargetRef.current = null;
+      return;
+    }
+    let targetId = selectedNodeToFeedId(selectedNode);
     if (!targetId) return;
+    if (
+      selectedNode.type === "step" &&
+      selectedNode.threadId &&
+      selectedNode.stepNumber !== undefined
+    ) {
+      const tid = selectedNode.threadId;
+      const sn = selectedNode.stepNumber;
+      const match = feedEntries.find(
+        (e) =>
+          e.thread_id === tid &&
+          e.step_number === sn &&
+          (e.event_type === "step_start" ||
+            e.event_type === "step_complete" ||
+            e.event_type === "human_message" ||
+            e.event_type === "thread_waiting"),
+      );
+      if (match) targetId = match.id;
+    }
+    // Only scroll once per selection. New live entries shouldn't yank
+    // the feed back to the previously-selected row.
+    if (lastScrolledTargetRef.current === targetId) {
+      setExpandedId(targetId);
+      return;
+    }
+    lastScrolledTargetRef.current = targetId;
     setExpandedId(targetId);
     autoScrollRef.current = false;
     requestAnimationFrame(() => {
@@ -66,7 +110,7 @@ export const EventFeed: React.FC = () => {
         container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       }, 120);
     });
-  }, [selectedNode]);
+  }, [selectedNode, feedEntries]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -75,15 +119,20 @@ export const EventFeed: React.FC = () => {
       el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_BOTTOM_THRESHOLD;
   }, []);
 
-  const toggleExpand = useCallback(
+  const expand = useCallback(
     (id: string, entry: FeedEntry) => {
       feedInitiatedRef.current = true;
-      const next = expandedIdRef.current === id ? null : id;
-      setExpandedId(next);
-      selectNode(next ? feedEntryToSelectedNode(entry) : null);
+      setExpandedId(id);
+      selectNode(feedEntryToSelectedNode(entry));
     },
     [selectNode],
   );
+
+  const collapse = useCallback(() => {
+    feedInitiatedRef.current = true;
+    setExpandedId(null);
+    selectNode(null);
+  }, [selectNode]);
 
   return (
     <Flex direction="column" h="100%" minW={0} maxW="100%" overflow="hidden">
@@ -113,7 +162,8 @@ export const EventFeed: React.FC = () => {
             threadIds={threadIds}
             isDark={isDark}
             isExpanded={expandedId === entry.id}
-            onToggle={toggleExpand}
+            onExpand={expand}
+            onCollapse={collapse}
           />
         ))}
       </Box>
@@ -126,19 +176,26 @@ interface FeedRowProps {
   threadIds: string[];
   isDark: boolean;
   isExpanded: boolean;
-  onToggle: (id: string, entry: FeedEntry) => void;
+  onExpand: (id: string, entry: FeedEntry) => void;
+  onCollapse: () => void;
 }
 
 function getTypeLabel(eventType: string): string {
   switch (eventType) {
-    case "thread_start":    return "start";
-    case "thread_complete": return "done";
-    case "thread_waiting":  return "waiting";
-    case "llm_call":        return "llm";
-    case "tool_call":       return "sql";
-    case "step_complete":   return "step done";
-    case "human_message":   return "msg";
-    default:                return "";
+    case "schema_summary_ready": return "schema";
+    case "session_ready":        return "ready";
+    case "scout_done":           return "scout";
+    case "thread_start":         return "start";
+    case "thread_resumed":       return "resumed";
+    case "thread_complete":      return "done";
+    case "thread_waiting":       return "waiting";
+    case "step_start":           return "plan";
+    case "llm_call":             return "llm";
+    case "tool_call":            return "sql";
+    case "step_complete":        return "step done";
+    case "human_message":        return "msg";
+    case "synthesis_start":      return "synthesis";
+    default:                     return "";
   }
 }
 
@@ -152,37 +209,72 @@ const WAITING_HEADERS: Record<string, string> = {
 };
 
 const FeedRow: React.FC<FeedRowProps> = React.memo(
-  ({ entry, threadIds, isDark, isExpanded, onToggle }) => {
+  ({ entry, threadIds, isDark, isExpanded, onExpand, onCollapse }) => {
     const threadColor = getThreadColor(entry.thread_id, threadIds, isDark);
-    const moveColor = getMoveColor(entry.move, isDark);
+    // Thread lifecycle events surface a synthetic move so they get the
+    // same colored-badge treatment as regular steps.
+    const displayMove =
+      entry.move ||
+      (entry.event_type === "thread_start" ? "START"
+        : entry.event_type === "thread_complete" ? "DONE"
+        : entry.event_type === "thread_waiting" ? "WAITING_FOR_HUMAN"
+        : "");
+    const moveColor = getMoveColor(displayMove || undefined, isDark, "badge");
     const expandable = hasExpandableContent(entry);
     const dimColor = isDark ? "#888" : "#666";
     const mutedColor = isDark ? "#555" : "#aaa";
 
-    const tid = entry.thread_id.slice(0, THREAD_ID_PREVIEW_LENGTH);
-    const duration = entry.message && /^\d/.test(entry.message) ? entry.message : "";
+    const threadIdx = threadIds.indexOf(entry.thread_id);
+    const tid = threadIdx >= 0 ? `T${threadIdx + 1}` : "";
+    const duration =
+      entry.message && /^\d/.test(entry.message) ? entry.message : "";
     const textContent =
-      entry.content ?? entry.response ?? entry.sql ?? entry.full_message ?? "";
-    const previewText = textContent !== ""
-      ? textContent
-      : (duration ? "" : (entry.message ?? ""));
+      entry.content ??
+      entry.response_text ??
+      entry.sql ??
+      entry.full_message ??
+      "";
+    const previewText =
+      textContent !== "" ? textContent : duration ? "" : entry.message ?? "";
     const typeHint = getTypeLabel(entry.event_type);
 
     return (
       <Box
         data-entry-id={entry.id}
         px={2}
-        py="3px"
+        py={1}
+        my={isExpanded ? 1 : 0}
         minW={0}
         maxW="100%"
         w="100%"
-        cursor={expandable ? "pointer" : "default"}
-        _hover={expandable ? { bg: isDark ? "whiteAlpha.50" : "blackAlpha.50" } : undefined}
+        borderTop={isExpanded ? "1px solid" : undefined}
+        borderBottom={isExpanded ? "1px solid" : undefined}
+        borderTopColor={
+          isExpanded ? (isDark ? "whiteAlpha.200" : "blackAlpha.200") : undefined
+        }
+        borderBottomColor={
+          isExpanded ? (isDark ? "whiteAlpha.200" : "blackAlpha.200") : undefined
+        }
+        _hover={
+          !isExpanded && expandable
+            ? { bg: isDark ? "whiteAlpha.50" : "blackAlpha.50" }
+            : undefined
+        }
         borderRadius="sm"
-        onClick={() => expandable && onToggle(entry.id, entry)}
       >
-        <Flex gap="6px" align="center" minW={0} w="100%">
-          {/* Thread ID pill */}
+        <Flex
+          gap="6px"
+          align="center"
+          minW={0}
+          w="100%"
+          cursor={expandable ? "pointer" : "default"}
+          onClick={() => {
+            if (!expandable) return;
+            if (isExpanded) onCollapse();
+            else onExpand(entry.id, entry);
+          }}
+        >
+          {/* Thread pill (or "session" for session-level rows) */}
           <Box
             flexShrink={0}
             px="5px"
@@ -190,9 +282,15 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             borderRadius="3px"
             border="1px solid"
             borderColor={isDark ? "whiteAlpha.100" : "blackAlpha.100"}
+            title={entry.thread_id || "session"}
           >
-            <Text as="span" color={threadColor} fontWeight="medium">
-              {tid}
+            <Text
+              as="span"
+              color={entry.thread_id ? threadColor : mutedColor}
+              fontWeight="medium"
+              fontStyle={entry.thread_id ? "normal" : "italic"}
+            >
+              {entry.thread_id ? tid : "session"}
             </Text>
           </Box>
 
@@ -203,8 +301,8 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             </Text>
           )}
 
-          {/* Move badge */}
-          {entry.move && (
+          {/* Move badge (synthetic for thread lifecycle rows) */}
+          {displayMove && (
             <Box
               px="5px"
               py="1px"
@@ -219,13 +317,13 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
                 fontSize="2xs"
                 letterSpacing="0.03em"
               >
-                {entry.move.toUpperCase()}
+                {displayMove.replace(/_/g, " ").toUpperCase()}
               </Text>
             </Box>
           )}
 
-          {/* Type hint when no move */}
-          {!entry.move && typeHint && (
+          {/* Type hint when no move and no synthetic badge */}
+          {!displayMove && typeHint && (
             <Text as="span" color={dimColor} flexShrink={0} fontSize="2xs">
               {typeHint.toUpperCase()}
             </Text>
@@ -272,10 +370,46 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
               </Text>
             </Box>
           )}
+
+          {/* Explicit collapse button — only when expanded */}
+          {isExpanded && (
+            <>
+              <Box flex="1 1 0%" />
+              <Box
+                as="button"
+                flexShrink={0}
+                display="inline-flex"
+                alignItems="center"
+                gap="3px"
+                px="6px"
+                py="1px"
+                borderRadius="3px"
+                color={dimColor}
+                fontSize="2xs"
+                fontFamily="mono"
+                _hover={{
+                  color: "fg",
+                  bg: isDark ? "whiteAlpha.200" : "blackAlpha.100",
+                }}
+                aria-label="Collapse"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onCollapse();
+                }}
+              >
+                <LuChevronUp size={11} />
+                collapse
+              </Box>
+            </>
+          )}
         </Flex>
 
         {isExpanded && (
-          <Box mt={1} mb={2} pl={1}>
+          <Box
+            mt={2}
+            pt={2}
+            pl={2}
+          >
             <ExpandedContent entry={entry} />
           </Box>
         )}
@@ -333,7 +467,7 @@ const JsonTable: React.FC<{ data: unknown[]; label?: string }> = ({ data, label 
 
 const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
   if (entry.event_type === "thread_waiting") {
-    const reason = entry.reason ?? undefined;
+    const reason = (entry.reason as string | undefined) ?? undefined;
     const header = reason ? WAITING_HEADERS[reason] : undefined;
     return (
       <Box>
@@ -403,20 +537,121 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
     );
   }
 
-  if (entry.event_type === "thread_start" && entry.thread_status === "running") {
+  if (entry.event_type === "scout_done" && entry.scout_questions) {
     return (
       <Box>
-        {entry.full_message && (
+        <Text fontSize="2xs" color="fg.muted" mb={1}>
+          {entry.scout_questions.length} seed question
+          {entry.scout_questions.length === 1 ? "" : "s"}
+        </Text>
+        {entry.scout_questions.map((q, i) => (
+          <Box
+            key={i}
+            mb={2}
+            pl={2}
+            borderLeft="2px solid"
+            borderColor="border.muted"
+          >
+            <Text fontSize="xs" fontWeight="semibold" mb={0.5}>
+              {q.question}
+            </Text>
+            {q.motivation && (
+              <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+                {q.motivation}
+              </Text>
+            )}
+            {q.entry_point && (
+              <Text fontSize="2xs" color="fg.subtle" fontStyle="italic">
+                entry: {q.entry_point}
+              </Text>
+            )}
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
+  if (entry.event_type === "synthesis_start" && entry.source_threads) {
+    return (
+      <Box>
+        <Text fontSize="2xs" color="fg.muted" mb={1}>
+          Synthesizing {entry.source_threads.length} thread finding
+          {entry.source_threads.length === 1 ? "" : "s"}
+        </Text>
+        <Flex gap={1} flexWrap="wrap">
+          {entry.source_threads.map((tid) => (
+            <Text
+              key={tid}
+              as="span"
+              fontFamily="mono"
+              fontSize="2xs"
+              px="5px"
+              py="1px"
+              borderRadius="3px"
+              border="1px solid"
+              borderColor="border.muted"
+            >
+              {tid.slice(0, 6)}
+            </Text>
+          ))}
+        </Flex>
+      </Box>
+    );
+  }
+
+  if (entry.event_type === "thread_resumed") {
+    return (
+      <Text fontSize="2xs" fontFamily="mono" color="fg.muted">
+        Thread resumed
+        {entry.from_step !== null && entry.from_step !== undefined
+          ? ` at step ${entry.from_step}`
+          : ""}
+        .
+      </Text>
+    );
+  }
+
+  if (entry.event_type === "session_ready") {
+    return (
+      <Text fontSize="2xs" fontFamily="mono" color="fg.muted">
+        Profiling complete. Waiting for the first human question.
+      </Text>
+    );
+  }
+
+  if (entry.event_type === "thread_start") {
+    const question = entry.seed_question ?? entry.full_message ?? "";
+    return (
+      <Box>
+        {question && (
           <Box mb={2}>
-            <MarkdownContent content={entry.full_message} />
+            <MarkdownContent content={question} />
           </Box>
         )}
-        <ReplyInput
-          threadId={entry.thread_id}
-          label="Send direction to running thread"
-          placeholder="Guide this thread…"
-          onClose={() => {}}
-        />
+        {entry.motivation && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              motivation
+            </Text>
+            <MarkdownContent content={entry.motivation} />
+          </Box>
+        )}
+        {entry.entry_point && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              entry point
+            </Text>
+            <MarkdownContent content={entry.entry_point} />
+          </Box>
+        )}
+        {entry.thread_status === "running" && (
+          <ReplyInput
+            threadId={entry.thread_id}
+            label="Send direction to running thread"
+            placeholder="Guide this thread…"
+            onClose={() => {}}
+          />
+        )}
       </Box>
     );
   }
@@ -461,15 +696,311 @@ const ExpandedContent: React.FC<{ entry: FeedEntry }> = ({ entry }) => {
   if (entry.event_type === "llm_call") {
     return (
       <Box>
-        {entry.response && <MarkdownContent content={entry.response} />}
-        {entry.tables &&
-          Object.entries(entry.tables).map(([key, rows]) => (
+        {entry.response_text && <MarkdownContent content={entry.response_text} />}
+        {entry.response_tables &&
+          Object.entries(entry.response_tables).map(([key, rows]) => (
             <JsonTable key={key} data={rows} label={key} />
           ))}
       </Box>
     );
   }
 
+  if (entry.event_type === "step_start") {
+    return (
+      <Box>
+        {entry.assessment && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              assessment
+            </Text>
+            <MarkdownContent content={entry.assessment} />
+          </Box>
+        )}
+        {entry.rationale && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              rationale
+            </Text>
+            <MarkdownContent content={entry.rationale} />
+          </Box>
+        )}
+        {entry.instruction && (
+          <Box mb={2}>
+            <Text fontSize="2xs" color="fg.muted" mb={0.5}>
+              instruction
+            </Text>
+            <MarkdownContent content={entry.instruction} />
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
   if (entry.full_message) return <MarkdownContent content={entry.full_message} />;
   return null;
+};
+
+// --- Session metrics: aggregated tokens + estimated cost ---
+
+// Prices in USD per 1M tokens. Update as providers change rates.
+// Keys are normalized model names (provider prefix and date/tag suffix stripped).
+const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  // Anthropic
+  "claude-opus-4-7":     { input: 15,   output: 75 },
+  "claude-opus-4-6":     { input: 15,   output: 75 },
+  "claude-opus-4-5":     { input: 15,   output: 75 },
+  "claude-opus-4":       { input: 15,   output: 75 },
+  "claude-sonnet-4-6":   { input: 3,    output: 15 },
+  "claude-sonnet-4-5":   { input: 3,    output: 15 },
+  "claude-sonnet-4":     { input: 3,    output: 15 },
+  "claude-haiku-4-5":    { input: 1,    output: 5 },
+  "claude-3-7-sonnet":   { input: 3,    output: 15 },
+  "claude-3-5-sonnet":   { input: 3,    output: 15 },
+  "claude-3-5-haiku":    { input: 0.8,  output: 4 },
+  "claude-3-opus":       { input: 15,   output: 75 },
+  // OpenAI
+  "gpt-5":               { input: 1.25, output: 10 },
+  "gpt-4.1":             { input: 2,    output: 8 },
+  "gpt-4o":              { input: 2.5,  output: 10 },
+  "gpt-4o-mini":         { input: 0.15, output: 0.6 },
+  // OSS (typical OpenRouter pricing)
+  "gpt-oss-20b":         { input: 0.05, output: 0.2 },
+  "gpt-oss-120b":        { input: 0.15, output: 0.6 },
+};
+
+function normalizeModel(m: string): string {
+  let n = m.split("/").pop() ?? m;     // strip provider prefix
+  n = n.split(":")[0];                  // strip ":nitro" / ":beta"
+  n = n.replace(/-\d{8}$/, "");         // strip date suffix
+  n = n.replace(/-latest$/, "");
+  return n.toLowerCase();
+}
+
+interface ModelTotals {
+  input: number;
+  output: number;
+  calls: number;
+  cost: number | null;
+}
+
+function aggregateMetrics(entries: FeedEntry[]): {
+  totalInput: number;
+  totalOutput: number;
+  totalCost: number;
+  unpricedTokens: number;
+  perModel: Map<string, ModelTotals>;
+} {
+  const perModel = new Map<string, ModelTotals>();
+  let totalInput = 0;
+  let totalOutput = 0;
+  let totalCost = 0;
+  let unpricedTokens = 0;
+
+  for (const e of entries) {
+    if (e.event_type !== "llm_call" && e.event_type !== "step_start") continue;
+    const i = e.input_tokens ?? 0;
+    const o = e.output_tokens ?? 0;
+    if (i === 0 && o === 0) continue;
+    totalInput += i;
+    totalOutput += o;
+
+    const key = e.model ? normalizeModel(e.model) : "unknown";
+    const price = MODEL_PRICING[key] ?? null;
+    const callCost = price
+      ? (i * price.input + o * price.output) / 1_000_000
+      : null;
+    if (callCost !== null) totalCost += callCost;
+    else unpricedTokens += i + o;
+
+    const t = perModel.get(key) ?? { input: 0, output: 0, calls: 0, cost: price ? 0 : null };
+    t.input += i;
+    t.output += o;
+    t.calls += 1;
+    if (price && t.cost !== null) t.cost += callCost!;
+    perModel.set(key, t);
+  }
+
+  return { totalInput, totalOutput, totalCost, unpricedTokens, perModel };
+}
+
+function formatTokens(n: number): string {
+  if (n === 0) return "0";
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10_000 ? 1 : 0)}k`;
+  return `${(n / 1_000_000).toFixed(n < 10_000_000 ? 2 : 1)}M`;
+}
+
+function formatCost(c: number): string {
+  if (c === 0) return "$0";
+  if (c < 0.01) return "<$0.01";
+  if (c < 1) return `$${c.toFixed(2)}`;
+  if (c < 100) return `$${c.toFixed(2)}`;
+  return `$${c.toFixed(0)}`;
+}
+
+export const FeedMetrics: React.FC = () => {
+  const entries = useAtomValue(feedEntriesAtom);
+  const metrics = useMemo(() => aggregateMetrics(entries), [entries]);
+
+  if (metrics.totalInput === 0 && metrics.totalOutput === 0) return null;
+
+  const tooltipLines: string[] = [];
+  for (const [model, t] of Array.from(metrics.perModel.entries())) {
+    const costStr = t.cost !== null ? formatCost(t.cost) : "—";
+    tooltipLines.push(
+      `${model}: ${t.calls} calls • ${formatTokens(t.input)} in • ${formatTokens(t.output)} out • ${costStr}`,
+    );
+  }
+  if (metrics.unpricedTokens > 0) {
+    tooltipLines.push(
+      `* unpriced models: ${formatTokens(metrics.unpricedTokens)} tokens not counted toward cost`,
+    );
+  }
+  const title = tooltipLines.join("\n");
+
+  const costSuffix =
+    metrics.unpricedTokens > 0 && metrics.totalCost > 0 ? "+" : "";
+
+  return (
+    <Flex
+      align="center"
+      gap={2}
+      fontSize="2xs"
+      fontFamily="mono"
+      color="fg.muted"
+      title={title}
+    >
+      <Text as="span">
+        {formatTokens(metrics.totalInput)} in
+      </Text>
+      <Text as="span" color="fg.subtle">•</Text>
+      <Text as="span">
+        {formatTokens(metrics.totalOutput)} out
+      </Text>
+      <Text as="span" color="fg.subtle">•</Text>
+      <Text as="span">
+        {metrics.totalCost > 0 || metrics.unpricedTokens === 0
+          ? formatCost(metrics.totalCost) + costSuffix
+          : "—"}
+      </Text>
+    </Flex>
+  );
+};
+
+// --- Per-model session metrics panel (rendered below FlowViz) ---
+
+export const SessionMetricsPanel: React.FC = () => {
+  const entries = useAtomValue(feedEntriesAtom);
+  const metrics = useMemo(() => aggregateMetrics(entries), [entries]);
+
+  if (metrics.totalInput === 0 && metrics.totalOutput === 0) return null;
+
+  const rows = Array.from(metrics.perModel.entries()).sort(
+    (a, b) => (b[1].cost ?? 0) - (a[1].cost ?? 0),
+  );
+  const costSuffix =
+    metrics.unpricedTokens > 0 && metrics.totalCost > 0 ? "+" : "";
+
+  const showTotal = rows.length > 1;
+
+  return (
+    <Box px={2} pb={2} fontFamily="mono" fontSize="2xs">
+      {rows.map(([model, t]) => (
+        <Box
+          key={model}
+          color="fg.muted"
+          py="2px"
+          title={model}
+        >
+          <Text as="span" color="fg.subtle">Model: </Text>
+          <Text as="span" color="fg">{model}</Text>
+          <Text as="span">, {t.calls} turns, </Text>
+          <Text as="span">
+            {formatTokens(t.input + t.output)} tokens ({formatTokens(t.input)} in / {formatTokens(t.output)} out)
+          </Text>
+          <Text as="span">, cost </Text>
+          <Text as="span" color="fg">
+            {t.cost !== null ? formatCost(t.cost) : "—"}
+          </Text>
+        </Box>
+      ))}
+      {showTotal && (
+        <Flex
+          align="baseline"
+          justify="flex-end"
+          gap={2}
+          color="fg"
+          pt={1}
+          mt={1}
+          borderTop="1px solid"
+          borderColor={"border.muted"}
+        >
+          <Text as="span">total</Text>
+          <Text as="span" minW="44px" textAlign="right">
+            {metrics.totalCost > 0 || metrics.unpricedTokens === 0
+              ? formatCost(metrics.totalCost) + costSuffix
+              : "—"}
+          </Text>
+        </Flex>
+      )}
+      {metrics.unpricedTokens > 0 && (
+        <Text color="fg.subtle" mt={1}>
+          {formatTokens(metrics.unpricedTokens)} tokens unpriced
+        </Text>
+      )}
+    </Box>
+  );
+};
+
+// --- JSONL download button (rendered in the feed panel header) ---
+
+export const FeedDownloadButton: React.FC = () => {
+  // Download always grabs the full feed, even when the replay cursor
+  // is truncating the visible slice.
+  const entries = useAtomValue(allFeedEntriesAtom);
+  const meta = useAtomValue(metaAtom);
+  const isDark = useColorModeValue(false, true);
+  const disabled = entries.length === 0;
+
+  const onClick = () => {
+    if (disabled) return;
+    const payload = JSON.stringify(entries, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${meta?.id ?? "session"}.feed.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Box
+      as="button"
+      display="inline-flex"
+      alignItems="center"
+      gap="4px"
+      px="6px"
+      py="2px"
+      fontSize="2xs"
+      fontFamily="mono"
+      color="fg.muted"
+      borderRadius="3px"
+      cursor={disabled ? "not-allowed" : "pointer"}
+      opacity={disabled ? 0.4 : 1}
+      _hover={
+        !disabled
+          ? { color: "fg", bg: isDark ? "whiteAlpha.100" : "blackAlpha.50" }
+          : undefined
+      }
+      aria-label="Download feed as JSON"
+      title={disabled ? "No entries to download" : "Download feed as .feed.json"}
+      onClick={onClick}
+    >
+      <LuDownload size={11} />
+      feed.json
+    </Box>
+  );
 };

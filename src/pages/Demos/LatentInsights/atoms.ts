@@ -1,22 +1,20 @@
 import { atom } from "jotai";
 import { atomWithReducer } from "jotai/utils";
 import {
-  SessionResponse,
-  ThreadResponse,
-  SSEEvent,
-  SSEEventType,
   FeedEntry,
-  SessionMode,
+  ScoutQuestion,
   SelectedNode,
   SessionConfig,
+  SessionMeta,
+  SessionMode,
 } from "./types";
 import { API_BASE } from "./config";
-import { buildFeedFromSession } from "./utils";
 
 export interface LatentInsightsState {
   status: "idle" | "loading" | "ready" | "error";
   mode: SessionMode | null;
-  session: SessionResponse | null;
+  meta: SessionMeta | null;
+  feedEntries: FeedEntry[];
   selectedNode: SelectedNode | null;
   error: string | null;
 }
@@ -24,17 +22,23 @@ export interface LatentInsightsState {
 const initialState: LatentInsightsState = {
   status: "idle",
   mode: null,
-  session: null,
+  meta: null,
+  feedEntries: [],
   selectedNode: null,
   error: null,
 };
 
 type Action =
   | { type: "LOAD_START" }
-  | { type: "LOAD_SESSION"; session: SessionResponse; mode: SessionMode }
+  | {
+      type: "LOAD_DONE";
+      meta: SessionMeta;
+      entries: FeedEntry[];
+      mode: SessionMode;
+    }
   | { type: "LOAD_ERROR"; error: string }
-  | { type: "SSE_EVENT"; event: SSEEvent }
-  | { type: "UPDATE_THREAD"; thread: ThreadResponse }
+  | { type: "APPEND_FEED_ENTRY"; entry: FeedEntry }
+  | { type: "SCOUT_QUESTIONS"; questions: ScoutQuestion[] }
   | { type: "SELECT_NODE"; node: SelectedNode | null }
   | { type: "RESET" };
 
@@ -46,189 +50,39 @@ function reducer(
     case "LOAD_START":
       return { ...state, status: "loading", error: null };
 
-    case "LOAD_SESSION":
+    case "LOAD_DONE":
       return {
         ...state,
         status: "ready",
         mode: action.mode,
-        session: action.session,
+        meta: action.meta,
+        feedEntries: action.entries,
         error: null,
+        selectedNode: null,
       };
 
     case "LOAD_ERROR":
       return { ...state, status: "error", error: action.error };
 
-    case "SSE_EVENT": {
-      if (!state.session) return state;
-      const evt = action.event;
-      const session = { ...state.session };
-      const threads = [...session.threads];
-
-      const idx = threads.findIndex((t) => t.id === evt.thread_id);
-      if (idx >= 0) {
-        const thread = { ...threads[idx] };
-
-        if (evt.event_type === "step_start") {
-          // When a real HUMAN_INPUT step arrives, clear any temporary
-          // placeholder steps created by message_injected.
-          if (evt.move === "HUMAN_INPUT") {
-            thread.steps = thread.steps.filter((s) => s.step_number >= 0);
-          }
-          const existing = thread.steps.find(
-            (s) => s.step_number === evt.step_number,
-          );
-          if (!existing && evt.step_number !== undefined) {
-            thread.steps = [
-              ...thread.steps,
-              {
-                step_number: evt.step_number,
-                move: evt.move ?? "",
-                instruction: evt.instruction ?? "",
-                result: "",
-                view_created: null,
-                duration_ms: null,
-                events: [],
-                started_at: evt.timestamp,
-              },
-            ];
-          }
-        } else if (evt.event_type === "step_complete") {
-          thread.steps = thread.steps.map((s) =>
-            s.step_number === evt.step_number
-              ? {
-                  ...s,
-                  result: evt.result ?? s.result,
-                  move: evt.move ?? s.move,
-                  instruction: evt.instruction ?? s.instruction,
-                  duration_ms: evt.duration_ms ?? s.duration_ms,
-                }
-              : s,
-          );
-        } else if (evt.event_type === "thread_complete") {
-          thread.status = "complete";
-        } else if (evt.event_type === "thread_resumed") {
-          thread.status = "running";
-          thread.error = null;
-          thread.running_summary = null;
-        } else if (evt.event_type === "thread_waiting") {
-          thread.status = "waiting";
-          thread.error = evt.reason ?? thread.error ?? null;
-          thread.running_summary =
-            evt.running_summary ?? thread.running_summary ?? null;
-        } else if (evt.event_type === "message_injected") {
-          // Immediate echo: create a temporary HUMAN_INPUT step so the
-          // message shows up in the feed before the runner drains it.
-          thread.steps = [
-            ...thread.steps,
-            {
-              step_number: -Date.now(),
-              move: "HUMAN_INPUT",
-              instruction: evt.target ?? "thread",
-              result: evt.content ?? "",
-              view_created: null,
-              duration_ms: 0,
-              events: [],
-              started_at: evt.timestamp,
-            },
-          ];
-        } else if (
-          evt.event_type === "llm_call" ||
-          evt.event_type === "tool_call"
-        ) {
-          const lastStep = thread.steps[thread.steps.length - 1];
-          if (lastStep) {
-            const newEvent = {
-              type: evt.event_type,
-              timestamp: evt.timestamp,
-              agent:
-                evt.agent ??
-                (evt.event_type === "tool_call" ? "worker" : null),
-              model: evt.model ?? null,
-              duration_ms: evt.duration_ms ?? null,
-              input_tokens: evt.input_tokens ?? null,
-              output_tokens: evt.output_tokens ?? null,
-              sql: evt.sql ?? null,
-              tool_result:
-                evt.event_type === "tool_call"
-                  ? evt.tool_result ?? null
-                  : null,
-              response:
-                evt.event_type === "llm_call" ? evt.response ?? null : null,
-            };
-            thread.steps = thread.steps.map((s) =>
-              s.step_number === lastStep.step_number
-                ? { ...s, events: [...s.events, newEvent] }
-                : s,
-            );
-          }
-        }
-
-        threads[idx] = thread;
-      } else if (evt.event_type === "message_injected") {
-        // Session-level broadcast: create temporary HUMAN_INPUT steps
-        // on each target thread for immediate feedback.
-        const targets = new Set([
-          ...(evt.injected_threads ?? []),
-          ...(evt.resumed_threads ?? []),
-        ]);
-        for (let i = 0; i < threads.length; i++) {
-          if (!targets.has(threads[i].id)) continue;
-          const t = { ...threads[i] };
-          t.steps = [
-            ...t.steps,
-            {
-              step_number: -(Date.now() + i),
-              move: "HUMAN_INPUT",
-              instruction: "session",
-              result: evt.content ?? "",
-              view_created: null,
-              duration_ms: 0,
-              events: [],
-              started_at: evt.timestamp,
-            },
-          ];
-          threads[i] = t;
-        }
-      } else if (evt.event_type === "thread_start") {
-        threads.push({
-          id: evt.thread_id,
-          seed_question: evt.message ?? "",
-          motivation: null,
-          status: "running",
-          summary: null,
-          running_summary: null,
-          error: null,
-          steps: [],
-          updated_at: new Date(evt.timestamp * 1000).toISOString(),
-        });
+    case "APPEND_FEED_ENTRY": {
+      // Replace-by-id if a row with this id already exists (e.g.,
+      // step_complete updating a step_start row's status).
+      const i = state.feedEntries.findIndex((e) => e.id === action.entry.id);
+      if (i >= 0) {
+        const next = state.feedEntries.slice();
+        next[i] = { ...next[i], ...action.entry };
+        return { ...state, feedEntries: next };
       }
-
-      session.threads = threads;
-
-      if (evt.event_type === "scout_done" && evt.message) {
-        try {
-          const questions = JSON.parse(evt.message);
-          if (Array.isArray(questions)) {
-            session.scout_questions = questions;
-          }
-        } catch {
-          // scout_done message may not be JSON
-        }
-      }
-      if (evt.event_type === "schema_summary_ready" && evt.schema_summary) {
-        session.schema_summary = evt.schema_summary;
-      }
-
-      return { ...state, session };
+      return { ...state, feedEntries: [...state.feedEntries, action.entry] };
     }
 
-    case "UPDATE_THREAD": {
-      if (!state.session) return state;
-      const threads = state.session.threads.map((t) =>
-        t.id === action.thread.id ? action.thread : t,
-      );
-      return { ...state, session: { ...state.session, threads } };
-    }
+    case "SCOUT_QUESTIONS":
+      return {
+        ...state,
+        meta: state.meta
+          ? { ...state.meta, scout_questions: action.questions }
+          : state.meta,
+      };
 
     case "SELECT_NODE":
       return { ...state, selectedNode: action.node };
@@ -241,41 +95,51 @@ function reducer(
   }
 }
 
-// Single reducer atom holds the entire state machine.
 export const stateAtom = atomWithReducer<LatentInsightsState, Action>(
   initialState,
   reducer,
 );
 
-// Derived selectors so consumers can subscribe to slices.
-export const sessionAtom = atom((get) => get(stateAtom).session);
-export const selectedNodeAtom = atom((get) => get(stateAtom).selectedNode);
-export const feedEntriesAtom = atom<FeedEntry[]>((get) => {
-  const session = get(sessionAtom);
-  return session ? buildFeedFromSession(session) : [];
+export const metaAtom = atom((get) => get(stateAtom).meta);
+export const allFeedEntriesAtom = atom((get) => get(stateAtom).feedEntries);
+
+export const replayCursorAtom = atom<number | null>(null);
+
+// Entry indices sorted by wall-clock timestamp (feed_index as tiebreak).
+// Replay reveals entries in this order so events from parallel threads
+// interlace as they really happened, instead of all-of-thread-A first.
+export const replayRevealOrderAtom = atom((get) => {
+  const entries = get(stateAtom).feedEntries;
+  return entries
+    .map((e, i) => ({ i, ts: e.timestamp, fi: e.feed_index }))
+    .sort((a, b) => a.ts - b.ts || a.fi - b.fi)
+    .map((x) => x.i);
 });
 
-const SSE_TYPES: SSEEventType[] = [
-  "scout_done",
-  "thread_start",
-  "thread_resumed",
-  "step_start",
-  "llm_call",
-  "tool_call",
-  "step_complete",
-  "thread_complete",
-  "thread_waiting",
-  "schema_summary_ready",
-  "message_injected",
-];
+export const feedEntriesAtom = atom((get) => {
+  const entries = get(stateAtom).feedEntries;
+  const cursor = get(replayCursorAtom);
+  if (cursor === null) return entries;
+  const order = get(replayRevealOrderAtom);
+  const cap = Math.min(cursor, entries.length);
+  const visible = new Set(order.slice(0, cap));
+  return entries.filter((_, i) => visible.has(i));
+});
+
+export const selectedNodeAtom = atom((get) => get(stateAtom).selectedNode);
+export const schemaSummaryAtom = atom((get) => {
+  const entries = get(stateAtom).feedEntries;
+  const entry = entries.find((e) => e.event_type === "schema_summary_ready");
+  return entry?.schema_summary_markdown ?? null;
+});
+
+// --- SSE plumbing ---
 
 interface SSEHandle {
   es: EventSource | null;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
-  seenEvents: Set<string>;
 }
 
-// SSE plumbing — one bundle so cleanup is atomic.
 export const sseHandleAtom = atom<SSEHandle | null>(null);
 
 export const cleanupSSEAtom = atom(null, (get, set) => {
@@ -283,80 +147,129 @@ export const cleanupSSEAtom = atom(null, (get, set) => {
   if (!h) return;
   if (h.es) h.es.close();
   if (h.reconnectTimer) clearTimeout(h.reconnectTimer);
-  h.seenEvents.clear();
   set(sseHandleAtom, null);
 });
 
-export const connectSSEAtom = atom(
-  null,
-  (_get, set, sessionId: string) => {
-    set(cleanupSSEAtom);
-    const handle: SSEHandle = {
-      es: null,
-      reconnectTimer: null,
-      seenEvents: new Set<string>(),
-    };
-    let backoff = 1000;
+// The backend emits one event type per FeedEntry. The frontend listens for
+// all of them and appends the parsed entry. The 'message' event is the
+// generic fallback (some SSE servers default to that).
+const SSE_EVENT_NAMES = [
+  "schema_summary_ready",
+  "thread_start",
+  "thread_resumed",
+  "step_start",
+  "llm_call",
+  "tool_call",
+  "step_complete",
+  "human_message",
+  "thread_complete",
+  "thread_waiting",
+  "scout_done",
+  "feed_entry",
+  "message",
+] as const;
 
-    const connect = () => {
-      const es = new EventSource(`${API_BASE}/sessions/${sessionId}/events`);
-      handle.es = es;
+export const connectSSEAtom = atom(null, (_get, set, sessionId: string) => {
+  set(cleanupSSEAtom);
+  const handle: SSEHandle = { es: null, reconnectTimer: null };
+  let backoff = 1000;
 
-      for (const eventType of SSE_TYPES) {
-        es.addEventListener(eventType, (e: MessageEvent) => {
-          try {
-            const data = JSON.parse(e.data);
-            const sseEvent: SSEEvent = { event_type: eventType, ...data };
+  const connect = () => {
+    const es = new EventSource(`${API_BASE}/sessions/${sessionId}/events`);
+    handle.es = es;
 
-            const dedupeKey = `${data.thread_id}:${data.step_number ?? ""}:${eventType}:${data.timestamp}`;
-            if (handle.seenEvents.has(dedupeKey)) return;
-            handle.seenEvents.add(dedupeKey);
-
-            set(stateAtom, { type: "SSE_EVENT", event: sseEvent });
-            backoff = 1000;
-          } catch {
-            // ignore parse errors
-          }
-        });
+    const onMessage = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data && data.event_type === "scout_done" && Array.isArray(data.questions)) {
+          set(stateAtom, { type: "SCOUT_QUESTIONS", questions: data.questions });
+          return;
+        }
+        if (data && data.event_type && data.id !== undefined) {
+          set(stateAtom, { type: "APPEND_FEED_ENTRY", entry: data as FeedEntry });
+          backoff = 1000;
+        }
+      } catch {
+        // ignore parse errors
       }
-
-      es.onerror = () => {
-        es.close();
-        handle.es = null;
-        handle.reconnectTimer = setTimeout(() => {
-          fetch(`${API_BASE}/sessions/${sessionId}`)
-            .then((r) => r.json())
-            .then((session: SessionResponse) => {
-              set(stateAtom, {
-                type: "LOAD_SESSION",
-                session,
-                mode: "live",
-              });
-            })
-            .catch(() => {});
-          connect();
-        }, backoff);
-        backoff = Math.min(backoff * 2, 30000);
-      };
     };
 
-    connect();
-    set(sseHandleAtom, handle);
-  },
-);
+    for (const name of SSE_EVENT_NAMES) {
+      es.addEventListener(name, onMessage as EventListener);
+    }
 
-// Action atoms
+    es.onerror = () => {
+      es.close();
+      handle.es = null;
+      handle.reconnectTimer = setTimeout(connect, backoff);
+      backoff = Math.min(backoff * 2, 30000);
+    };
+  };
+
+  connect();
+  set(sseHandleAtom, handle);
+});
+
+// --- Loaders ---
+
+interface SessionInfo {
+  id: string;
+  dataset_path?: string | null;
+  created_at?: string | null;
+  scout_questions?: ScoutQuestion[] | null;
+}
+
+async function fetchMetaAndFeed(
+  sessionId: string,
+  metaUrl: string,
+  feedUrl: string,
+): Promise<{ meta: SessionMeta; entries: FeedEntry[] }> {
+  const [metaRes, feedRes] = await Promise.all([
+    fetch(metaUrl),
+    fetch(feedUrl),
+  ]);
+  if (!metaRes.ok) throw new Error(`Session not found (${metaRes.status})`);
+  if (!feedRes.ok) throw new Error(`Feed not found (${feedRes.status})`);
+  const metaJson: SessionInfo = await metaRes.json();
+  const entries: FeedEntry[] = await feedRes.json();
+  const meta: SessionMeta = {
+    id: metaJson.id ?? sessionId,
+    dataset_path: metaJson.dataset_path ?? null,
+    created_at: metaJson.created_at ?? null,
+    scout_questions: metaJson.scout_questions ?? null,
+  };
+  return { meta, entries };
+}
+
+function metaFromFeed(sessionId: string, entries: FeedEntry[]): SessionMeta {
+  const schema = entries.find((e) => e.event_type === "schema_summary_ready");
+  const scout = entries.find((e) => e.event_type === "scout_done");
+  let earliest = 0;
+  for (const e of entries) {
+    if (e.timestamp && (earliest === 0 || e.timestamp < earliest)) {
+      earliest = e.timestamp;
+    }
+  }
+  return {
+    id: sessionId,
+    dataset_path: schema?.dataset_path ?? null,
+    created_at: earliest ? new Date(earliest * 1000).toISOString() : null,
+    scout_questions: scout?.scout_questions ?? null,
+  };
+}
 
 export const loadSavedSessionAtom = atom(
   null,
   async (_get, set, sessionId: string) => {
     set(cleanupSSEAtom);
+    set(replayCursorAtom, null);
     set(stateAtom, { type: "LOAD_START" });
     try {
-      const res = await fetch(`/data/latent-insights/${sessionId}.json`);
-      if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
-      const session: SessionResponse = await res.json();
-      set(stateAtom, { type: "LOAD_SESSION", session, mode: "saved" });
+      const res = await fetch(`/data/latent-insights/${sessionId}.feed.json`);
+      if (!res.ok) throw new Error(`Feed not found (${res.status})`);
+      const entries: FeedEntry[] = await res.json();
+      const meta = metaFromFeed(sessionId, entries);
+      set(stateAtom, { type: "LOAD_DONE", meta, entries, mode: "saved" });
     } catch (e) {
       set(stateAtom, {
         type: "LOAD_ERROR",
@@ -370,13 +283,16 @@ export const loadLiveSessionAtom = atom(
   null,
   async (_get, set, sessionId: string) => {
     set(cleanupSSEAtom);
+    set(replayCursorAtom, null);
     set(stateAtom, { type: "LOAD_START" });
     try {
-      const res = await fetch(`${API_BASE}/sessions/${sessionId}`);
-      if (!res.ok) throw new Error(`Failed to load session: ${res.status}`);
-      const session: SessionResponse = await res.json();
-      set(stateAtom, { type: "LOAD_SESSION", session, mode: "live" });
-      set(connectSSEAtom, session.id);
+      const { meta, entries } = await fetchMetaAndFeed(
+        sessionId,
+        `${API_BASE}/sessions/${sessionId}`,
+        `${API_BASE}/sessions/${sessionId}/feed`,
+      );
+      set(stateAtom, { type: "LOAD_DONE", meta, entries, mode: "live" });
+      set(connectSSEAtom, sessionId);
     } catch (e) {
       set(stateAtom, {
         type: "LOAD_ERROR",
@@ -512,4 +428,3 @@ export const resetAtom = atom(null, (_get, set) => {
   set(cleanupSSEAtom);
   set(stateAtom, { type: "RESET" });
 });
-
