@@ -769,43 +769,6 @@ export const FlowViz: React.FC = () => {
         )}
       </Box>
 
-      {/* Legend — only shown when using abbreviations */}
-      {!useFullNames && (
-        <Flex
-          px={2}
-          py={1}
-          columnGap={4}
-          rowGap="2px"
-          flexWrap="wrap"
-          borderTop="1px solid"
-          borderColor="gray.subtle"
-          bg="bg"
-          flexShrink={0}
-        >
-          {[
-            ["SC", "Scope"],
-            ["FO", "Forage"],
-            ["FR", "Frame"],
-            ["IN", "Interrogate"],
-            ["SY", "Synthesize"],
-            ["HI", "Human Input"],
-            ["WT", "Waiting"],
-            ["ER", "Error"],
-          ].map(([abbr, label]) => (
-            <Text
-              key={abbr}
-              fontSize="2xs"
-              fontFamily="mono"
-              lineHeight="1.2"
-            >
-              <Text as="span" fontWeight="semibold">
-                {abbr}
-              </Text>{" "}
-              {label}
-            </Text>
-          ))}
-        </Flex>
-      )}
     </Flex>
   );
 };

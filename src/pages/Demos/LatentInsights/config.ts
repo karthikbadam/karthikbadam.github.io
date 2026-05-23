@@ -71,18 +71,18 @@ export const MOVE_COLORS_DARK: Record<string, MoveColor> = {
 };
 
 export const MOVE_COLORS_LIGHT: Record<string, MoveColor> = {
-  SCOPE:       { fg: "#3d1855", bg: "#e1d5f0" },
-  FORAGE:      { fg: "#0d2545", bg: "#cee0f5" },
-  FRAME:       { fg: "#093450", bg: "#cee8ef" },
-  INTERROGATE: { fg: "#3a2306", bg: "#f0dfb8" },
-  SYNTHESIZE:  { fg: "#163818", bg: "#d4e3c4" },
-  ERROR:       { fg: "#561624", bg: "#f0c9d3" },
-  HUMAN_INPUT:        { fg: "#5a1f33", bg: "#f9d5e3" },
-  WAITING_FOR_HUMAN:  { fg: "#3a3a3a", bg: "#e0e0e0" },
-  START:              { fg: "#1d3a19", bg: "#d4ecca" },
-  DONE:               { fg: "#1d3a19", bg: "#d4ecca" },
-  STUCK:              { fg: "#651b27", bg: "#ebcbd3" },
-  UNKNOWN:     { fg: "#333333", bg: "#dadada" },
+  SCOPE:       { fg: "#3d1855", bg: "#c8aee0" },
+  FORAGE:      { fg: "#0d2545", bg: "#a8c4eb" },
+  FRAME:       { fg: "#093450", bg: "#a5d2dc" },
+  INTERROGATE: { fg: "#3a2306", bg: "#e6c785" },
+  SYNTHESIZE:  { fg: "#163818", bg: "#b3cb9b" },
+  ERROR:       { fg: "#561624", bg: "#e3a3b4" },
+  HUMAN_INPUT:        { fg: "#5a1f33", bg: "#ecb0c8" },
+  WAITING_FOR_HUMAN:  { fg: "#2d2d2d", bg: "#cccccc" },
+  START:              { fg: "#254820", bg: "#d8ecce" },
+  DONE:               { fg: "#254820", bg: "#d8ecce" },
+  STUCK:              { fg: "#651b27", bg: "#daa6b2" },
+  UNKNOWN:     { fg: "#2d2d2d", bg: "#cfcfcf" },
 };
 
 export const MOVE_BADGE_COLORS_LIGHT = MOVE_COLORS_LIGHT;
