@@ -211,7 +211,15 @@ const WAITING_HEADERS: Record<string, string> = {
 const FeedRow: React.FC<FeedRowProps> = React.memo(
   ({ entry, threadIds, isDark, isExpanded, onExpand, onCollapse }) => {
     const threadColor = getThreadColor(entry.thread_id, threadIds, isDark);
-    const moveColor = getMoveColor(entry.move ?? undefined, isDark, "badge");
+    // Thread lifecycle events surface a synthetic move so they get the
+    // same colored-badge treatment as regular steps.
+    const displayMove =
+      entry.move ||
+      (entry.event_type === "thread_start" ? "START"
+        : entry.event_type === "thread_complete" ? "DONE"
+        : entry.event_type === "thread_waiting" ? "WAITING_FOR_HUMAN"
+        : "");
+    const moveColor = getMoveColor(displayMove || undefined, isDark, "badge");
     const expandable = hasExpandableContent(entry);
     const dimColor = isDark ? "#888" : "#666";
     const mutedColor = isDark ? "#555" : "#aaa";
@@ -293,8 +301,8 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
             </Text>
           )}
 
-          {/* Move badge */}
-          {entry.move && (
+          {/* Move badge (synthetic for thread lifecycle rows) */}
+          {displayMove && (
             <Box
               px="5px"
               py="1px"
@@ -309,13 +317,13 @@ const FeedRow: React.FC<FeedRowProps> = React.memo(
                 fontSize="2xs"
                 letterSpacing="0.03em"
               >
-                {entry.move.toUpperCase()}
+                {displayMove.replace(/_/g, " ").toUpperCase()}
               </Text>
             </Box>
           )}
 
-          {/* Type hint when no move */}
-          {!entry.move && typeHint && (
+          {/* Type hint when no move and no synthetic badge */}
+          {!displayMove && typeHint && (
             <Text as="span" color={dimColor} flexShrink={0} fontSize="2xs">
               {typeHint.toUpperCase()}
             </Text>
