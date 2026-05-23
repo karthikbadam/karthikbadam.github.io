@@ -1,4 +1,4 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex } from "@chakra-ui/react";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { LuPlay, LuSquare, LuRotateCcw } from "react-icons/lu";
@@ -27,7 +27,7 @@ import type { FeedEntry } from "../types";
 
 const RX = 4;
 export const FIXED_THREAD_W = 68;
-const FULL_NAME_THRESHOLD = 72;
+const FULL_NAME_THRESHOLD = 68;
 
 interface FlowEvent {
   type: "llm_call" | "tool_call" | "human_message";
