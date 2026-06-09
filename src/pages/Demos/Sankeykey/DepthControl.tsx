@@ -29,6 +29,7 @@ export function DepthControl() {
     survival && survival.total > 0
       ? Math.round((100 * survival.ge[depth - 1]) / survival.total)
       : null;
+  const paths = survival ? survival.paths[depth - 1] : null;
 
   return (
     <Flex
@@ -78,6 +79,11 @@ export function DepthControl() {
       </Slider.Root>
       <Text fontSize="sm" color="fg.muted">
         <Text as="span" fontFamily="mono" fontWeight="bold" color="fg">
+          {paths === null ? "—" : paths.toLocaleString()}
+        </Text>{" "}
+        distinct tool {paths === 1 ? "path" : "paths"} through the first{" "}
+        {depth === 1 ? "call" : `${depth} calls`} ·{" "}
+        <Text as="span" fontFamily="mono">
           {pct === null ? "—" : `${pct}%`}
         </Text>{" "}
         of rollouts make ≥{depth} tool {depth === 1 ? "call" : "calls"}
