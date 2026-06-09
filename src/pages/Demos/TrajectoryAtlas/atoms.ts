@@ -3,6 +3,7 @@ import * as vg from "@uwdata/vgplot";
 import { verbatim } from "@uwdata/mosaic-sql";
 import type { Coordinator, Selection as VgSelection } from "@uwdata/mosaic-core";
 import { arrowFirstRow } from "../../../components/chartUtils";
+import { localDuckDB } from "../../../components/duckdbLocal";
 import { LoadingState } from "../../../types/loading";
 import type { Outcome, SourceConfig, SourceKey, Trajectory } from "./types";
 
@@ -206,16 +207,14 @@ export const initializeTrajectoryAtlasAtom = atom(null, async (get, set) => {
 
   try {
     set(loadingStateAtom, { status: "initializing" });
-    const connector = vg.wasmConnector();
+    const connector = vg.wasmConnector({ duckdb: await localDuckDB() });
     const coord = new vg.Coordinator(connector, {
       cache: false,
       preagg: { enabled: false },
     });
     vg.coordinator(coord).databaseConnector(connector);
     set(coordinatorAtom, coord);
-    await connector.getDuckDB();
 
-    await coord.exec(`INSTALL httpfs; LOAD httpfs;`);
     set(crossfilterAtom, vg.Selection.crossfilter());
 
     const src = get(sourceAtom);
