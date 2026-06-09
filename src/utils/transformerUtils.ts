@@ -409,7 +409,7 @@ export function getInitialCameraPosition(totalLayers: number): THREE.Vector3 {
 /**
  * Calculate camera target (center of tower).
  */
-export function getCameraTarget(_totalLayers: number): THREE.Vector3 {
+export function getCameraTarget(): THREE.Vector3 {
   return new THREE.Vector3(0, 0, 0);
 }
 
