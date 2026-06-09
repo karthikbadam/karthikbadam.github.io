@@ -64,7 +64,7 @@ async function loadLegendCategories(coord: Coordinator): Promise<Category[]> {
     if (typeof tool !== "string" || !tool || tool === "(none)") continue;
     cats.add(categoryFor(tool));
   }
-  return [...cats];
+  return Array.from(cats);
 }
 
 export const initializeSankeykeyAtom = atom(null, async (get, set) => {
