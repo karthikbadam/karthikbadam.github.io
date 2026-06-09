@@ -574,6 +574,7 @@ def main() -> int:
 
     p.add_argument("--outcome-mode", choices=["score+match", "terminal-tool", "auto"], default="auto")
 
+    p.add_argument("--flat-csv", type=Path, default=None)
     p.add_argument("--batch-size", type=int, default=500)
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--print-summary", action=argparse.BooleanOptionalAction, default=True)
@@ -735,6 +736,19 @@ def main() -> int:
 
     flush_batch()
     writer.close()
+
+    # Flat (id, outcome, step_1..step_K) projection consumed by the Sankeykey
+    # demo as CSV, which duckdb-wasm reads without the parquet extension.
+    if args.flat_csv:
+        import duckdb
+
+        cols = ", ".join(f"step_{i}" for i in range(1, MAX_TOOL_STEPS + 1))
+        duckdb.connect().execute(
+            f"COPY (SELECT id, outcome, {cols} FROM read_parquet('{args.output}')) "
+            f"TO '{args.flat_csv}' (HEADER, DELIMITER ',')"
+        )
+        if args.print_summary:
+            print(f"[extract_trajectories] wrote flat csv to {args.flat_csv}", file=sys.stderr)
 
     if args.print_summary:
         print(f"\n[extract_trajectories] wrote {n:,} trajectories to {args.output}", file=sys.stderr)

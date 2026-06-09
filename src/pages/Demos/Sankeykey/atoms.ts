@@ -1,10 +1,11 @@
-// Sankeykey — minimal data layer. One parquet, one table, no crossfilter:
+// Sankeykey — minimal data layer. One CSV, one table, no crossfilter:
 // the page exists to showcase the depth-expandable sankey on its own.
 
 import { atom } from "jotai";
 import * as vg from "@uwdata/vgplot";
 import type { Coordinator } from "@uwdata/mosaic-core";
 import { arrowFirstRow, arrowRows } from "../../../components/chartUtils";
+import { localDuckDB } from "../../../components/duckdbLocal";
 import { LoadingState } from "../../../types/loading";
 import { categoryFor } from "../TrajectoryAtlas/taxonomy";
 import type { Category } from "../TrajectoryAtlas/types";
@@ -12,15 +13,20 @@ import type { Category } from "../TrajectoryAtlas/types";
 // Must match MAX_TOOL_STEPS in extract_trajectories.py
 export const MAX_DEPTH = 8;
 
-const PARQUET_URL = "/data/trajectory-atlas/deepswe-kimi.parquet";
+// Flat projection (id, outcome, step_1..8) of deepswe-kimi.parquet. CSV so
+// the wasm core can read it without autoloading the parquet extension from
+// a third-party CDN — the page is fully self-hosted.
+const DATA_URL = "/data/trajectory-atlas/deepswe-kimi-flat.csv";
 
 const STEP_COLS = Array.from({ length: MAX_DEPTH }, (_, i) => `step_${i + 1}`);
 
-/** Rollout counts surviving to each tool-call depth: `ge[k-1]` = rollouts
- * whose k-th step column is a real tool (not the `(none)` sentinel). */
+/** Depth stats: `ge[k-1]` = rollouts whose k-th step column is a real tool
+ * (not the `(none)` sentinel); `paths[k-1]` = distinct tool sequences
+ * through the first k calls — the diversity the sankey aggregates. */
 export interface Survival {
   total: number;
   ge: number[];
+  paths: number[];
 }
 
 // Primitive atoms — infra
@@ -42,14 +48,19 @@ async function loadSurvival(coord: Coordinator): Promise<Survival> {
     (c, i) =>
       `COUNT(*) FILTER (WHERE ${c} IS NOT NULL AND ${c} <> '(none)') AS ge_${i + 1}`,
   );
+  const paths = STEP_COLS.map(
+    (_, i) =>
+      `COUNT(DISTINCT concat_ws('→', ${STEP_COLS.slice(0, i + 1).join(", ")})) AS paths_${i + 1}`,
+  );
   const r = await coord.query(`
-    SELECT COUNT(*) AS total, ${ge.join(", ")}
+    SELECT COUNT(*) AS total, ${ge.join(", ")}, ${paths.join(", ")}
     FROM trajectories
   `);
   const row = arrowFirstRow(r);
   return {
     total: Number(row?.total ?? 0),
     ge: STEP_COLS.map((_, i) => Number(row?.[`ge_${i + 1}`] ?? 0)),
+    paths: STEP_COLS.map((_, i) => Number(row?.[`paths_${i + 1}`] ?? 0)),
   };
 }
 
@@ -72,7 +83,7 @@ export const initializeSankeykeyAtom = atom(null, async (get, set) => {
 
   try {
     set(loadingStateAtom, { status: "initializing" });
-    const connector = vg.wasmConnector();
+    const connector = vg.wasmConnector({ duckdb: await localDuckDB() });
     // Local coordinator only — never registered as the vgplot global, so
     // visiting this page can't clobber other demos' singleton.
     const coord = new vg.Coordinator(connector, {
@@ -80,16 +91,15 @@ export const initializeSankeykeyAtom = atom(null, async (get, set) => {
       preagg: { enabled: false },
     });
     set(coordinatorAtom, coord);
-    await connector.getDuckDB();
-    await coord.exec(`INSTALL httpfs; LOAD httpfs;`);
 
     set(loadingStateAtom, {
       status: "loading-parquet",
       message: "DeepSWE · Kimi-K2",
     });
-    const url = `${window.location.origin}${PARQUET_URL}`;
+    const url = `${window.location.origin}${DATA_URL}`;
     await coord.exec(`
-      CREATE TABLE trajectories AS SELECT * FROM read_parquet('${url}')
+      CREATE TABLE trajectories AS
+      SELECT * FROM read_csv('${url}', header = true, all_varchar = true)
     `);
 
     set(loadingStateAtom, { status: "creating-tables", table: "stats" });
