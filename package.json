@@ -7,6 +7,9 @@
   "engines": {
     "node": ">=22.16.0"
   },
+  "overrides": {
+    "@duckdb/duckdb-wasm": "1.30.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -18,7 +21,7 @@
     "@any_table/core": "^0.2.0",
     "@any_table/react": "^0.2.1",
     "@chakra-ui/react": "^3.35.0",
-    "@duckdb/duckdb-wasm": "^1.32.0",
+    "@duckdb/duckdb-wasm": "1.30.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@kvis/packed-radial-tree": "file:src/lib/kvis-packed-radial-tree-1.0.0.tgz",
