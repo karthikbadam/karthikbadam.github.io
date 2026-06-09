@@ -19,6 +19,7 @@ import { StarCatalogExplorer } from "./pages/Demos/StarCatalog";
 import { TransformerViz } from "./pages/Demos/TransformerViz";
 import { LatentInsights } from "./pages/Demos/LatentInsights";
 import { TrajectoryAtlas } from "./pages/Demos/TrajectoryAtlas";
+import { Sankeykey } from "./pages/Demos/Sankeykey";
 
 function RouteTracker() {
   const location = useLocation();
@@ -54,6 +55,7 @@ function App() {
           <Route path="/latent-insights" element={<LatentInsights />} />
           <Route path="/latent-insights/:sessionId" element={<LatentInsights />} />
           <Route path="/trajectory-atlas" element={<TrajectoryAtlas />} />
+          <Route path="/sankeykey" element={<Sankeykey />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
         </Routes>
       </Router>
