@@ -46,25 +46,27 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 
 // Category → palette key. Used both for `bg={`chart.${CAT_PALETTE_KEY[c]}`}`
 // in JSX and for hex resolution in SVG.
+// Tools lean orange/red/violet/cyan; outcomes own the deep blue/gold/crimson
+// scale, so the two read as separate systems.
 export const CAT_PALETTE_KEY: Record<Category, keyof typeof chartPalette> = {
-  plan: "purple",
-  task: "purple",
+  plan: "pink",
+  task: "pink",
   thought: "lightBlue",
   observation: "gray",
-  search: "cyan",
-  read: "lightBlue",
-  edit: "orange",
-  exec: "blue",
-  tool: "green",
+  search: "teal",
+  read: "cyan",
+  edit: "purple",
+  exec: "red",
+  tool: "orange",
   verify: "brown",
   submit: "pink",
-  error: "red",
+  error: "gray",
 };
 
 const OUTCOME_PALETTE_KEY: Record<Outcome, keyof typeof chartPalette> = {
-  success: "blue",
-  partial: "orange",
-  fail: "red",
+  success: "outcomeSuccess",
+  partial: "outcomePartial",
+  fail: "outcomeFail",
 };
 
 export const OUTCOME_ORDER: Outcome[] = ["success", "partial", "fail"];

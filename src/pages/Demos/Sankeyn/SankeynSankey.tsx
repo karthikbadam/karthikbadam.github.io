@@ -20,10 +20,10 @@ import {
   OUTCOME_ORDER,
   categoryFor,
   categoryHex,
+  outcomeHex,
   stepLabel,
 } from "../../../components/taxonomy";
 import type { Outcome } from "../../../components/taxonomy";
-import { outcomeColor } from "./outcomeColors";
 
 const ORDERINGS: Record<string, string[]> = {
   outcome: [...OUTCOME_ORDER],
@@ -57,7 +57,7 @@ export function SankeynSankey() {
 
   const palette = useMemo(
     () => (column: string, value: string): string => {
-      if (column === "outcome") return outcomeColor(value as Outcome, dark);
+      if (column === "outcome") return outcomeHex(value as Outcome, dark);
       if (value === "(none)") return dark ? "#4a5568" : "#a0aec0";
       return categoryHex(categoryFor(value), dark);
     },
