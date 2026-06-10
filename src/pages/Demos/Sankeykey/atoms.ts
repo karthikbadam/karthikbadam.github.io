@@ -69,15 +69,23 @@ export const loadedSourceAtom = atom<SourceKey | null>(null);
 export const survivalAtom = atom<Survival | null>(null);
 export const legendCategoriesAtom = atom<Category[]>([]);
 
-/** Deepest tool call actually present in the loaded dataset: the largest k
- * where at least one rollout makes a k-th call. The slider caps here (not at
- * the hard MAX_DEPTH column ceiling) so the control fits the data. */
+// The slider stops where the data thins out: showing columns that only a
+// handful of rollouts still reach turns the sankey into a hairball of long
+// skip-edges. Cap at the deepest column still carrying a meaningful share of
+// runs (≥ MIN_DEPTH_FRAC of the total, or MIN_DEPTH_COUNT rollouts).
+const MIN_DEPTH_FRAC = 0.04;
+const MIN_DEPTH_COUNT = 12;
+
+/** Deepest tool call worth showing for the loaded dataset: the largest k where
+ * enough rollouts still make a k-th call. Caps the slider (not the hard
+ * MAX_DEPTH column ceiling) so the chart stays readable across datasets. */
 export const maxDepthAtom = atom((get) => {
   const s = get(survivalAtom);
-  if (!s) return MAX_DEPTH;
-  let k = 0;
-  for (let i = 0; i < s.ge.length; i++) if (s.ge[i] > 0) k = i + 1;
-  return Math.min(MAX_DEPTH, Math.max(1, k));
+  if (!s || s.total <= 0) return MAX_DEPTH;
+  const floor = Math.max(MIN_DEPTH_COUNT, s.total * MIN_DEPTH_FRAC);
+  let k = 1;
+  for (let i = 0; i < s.ge.length; i++) if (s.ge[i] >= floor) k = i + 1;
+  return Math.min(MAX_DEPTH, Math.max(2, k));
 });
 
 async function loadSurvival(coord: Coordinator): Promise<Survival> {
