@@ -2,7 +2,7 @@
 // at the loaded dataset's real max depth.
 
 import { useEffect } from "react";
-import { Flex, IconButton, Slider, Text } from "@chakra-ui/react";
+import { Button, Flex, Slider, Text } from "@chakra-ui/react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { LuPause, LuPlay } from "react-icons/lu";
 import {
@@ -52,17 +52,15 @@ export function DepthControl() {
 
   return (
     <Flex align="center" gap={3} w="100%">
-      <IconButton
-        aria-label={playing ? "Pause auto-expand" : "Auto-expand n"}
-        size="sm"
-        variant="outline"
-        color="accent"
-        borderColor="accent"
-        onClick={toggle}
+      <Text
+        fontSize="xs"
+        color="fg.muted"
+        textTransform="uppercase"
+        letterSpacing="0.04em"
         flexShrink={0}
       >
-        {playing ? <LuPause /> : <LuPlay />}
-      </IconButton>
+        tool calls (n)
+      </Text>
       <Text fontFamily="mono" fontSize="xs" color="fg.muted" flexShrink={0}>
         1
       </Text>
@@ -123,6 +121,18 @@ export function DepthControl() {
           {depth}
         </Text>
       </Flex>
+      <Button
+        size="sm"
+        variant="outline"
+        color="accent"
+        borderColor="accent"
+        onClick={toggle}
+        flexShrink={0}
+        minW="7em"
+      >
+        {playing ? <LuPause /> : <LuPlay />}
+        {playing ? "Freeze" : "Animate"}
+      </Button>
     </Flex>
   );
 }

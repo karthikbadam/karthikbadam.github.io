@@ -13,41 +13,39 @@ export function SourceToggle() {
   const switchSource = useSetAtom(switchSourceAtom);
 
   return (
-    <Box textAlign="center">
-      <Flex gap={2} wrap="wrap" justify="center">
-        {SOURCE_KEYS.map((key) => {
-          const active = key === loadedSource;
-          return (
-            <Box
-              as="button"
-              key={key}
-              onClick={() => switchSource(key)}
-              textAlign="left"
-              px={3}
-              py={2}
-              maxW="220px"
-              borderRadius="md"
-              borderWidth="1px"
-              borderColor={active ? "accent" : "gray.subtle"}
-              bg={active ? "accentBackground" : "bg"}
-              cursor="pointer"
-              transition="border-color .15s, background .15s"
-              _hover={{ borderColor: "accent" }}
+    <Flex gap={2} wrap="wrap" align="stretch">
+      {SOURCE_KEYS.map((key) => {
+        const active = key === loadedSource;
+        return (
+          <Box
+            as="button"
+            key={key}
+            onClick={() => switchSource(key)}
+            textAlign="left"
+            px={3}
+            py={2}
+            borderRadius="md"
+            borderWidth="1px"
+            borderColor={active ? "accent" : "gray.subtle"}
+            bg={active ? "accentBackground" : "bg"}
+            cursor="pointer"
+            transition="border-color .15s, background .15s"
+            _hover={{ borderColor: "accent" }}
+          >
+            <Text
+              fontSize="sm"
+              fontWeight="semibold"
+              color={active ? "accent" : "fg"}
+              whiteSpace="nowrap"
             >
-              <Text
-                fontSize="sm"
-                fontWeight="semibold"
-                color={active ? "accent" : "fg"}
-              >
-                {SOURCES[key].label}
-              </Text>
-              <Text fontSize="xs" color="fg.muted" mt={1} lineHeight="1.35">
-                {SOURCES[key].blurb}
-              </Text>
-            </Box>
-          );
-        })}
-      </Flex>
-    </Box>
+              {SOURCES[key].label}
+            </Text>
+            <Text fontSize="xs" color="fg.muted" mt={1} whiteSpace="nowrap">
+              {SOURCES[key].blurb}
+            </Text>
+          </Box>
+        );
+      })}
+    </Flex>
   );
 }

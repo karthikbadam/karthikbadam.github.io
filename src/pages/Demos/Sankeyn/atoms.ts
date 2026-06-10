@@ -21,21 +21,24 @@ export type SourceKey = "deepswe" | "hermes" | "deepseek-pi";
 
 export const SOURCES: Record<
   SourceKey,
-  { label: string; blurb: string; url: string }
+  { label: string; runs: string; blurb: string; url: string }
 > = {
   deepswe: {
     label: "DeepSWE · Kimi-K2",
-    blurb: "2.8k runs fixing real GitHub issues with bash and a file editor",
+    runs: "2.8k runs",
+    blurb: "Fixing GitHub issues with bash + editor",
     url: "/data/trajectory-atlas/deepswe-kimi-flat.csv",
   },
   hermes: {
     label: "Hermes · agent traces",
-    blurb: "2.5k multi-tool sessions across terminal, files, and browser",
+    runs: "2.5k runs",
+    blurb: "Multi-tool: terminal, files, browser",
     url: "/data/trajectory-atlas/hermes-flat.csv",
   },
   "deepseek-pi": {
     label: "DeepSeek-v4 · pi",
-    blurb: "2.5k coding-agent sessions in the pi harness",
+    runs: "2.5k runs",
+    blurb: "Coding sessions in the pi harness",
     url: "/data/trajectory-atlas/deepseek-pi-flat.csv",
   },
 };

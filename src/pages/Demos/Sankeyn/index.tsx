@@ -10,6 +10,7 @@ import {
   outcomeToken,
 } from "../../../components/taxonomy";
 import {
+  SOURCES,
   initializeSankeynAtom,
   legendCategoriesAtom,
   loadedSourceAtom,
@@ -62,34 +63,41 @@ function Content() {
       p={4}
       gap={3}
     >
-      <Box textAlign="center" maxW="72ch" mx="auto">
-        <Heading as="h1" size="lg" color="accent" lineHeight="1">
-          San(key)
-          <chakra.sup fontSize="0.5em" top="-0.7em" ml="1px">
-            n
-          </chakra.sup>
+      <Box maxW="100em">
+        <Heading as="h1" size="lg" lineHeight="1.2">
+          <Text as="span" color="accent">
+            San(key)
+            <chakra.sup fontSize="0.5em" top="-0.7em" ml="1px">
+              n
+            </chakra.sup>
+          </Text>
+          {loadedSource && (
+            <Text as="span" color="fg.muted" fontWeight="normal" fontSize="md" ml={2}>
+              · {SOURCES[loadedSource].label} ({SOURCES[loadedSource].runs})
+            </Text>
+          )}
         </Heading>
-        <Text fontSize="sm" color="fg.muted" mt={2}>
-          Each agent run is a chain of tool calls that ends in success,
-          partial, or fail. Columns stack each position in the chain; ribbons
-          trace the flow between tools. Slide n to unfold more of every run.
+        <Text fontSize="sm" color="fg.muted" mt={1}>
+          Each agent run is a chain of tool calls ending in success, partial,
+          or fail; slide n to unfold the first n calls of every run.
         </Text>
       </Box>
 
-      <SourceToggle />
-
-      <Flex
-        align="center"
-        bg="bg"
-        borderWidth="1px"
-        borderColor="gray.subtle"
-        borderRadius="lg"
-        px={4}
-        py={3}
-        w={{ base: "100%", md: "min(72ch, 100%)" }}
-        mx="auto"
-      >
-        <DepthControl />
+      <Flex maxW="100em" gap={3} align="stretch" wrap="wrap">
+        <SourceToggle />
+        <Flex
+          align="center"
+          flex="1"
+          minW="480px"
+          bg="bg"
+          borderWidth="1px"
+          borderColor="gray.subtle"
+          borderRadius="lg"
+          px={4}
+          py={2}
+        >
+          <DepthControl />
+        </Flex>
       </Flex>
 
       <Box flex="1" minH={0} h={{ base: "460px", md: "auto" }}>
