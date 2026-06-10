@@ -164,6 +164,12 @@ export function SankeyMosaicClient({
     from: string;
     to: string;
   } | null>(null);
+  // Click-to-expand: the column rendered as the wide "detail" layer (others
+  // compress). Null = even overview. Cleared when the columns change.
+  const [focusedCol, setFocusedCol] = useState<number | null>(null);
+  useEffect(() => setFocusedCol(null), [columns]);
+  const toggleFocus = (ci: number) =>
+    setFocusedCol((cur) => (cur === ci ? null : ci));
 
   // Stable token for the selection's "source" identity.
   const sourceRef = useRef<{ id: string }>({ id: "sankey-mosaic-client" });
@@ -193,6 +199,7 @@ export function SankeyMosaicClient({
   useEffect(() => {
     if (resetSignal === undefined) return;
     setLocalSelection(null);
+    setFocusedCol(null);
     onSelectionStateChange?.(false);
     if (selection) {
       selection.update(
@@ -320,9 +327,9 @@ export function SankeyMosaicClient({
   const layout = useMemo(() => {
     return layoutSankey(
       columns, nodes, links, size.w, size.h, orderings, palette, align,
-      dropoffLabels, nodeOrder,
+      dropoffLabels, nodeOrder, focusedCol,
     );
-  }, [columns, nodes, links, size.w, size.h, orderings, palette, align, dropoffLabels, nodeOrder]);
+  }, [columns, nodes, links, size.w, size.h, orderings, palette, align, dropoffLabels, nodeOrder, focusedCol]);
 
   // Per-column label width budget: the space up to the neighboring column
   // (or the chart edge), so labels never bleed into the next column. The
@@ -396,6 +403,36 @@ export function SankeyMosaicClient({
     <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
       <svg width={size.w} height={size.h} style={{ display: "block" }}>
         <Group>
+          {/* Per-column focus targets, beneath everything: click a layer's
+              vertical band (its whitespace) to expand it; ribbons/nodes on
+              top keep their own clicks. */}
+          {layout.cols.map((c, i) => {
+            if (!layout.nodes.some((n) => n.col === i)) return null;
+            const left = i === 0 ? 0 : (layout.cols[i - 1].x + layout.cols[i - 1].w + c.x) / 2;
+            const right =
+              i === columns.length - 1
+                ? size.w
+                : (c.x + c.w + layout.cols[i + 1].x) / 2;
+            const isFocused = focusedCol === i;
+            return (
+              <rect
+                key={`f-${i}`}
+                x={left}
+                y={0}
+                width={Math.max(0, right - left)}
+                height={size.h}
+                fill={
+                  isFocused
+                    ? dark
+                      ? "rgba(255,255,255,0.04)"
+                      : "rgba(0,0,0,0.04)"
+                    : "transparent"
+                }
+                style={{ cursor: "pointer" }}
+                onClick={() => toggleFocus(i)}
+              />
+            );
+          })}
           {layout.links.map((lk, i) => {
             const sel = isSelected(lk);
             const hi =
@@ -458,6 +495,7 @@ export function SankeyMosaicClient({
                   style={{ cursor: "pointer", transition: "opacity .15s" }}
                   onMouseEnter={() => setHover({ kind: "node", n })}
                   onMouseLeave={() => setHover(null)}
+                  onClick={() => toggleFocus(n.col)}
                 />
                 {showLabel && (
                   <text
@@ -485,8 +523,13 @@ export function SankeyMosaicClient({
             // step_3 column with no trajectories that reach a third tool.
             const firstNode = layout.nodes.find((n) => n.col === i);
             if (!firstNode) return null;
-            const labelText = c.label ?? c.name;
             const lastCol = i === columns.length - 1;
+            const focused = focusedCol === i;
+            // Hide crowded headers when columns compress; always keep the
+            // focused column, the first, and the last.
+            const slot = (layout.cols[i + 1]?.x ?? size.w) - layout.cols[i].x;
+            if (!focused && !lastCol && i !== 0 && slot < 28) return null;
+            const labelText = c.label ?? c.name;
             const x = lastCol ? firstNode.x + firstNode.w : firstNode.x;
             const anchor = lastCol ? "end" : "start";
             return (
@@ -494,9 +537,15 @@ export function SankeyMosaicClient({
                 key={`h-${i}`}
                 x={x}
                 y={12}
-                fill={chartFgMuted(dark)}
+                fill={focused ? chartFg(dark) : chartFgMuted(dark)}
                 textAnchor={anchor}
-                style={{ ...chartColumnHeaderStyle, ...chartTextHalo(dark) }}
+                style={{
+                  ...chartColumnHeaderStyle,
+                  ...chartTextHalo(dark),
+                  fontWeight: focused ? 700 : undefined,
+                  cursor: "pointer",
+                }}
+                onClick={() => toggleFocus(i)}
               >
                 {labelText}
               </text>
@@ -618,6 +667,59 @@ function readPredicate(selection: VgSelection | null | undefined, ownSource: any
   return parts.length ? parts.join(" AND ") : null;
 }
 
+// Fit-to-width column geometry. Bars stay COL_W wide and gaps stay uniform
+// (pixel-identical to the old fixed layout) until the columns can no longer
+// fit; then bars shrink to COL_W_MIN so everything stays on screen without
+// scrolling. A focused column widens to FOCUS_W and the two ribbon-gaps beside
+// it get FOCUS_GAP_W times the weight of the rest, so it reads as an expanded
+// detail layer while the others compress. Multiples of 4 per the spacing rule.
+const COL_W = 14;
+const COL_W_MIN = 4;
+const GAP_MIN = 4;
+const FOCUS_W = 32;
+const FOCUS_GAP_W = 10;
+
+interface ColLayout {
+  x: number;
+  w: number;
+}
+
+/** Per-column x-left + bar width, distributing `innerW` by weight so the
+ * chart always fits and a focused layer expands. */
+function columnGeometry(
+  nCols: number,
+  innerW: number,
+  padLeft: number,
+  focusedCol: number | null,
+): ColLayout[] {
+  if (nCols <= 0) return [];
+  // Shrink bars below COL_W only when COL_W bars + min gaps overflow innerW.
+  let baseW = COL_W;
+  const needed = nCols * COL_W + Math.max(0, nCols - 1) * GAP_MIN;
+  if (needed > innerW) {
+    baseW = Math.max(COL_W_MIN, (innerW - Math.max(0, nCols - 1) * GAP_MIN) / nCols);
+  }
+  const barW = Array.from({ length: nCols }, (_, i) =>
+    i === focusedCol ? Math.max(baseW, FOCUS_W) : baseW,
+  );
+  const totalBars = barW.reduce((a, b) => a + b, 0);
+  const freeGap = Math.max(0, innerW - totalBars);
+  const gapW = Array.from({ length: Math.max(0, nCols - 1) }, (_, i) =>
+    focusedCol != null && (i === focusedCol - 1 || i === focusedCol)
+      ? FOCUS_GAP_W
+      : 1,
+  );
+  const gapSum = gapW.reduce((a, b) => a + b, 0) || 1;
+  const gaps = gapW.map((w) => (freeGap * w) / gapSum);
+  const cols: ColLayout[] = [];
+  let x = padLeft;
+  for (let i = 0; i < nCols; i++) {
+    cols.push({ x, w: barW[i] });
+    x += barW[i] + (i < nCols - 1 ? gaps[i] : 0);
+  }
+  return cols;
+}
+
 function layoutSankey(
   columns: SankeyColumnSpec[],
   nodeRows: NodeRow[],
@@ -629,9 +731,10 @@ function layoutSankey(
   align: "bottom" | "top",
   dropoffLabels = false,
   nodeOrder: "count" | "barycenter" = "count",
-): { nodes: NodeLayout[]; links: LinkLayout[] } {
-  if (!nodeRows.length || !columns.length) return { nodes: [], links: [] };
-  const colW = 14;
+  focusedCol: number | null = null,
+): { nodes: NodeLayout[]; links: LinkLayout[]; cols: ColLayout[] } {
+  if (!nodeRows.length || !columns.length)
+    return { nodes: [], links: [], cols: [] };
   // Outcome / last-column labels are anchored to the LEFT of their rect
   // (textAnchor='end' with x=n.x - 6) so we don't need extra right margin.
   const padLeft = 8;
@@ -642,7 +745,11 @@ function layoutSankey(
   const innerW = Math.max(0, width - padLeft - padRight);
   const innerH = Math.max(0, height - padTop - padBottom);
   const nCols = columns.length;
-  const gapX = nCols > 1 ? (innerW - nCols * colW) / (nCols - 1) : 0;
+  const fc =
+    focusedCol != null && focusedCol >= 0 && focusedCol < nCols
+      ? focusedCol
+      : null;
+  const colGeom = columnGeometry(nCols, innerW, padLeft, fc);
 
   // Group nodes by column, apply ordering.
   const byCol: Record<number, NodeRow[]> = {};
@@ -756,14 +863,14 @@ function layoutSankey(
     const nGaps = Math.max(0, list.length - 1);
     const colHeight = colTotal * unit + nGaps * gapY;
     let y = align === "top" ? padTop : bottomY - colHeight;
+    const geom = colGeom[ci];
     for (const n of list) {
       const h = Math.max(1, n.count * unit);
-      const x = padLeft + ci * (colW + gapX);
       const layout: NodeLayout = {
         ...n,
-        x,
+        x: geom.x,
         y,
-        w: colW,
+        w: geom.w,
         h,
         label: n.key === OTHER_KEY ? "other" : n.key,
         color: n.key === OTHER_KEY ? "#9498A0" : palette(col.name, n.key),
@@ -839,7 +946,7 @@ function layoutSankey(
   // Paint big bands first so thin ribbons draw on top and stay traceable.
   linkLayouts.sort((a, b) => b.count - a.count);
 
-  return { nodes: orderedNodes, links: linkLayouts };
+  return { nodes: orderedNodes, links: linkLayouts, cols: colGeom };
 }
 
 // Approximate glyph widths for the 12px/11px label fonts. Fit strategy:
