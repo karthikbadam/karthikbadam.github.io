@@ -115,14 +115,23 @@ export const switchSourceAtom = atom(null, async (get, set, src: SourceKey) => {
   try {
     set(playingAtom, false);
     await loadTable(coord, src);
-    set(survivalAtom, await loadSurvival(coord));
-    set(legendCategoriesAtom, await loadLegendCategories(coord));
+    const stats = await loadStats(coord);
+    set(survivalAtom, stats.survival);
+    set(legendCategoriesAtom, stats.categories);
     set(resetSignalAtom, (n) => n + 1);
     set(loadedSourceAtom, src);
   } catch (err) {
     console.error("Sankeykey source switch failed:", err);
   }
 });
+
+async function loadStats(coord: Coordinator) {
+  const [survival, categories] = await Promise.all([
+    loadSurvival(coord),
+    loadLegendCategories(coord),
+  ]);
+  return { survival, categories };
+}
 
 export const initializeSankeykeyAtom = atom(null, async (get, set) => {
   if (get(coordinatorAtom)) return;
@@ -146,8 +155,9 @@ export const initializeSankeykeyAtom = atom(null, async (get, set) => {
     await loadTable(coord, src);
 
     set(loadingStateAtom, { status: "creating-tables", table: "stats" });
-    set(survivalAtom, await loadSurvival(coord));
-    set(legendCategoriesAtom, await loadLegendCategories(coord));
+    const stats = await loadStats(coord);
+    set(survivalAtom, stats.survival);
+    set(legendCategoriesAtom, stats.categories);
     set(loadedSourceAtom, src);
     set(loadingStateAtom, { status: "ready" });
   } catch (err) {
