@@ -325,6 +325,14 @@ export function SankeyMosaicClient({
     );
   }, [columns, nodes, links, size.w, size.h, orderings, palette, align, dropoffLabels, nodeOrder]);
 
+  // Sorted column x positions — used to budget label widths so text never
+  // bleeds into the neighboring column.
+  const colXs = useMemo(() => {
+    const xs = new Set<number>();
+    for (const n of layout.nodes) xs.add(n.x);
+    return Array.from(xs).sort((a, b) => a - b);
+  }, [layout.nodes]);
+
   // Per-column dropoff counts: trajectories whose link from this column goes
   // straight to the final column, skipping at least one column in between —
   // i.e. they stop calling tools here.
@@ -410,6 +418,17 @@ export function SankeyMosaicClient({
             // Drop labels on rectangles too short to fit the text — they
             // collide otherwise. The "other" node is small but always shown.
             const showLabel = n.h >= 11 || n.key === OTHER_KEY;
+            const lastCol = n.col === columns.length - 1;
+            // Width budget: the space up to the neighboring column (or the
+            // chart edge), so labels never collide with the next column.
+            const avail = lastCol
+              ? n.x -
+                6 -
+                (colXs.filter((x) => x < n.x).pop() ?? -n.w - 6) -
+                n.w -
+                6
+              : (colXs.find((x) => x > n.x) ?? size.w) - (n.x + n.w + 6) - 6;
+            const fit = fitNodeLabel(n.label, n.count.toLocaleString(), avail);
             const isHoverNode = hover?.kind === "node" && hover.n === n;
             const dimmedNode =
               hover != null &&
@@ -443,8 +462,8 @@ export function SankeyMosaicClient({
                     style={{ ...chartLabelStyle, ...chartTextHalo(dark) }}
                     opacity={dimmedNode ? 0.4 : 1}
                   >
-                    {n.label}
-                    {n.h >= 14 && (
+                    {fit.text}
+                    {n.h >= 14 && fit.showCount && (
                       <tspan dx="6" style={chartValueStyle}>
                         {n.count.toLocaleString()}
                       </tspan>
@@ -815,6 +834,26 @@ function layoutSankey(
   linkLayouts.sort((a, b) => b.count - a.count);
 
   return { nodes: orderedNodes, links: linkLayouts };
+}
+
+// Approximate glyph widths for the 12px/11px label fonts. Fit strategy:
+// full "name count" → drop the count → ellipsis-truncate the name.
+const LABEL_CHAR_W = 6.5;
+const VALUE_CHAR_W = 6.2;
+
+function fitNodeLabel(
+  name: string,
+  countStr: string,
+  avail: number,
+): { text: string; showCount: boolean } {
+  const nameW = name.length * LABEL_CHAR_W;
+  if (nameW + 6 + countStr.length * VALUE_CHAR_W <= avail) {
+    return { text: name, showCount: true };
+  }
+  if (nameW <= avail) return { text: name, showCount: false };
+  const maxChars = Math.max(4, Math.floor(avail / LABEL_CHAR_W));
+  if (maxChars >= name.length) return { text: name, showCount: false };
+  return { text: `${name.slice(0, maxChars - 1)}…`, showCount: false };
 }
 
 function ribbonPath(x0: number, y0: number, t0: number, x1: number, y1: number, t1: number): string {
