@@ -62,24 +62,21 @@ function Content() {
       p={4}
       gap={3}
     >
-      <Flex justify="space-between" align="flex-start" gap={8} wrap="wrap">
-        <Box maxW="72ch">
-          <Heading as="h1" size="lg" color="accent" mb={1} lineHeight="1">
-            San(key)
-            <chakra.sup fontSize="0.5em" top="-0.7em" ml="1px">
-              n
-            </chakra.sup>
-          </Heading>
-          <Text fontSize="sm" color="fg.muted" mt={1}>
-            Each agent run is a chain of tool calls that ends in an outcome.
-            Every column stacks one position in that chain, colored by the kind
-            of tool used there; ribbons trace how runs flow from tool to tool
-            and finally into success, partial, or fail. Slide n to unfold more
-            of the chain.
-          </Text>
-        </Box>
-        <SourceToggle />
-      </Flex>
+      <Box textAlign="center" maxW="72ch" mx="auto">
+        <Heading as="h1" size="lg" color="accent" lineHeight="1">
+          San(key)
+          <chakra.sup fontSize="0.5em" top="-0.7em" ml="1px">
+            n
+          </chakra.sup>
+        </Heading>
+        <Text fontSize="sm" color="fg.muted" mt={2}>
+          Each agent run is a chain of tool calls that ends in success,
+          partial, or fail. Columns stack each position in the chain; ribbons
+          trace the flow between tools. Slide n to unfold more of every run.
+        </Text>
+      </Box>
+
+      <SourceToggle />
 
       <Flex
         align="center"
@@ -89,8 +86,8 @@ function Content() {
         borderRadius="lg"
         px={4}
         py={3}
-        alignSelf={{ base: "stretch", md: "flex-start" }}
         w={{ base: "100%", md: "min(72ch, 100%)" }}
+        mx="auto"
       >
         <DepthControl />
       </Flex>

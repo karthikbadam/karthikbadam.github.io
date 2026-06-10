@@ -13,17 +13,8 @@ export function SourceToggle() {
   const switchSource = useSetAtom(switchSourceAtom);
 
   return (
-    <Box>
-      <Text
-        fontSize="xs"
-        color="fg.muted"
-        textTransform="uppercase"
-        letterSpacing="0.04em"
-        mb={2}
-      >
-        dataset
-      </Text>
-      <Flex gap={2} wrap="wrap">
+    <Box textAlign="center">
+      <Flex gap={2} wrap="wrap" justify="center">
         {SOURCE_KEYS.map((key) => {
           const active = key === loadedSource;
           return (
