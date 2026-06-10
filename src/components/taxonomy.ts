@@ -46,21 +46,19 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 
 // Category → palette key. Used both for `bg={`chart.${CAT_PALETTE_KEY[c]}`}`
 // in JSX and for hex resolution in SVG.
-// Tool categories deliberately avoid blue/orange/red — those are reserved for
-// outcomes (success/partial/fail) so tools and verdicts never share a colour.
 export const CAT_PALETTE_KEY: Record<Category, keyof typeof chartPalette> = {
   plan: "purple",
   task: "purple",
   thought: "lightBlue",
   observation: "gray",
   search: "cyan",
-  read: "teal",
-  edit: "green",
-  exec: "brown",
-  tool: "pink",
-  verify: "lightBlue",
+  read: "lightBlue",
+  edit: "orange",
+  exec: "blue",
+  tool: "green",
+  verify: "brown",
   submit: "pink",
-  error: "gray",
+  error: "red",
 };
 
 const OUTCOME_PALETTE_KEY: Record<Outcome, keyof typeof chartPalette> = {

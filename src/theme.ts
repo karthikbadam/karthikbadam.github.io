@@ -30,8 +30,11 @@ export const chartPalette = {
   purple:    { light: "#A463F2", dark: "#BC8AF5" },
   lightBlue: { light: "#97BBF5", dark: "#B5CFFB" },
   brown:     { light: "#9C6B4E", dark: "#B58A72" },
-  teal:      { light: "#2CA8A0", dark: "#6FD3CC" },
   gray:      { light: "#9498A0", dark: "#B8BCC4" },
+  // Dedicated outcome scale, kept distinct from the tool categories above.
+  outcomeSuccess: { light: "#0E7C42", dark: "#37C77D" },
+  outcomePartial: { light: "#C77A0A", dark: "#E8A22E" },
+  outcomeFail:    { light: "#C0231C", dark: "#EE5B4E" },
 } as const;
 
 const chartTokens = Object.fromEntries(

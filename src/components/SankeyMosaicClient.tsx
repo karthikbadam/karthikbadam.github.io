@@ -479,7 +479,7 @@ export function SankeyMosaicClient({
           })}
           {layout.nodes.map((n, i) => {
             const wideEnough =
-              colSlot(n.col) >= 40 ||
+              (colSlot(n.col) >= 40 && columns.length <= 20) ||
               focusedCol === n.col ||
               n.col === columns.length - 1;
             const showLabel = wideEnough && (n.h >= 11 || n.key === OTHER_KEY);
