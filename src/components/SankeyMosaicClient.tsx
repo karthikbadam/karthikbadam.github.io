@@ -248,9 +248,7 @@ export function SankeyMosaicClient({
 
     (async () => {
       try {
-        // All column node-counts in one query (UNION ALL). Nodes need only
-        // counts — trajectory ids are carried on links, where clicks consume
-        // them — so no ARRAY_AGG here.
+        // Node counts in one query; ids are carried on links only.
         const nodeSql = columns
           .map(
             (c, i) =>
@@ -402,8 +400,7 @@ export function SankeyMosaicClient({
     onLinkClick?.(lk.fromCol, lk.from, lk.to, Array.from(lk.trajIds));
   }
 
-  // Fade ribbons as depth grows — at many columns they're too thin to trace,
-  // so let the node structure carry the read.
+  // Ribbons fade as depth grows — too thin to trace, so nodes carry the read.
   const linkBase =
     columns.length > 16 ? 0.1 : columns.length > 8 ? 0.18 : 0.32;
   const colSlot = (ci: number) =>
@@ -413,9 +410,7 @@ export function SankeyMosaicClient({
     <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
       <svg width={size.w} height={size.h} style={{ display: "block" }}>
         <Group>
-          {/* Per-column focus targets, beneath everything: click a layer's
-              vertical band (its whitespace) to expand it; ribbons/nodes on
-              top keep their own clicks. */}
+          {/* Click a column's band to expand that layer. */}
           {layout.cols.map((c, i) => {
             if (!layout.nodes.some((n) => n.col === i)) return null;
             const left = i === 0 ? 0 : (layout.cols[i - 1].x + layout.cols[i - 1].w + c.x) / 2;
@@ -690,20 +685,13 @@ function readPredicate(selection: VgSelection | null | undefined, ownSource: any
   return parts.length ? parts.join(" AND ") : null;
 }
 
-// Fit-to-width column geometry. Bars stay COL_W wide and gaps stay uniform
-// (pixel-identical to the old fixed layout) until the columns can no longer
-// fit; then bars shrink to COL_W_MIN so everything stays on screen without
-// scrolling. A focused column widens to FOCUS_W and the two ribbon-gaps beside
-// it get FOCUS_GAP_W times the weight of the rest, so it reads as an expanded
-// detail layer while the others compress. Multiples of 4 per the spacing rule.
+// Bars shrink only when columns can't fit; a focused column and its ribbon
+// gaps take extra weight so it expands while the rest compress.
 const COL_W = 14;
 const COL_W_MIN = 4;
 const GAP_MIN = 4;
 const FOCUS_W = 32;
 const FOCUS_GAP_W = 10;
-// Staggered vertical column offsets spread early-dropoff skip-edges across the
-// gutter instead of piling them up. Only worthwhile with few columns; deep
-// sankeys aren't dominated by early dropoff.
 const STAGGER_MAX_COLS = 6;
 const STAGGER_STEP = 12;
 
