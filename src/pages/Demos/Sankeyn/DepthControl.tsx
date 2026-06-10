@@ -52,14 +52,12 @@ export function DepthControl() {
 
   return (
     <Flex align="center" gap={3} w="100%">
-      <Text
-        fontSize="xs"
-        color="fg.muted"
-        textTransform="uppercase"
-        letterSpacing="0.04em"
-        flexShrink={0}
-      >
-        tool calls (n)
+      <Text fontSize="sm" fontWeight="semibold" flexShrink={0}>
+        Tool calls (n ={" "}
+        <Text as="span" fontFamily="mono" color="accent">
+          {depth}
+        </Text>
+        )
       </Text>
       <Text fontFamily="mono" fontSize="xs" color="fg.muted" flexShrink={0}>
         1
@@ -98,29 +96,6 @@ export function DepthControl() {
           clear
         </Text>
       )}
-      <Flex
-        align="baseline"
-        gap={1}
-        bg="bg.muted"
-        borderRadius="md"
-        px={3}
-        py={1}
-        flexShrink={0}
-      >
-        <Text fontFamily="mono" fontSize="xs" color="fg.muted">
-          n =
-        </Text>
-        <Text
-          fontFamily="mono"
-          fontSize="md"
-          fontWeight="bold"
-          color="accent"
-          minW="2ch"
-          textAlign="right"
-        >
-          {depth}
-        </Text>
-      </Flex>
       <Button
         size="sm"
         variant="outline"
