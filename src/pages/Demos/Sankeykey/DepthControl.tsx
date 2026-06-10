@@ -63,7 +63,7 @@ export function DepthControl() {
   const { playing, toggle, stop } = useAutoExpand(maxDepth);
 
   return (
-    <Flex align="center" gap={4} w="100%">
+    <Flex align="center" gap={4} flex="1" minW={0}>
       <IconButton
         aria-label={playing ? "Pause auto-expand" : "Auto-expand n"}
         size="sm"
@@ -75,16 +75,6 @@ export function DepthControl() {
       >
         {playing ? <LuPause /> : <LuPlay />}
       </IconButton>
-      <Text
-        fontFamily="mono"
-        fontStyle="italic"
-        fontWeight="bold"
-        color="accent"
-        fontSize="md"
-        flexShrink={0}
-      >
-        n
-      </Text>
       <Slider.Root
         value={[depth]}
         onValueChange={(d) => {
@@ -105,17 +95,6 @@ export function DepthControl() {
           <Slider.Marks marks={buildMarks(maxDepth)} fontSize="xs" />
         </Slider.Control>
       </Slider.Root>
-      <Text
-        fontFamily="mono"
-        fontSize="md"
-        fontWeight="bold"
-        color="fg"
-        minW="3ch"
-        textAlign="right"
-        flexShrink={0}
-      >
-        {depth}
-      </Text>
       {sankeyActive && (
         <Text
           as="button"
@@ -128,6 +107,22 @@ export function DepthControl() {
           clear
         </Text>
       )}
+      <Flex
+        align="baseline"
+        gap={1}
+        bg="bg.muted"
+        borderRadius="md"
+        px={3}
+        py={1}
+        flexShrink={0}
+      >
+        <Text fontFamily="mono" fontSize="xs" color="fg.muted">
+          n =
+        </Text>
+        <Text fontFamily="mono" fontSize="md" fontWeight="bold" color="accent" minW="2ch" textAlign="right">
+          {depth}
+        </Text>
+      </Flex>
     </Flex>
   );
 }

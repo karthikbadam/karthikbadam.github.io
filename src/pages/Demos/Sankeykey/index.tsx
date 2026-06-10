@@ -62,25 +62,21 @@ function Content() {
       p={4}
       gap={3}
     >
-      {/* Header — title + concept, kept to a readable width. */}
-      <Flex justify="space-between" align="flex-start" gap={4} wrap="wrap">
-        <Box>
-          <Heading as="h1" size="lg" color="accent" mb={1} lineHeight="1">
-            San(key)
-            <chakra.sup fontSize="0.5em" top="-0.7em" ml="1px">
-              n
-            </chakra.sup>
-          </Heading>
-          <Text fontSize="sm" color="fg.muted" maxW="68ch">
-            An agent fires off many tool calls to finish a task. How do you see
-            them all at once? San(key)ⁿ folds the first n calls of every run
-            into a single flow.
-          </Text>
-        </Box>
-        <SourceToggle />
-      </Flex>
+      {/* Header — title + one-line concept. */}
+      <Box>
+        <Heading as="h1" size="lg" color="accent" mb={1} lineHeight="1">
+          San(key)
+          <chakra.sup fontSize="0.5em" top="-0.7em" ml="1px">
+            n
+          </chakra.sup>
+        </Heading>
+        <Text fontSize="sm" color="fg.muted" maxW="80ch">
+          Each agent run is a chain of tool calls. Slide n to unfold the first n
+          calls of every run into one flow.
+        </Text>
+      </Box>
 
-      {/* Control toolbar — the slider is the primary control. */}
+      {/* Control bar — play, the primary n slider, value, and dataset toggle. */}
       <Flex
         align="center"
         gap={4}
@@ -92,6 +88,8 @@ function Content() {
         py={3}
       >
         <DepthControl />
+        <Box w="1px" h="24px" bg="gray.subtle" flexShrink={0} />
+        <SourceToggle />
       </Flex>
 
       {/* Hero chart — fills the remaining height, full width. */}
