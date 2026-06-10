@@ -309,10 +309,14 @@ export function SankeyMosaicClient({
     };
   }, [version, coordinator, table, idCol, columns, whereExpr, selection, maxNodesPerColumn]);
 
-  // Layout — produces nodes and links with x/y/w/h.
+  // Layout — produces nodes and links with x/y/w/h. Dropoff labels occupy a
+  // second header line, so reserve extra top padding for them.
   const layout = useMemo(() => {
-    return layoutSankey(columns, nodes, links, size.w, size.h, orderings, palette, align);
-  }, [columns, nodes, links, size.w, size.h, orderings, palette, align]);
+    return layoutSankey(
+      columns, nodes, links, size.w, size.h, orderings, palette, align,
+      dropoffLabels ? 34 : 22,
+    );
+  }, [columns, nodes, links, size.w, size.h, orderings, palette, align, dropoffLabels]);
 
   // Per-column dropoff counts: trajectories whose link from this column goes
   // straight to the final column, skipping at least one column in between —
@@ -471,14 +475,13 @@ export function SankeyMosaicClient({
               if (!count) return null;
               const colNodes = layout.nodes.filter((n) => n.col === i);
               if (!colNodes.length) return null;
-              const x = colNodes[0].x;
-              const y = Math.max(...colNodes.map((n) => n.y + n.h)) + 14;
-              if (y > size.h - 2) return null;
+              // Render right under the column header — the column itself may
+              // be full-height, leaving no room below the nodes.
               return (
                 <text
                   key={`d-${i}`}
-                  x={x}
-                  y={y}
+                  x={colNodes[0].x}
+                  y={24}
                   fill={chartFgMuted(dark)}
                   textAnchor="start"
                   pointerEvents="none"
@@ -591,6 +594,7 @@ function layoutSankey(
   orderings: Record<string, string[]> | undefined,
   palette: (column: string, value: string) => string,
   align: "bottom" | "top",
+  padTop = 22,
 ): { nodes: NodeLayout[]; links: LinkLayout[] } {
   if (!nodeRows.length || !columns.length) return { nodes: [], links: [] };
   const colW = 14;
@@ -598,7 +602,6 @@ function layoutSankey(
   // (textAnchor='end' with x=n.x - 6) so we don't need extra right margin.
   const padLeft = 8;
   const padRight = 8;
-  const padTop = 22;
   const padBottom = 8;
   const innerW = Math.max(0, width - padLeft - padRight);
   const innerH = Math.max(0, height - padTop - padBottom);

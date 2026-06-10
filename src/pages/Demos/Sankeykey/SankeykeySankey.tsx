@@ -20,7 +20,12 @@ import { OUTCOME_ORDER, categoryFor, categoryHex } from "../TrajectoryAtlas/taxo
 import type { Outcome } from "../TrajectoryAtlas/types";
 import { outcomeColor } from "./outcomeColors";
 
-const ORDERINGS = { outcome: OUTCOME_ORDER as readonly string[] as string[] };
+// Outcome order reversed vs the shared OUTCOME_ORDER: with top-aligned
+// columns, dropoff skip-edges travel the bottom gutter, so success sits at
+// the bottom of the outcome column where the gutter lands without crossing.
+const ORDERINGS = {
+  outcome: [...OUTCOME_ORDER].reverse() as string[],
+};
 
 const stepLabel = (i: number): string => {
   if (i === 0) return "Entry tool";
