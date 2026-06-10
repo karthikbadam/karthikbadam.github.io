@@ -52,7 +52,7 @@ function Content() {
   }
 
   return (
-    <Container maxW="1400px" py={4}>
+    <Container maxW="130ch" py={4}>
       <Box mb={4}>
         <Heading color="accent" mb={1}>
           San(key)
