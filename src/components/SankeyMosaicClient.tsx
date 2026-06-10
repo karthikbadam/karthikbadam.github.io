@@ -248,21 +248,21 @@ export function SankeyMosaicClient({
 
     (async () => {
       try {
-        const [nodeRes, linkRes] = await Promise.all([
-          Promise.all(
-            columns.map((c, i) =>
-              coordinator
-                .query(`
-                  ${trajCte}
-                  SELECT ${col(c.name)} AS key, COUNT(*) AS n,
-                         ARRAY_AGG(traj_id) AS traj_ids
-                  FROM traj_cols
-                  WHERE ${col(c.name)} IS NOT NULL AND ${col(c.name)} <> ${noneStr}
-                  GROUP BY 1 ORDER BY n DESC
-                `)
-                .then((r) => ({ i, rows: arrowRows(r) })),
-            ),
-          ),
+        // All column node-counts in one query (UNION ALL). Nodes need only
+        // counts — trajectory ids are carried on links, where clicks consume
+        // them — so no ARRAY_AGG here.
+        const nodeSql = columns
+          .map(
+            (c, i) =>
+              `SELECT ${i} AS col_i, ${col(c.name)} AS key, COUNT(*) AS n
+               FROM traj_cols WHERE ${realCheck(i)} GROUP BY 1, 2`,
+          )
+          .join("\nUNION ALL\n");
+
+        const [nodeData, linkRes] = await Promise.all([
+          coordinator
+            .query(`${trajCte}\n${nodeSql}\nORDER BY col_i, n DESC`)
+            .then((r) => arrowRows(r)),
           Promise.all(
             linkPairs.map(({ i, j }) => {
               const intermediates: string[] = [];
@@ -286,15 +286,13 @@ export function SankeyMosaicClient({
         if (cancelled) return;
 
         let nextNodes: NodeRow[] = [];
-        for (const { i, rows } of nodeRes) {
-          for (const r of rows) {
-            nextNodes.push({
-              col: i,
-              key: String(r.key ?? ""),
-              count: Number(r.n ?? 0),
-              trajIds: new Set(asArray(r.traj_ids).map(String)),
-            });
-          }
+        for (const r of nodeData) {
+          nextNodes.push({
+            col: Number(r.col_i ?? 0),
+            key: String(r.key ?? ""),
+            count: Number(r.n ?? 0),
+            trajIds: new Set(),
+          });
         }
         let nextLinks: LinkRow[] = [];
         for (const { i, j, rows } of linkRes) {
@@ -468,7 +466,15 @@ export function SankeyMosaicClient({
                 key={`l-${i}`}
                 d={ribbonPath(lk.x0, lk.y0, lk.t0, lk.x1, lk.y1, lk.t1)}
                 fill={lk.color}
-                opacity={accent ? 0.85 : dimmed ? 0.04 : linkBase}
+                opacity={
+                  accent
+                    ? 0.85
+                    : dimmed
+                      ? columns.length > 16
+                        ? linkBase
+                        : 0.04
+                      : linkBase
+                }
                 style={{ cursor: "pointer", transition: "opacity .15s" }}
                 onClick={() => handleClick(lk)}
                 onMouseEnter={() => setHover({ kind: "link", lk })}
