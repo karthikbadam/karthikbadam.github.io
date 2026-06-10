@@ -1,6 +1,7 @@
 // Sankeykey — the centerpiece control bar: play button, wide tick-marked
 // depth slider, and a live "depth survival" readout.
 
+import { useEffect } from "react";
 import { Button, ButtonGroup, Flex, IconButton, Slider, Text } from "@chakra-ui/react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { LuPause, LuPlay } from "react-icons/lu";
@@ -9,13 +10,13 @@ import {
   SOURCES,
   depthAtom,
   loadedSourceAtom,
+  playingAtom,
   resetSignalAtom,
   sankeyActiveAtom,
   survivalAtom,
   switchSourceAtom,
   type SourceKey,
 } from "./atoms";
-import { useAutoExpand } from "./useAutoExpand";
 
 const SOURCE_KEYS = Object.keys(SOURCES) as SourceKey[];
 
@@ -23,6 +24,36 @@ const MARKS = Array.from({ length: MAX_DEPTH }, (_, i) => ({
   value: i + 1,
   label: `${i + 1}`,
 }));
+
+/** Animates the depth slider 1→MAX_DEPTH while playing; stops at the end.
+ * Pressing play at max restarts the sweep from the entry tool. */
+function useAutoExpand(stepMs = 800) {
+  const [playing, setPlaying] = useAtom(playingAtom);
+  const depth = useAtomValue(depthAtom);
+  const setDepth = useSetAtom(depthAtom);
+
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => {
+      setDepth((d) => {
+        if (d >= MAX_DEPTH) {
+          setPlaying(false);
+          return d;
+        }
+        return d + 1;
+      });
+    }, stepMs);
+    return () => clearInterval(id);
+  }, [playing, stepMs, setDepth, setPlaying]);
+
+  const toggle = () => {
+    if (!playing && depth >= MAX_DEPTH) setDepth(1);
+    setPlaying((p) => !p);
+  };
+  const stop = () => setPlaying(false);
+
+  return { playing, toggle, stop };
+}
 
 export function DepthControl() {
   const [depth, setDepth] = useAtom(depthAtom);

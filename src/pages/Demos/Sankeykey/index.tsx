@@ -1,15 +1,46 @@
-import { Box, Container, Heading, Text } from "@chakra-ui/react";
+import { Box, Container, Heading, HStack, Text } from "@chakra-ui/react";
 import { Provider, useAtomValue } from "jotai";
 import { Page } from "../../../components/Page";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
 import {
+  CATEGORY_LABELS,
+  OUTCOME_ORDER,
+  categoryToken,
+} from "../TrajectoryAtlas/taxonomy";
+import {
   initializeSankeykeyAtom,
+  legendCategoriesAtom,
   loadedSourceAtom,
   loadingStateAtom,
 } from "./atoms";
 import { DepthControl } from "./DepthControl";
-import { Legend } from "./Legend";
+import { OUTCOME_PALETTE_KEY } from "./outcomeColors";
 import { SankeykeySankey } from "./SankeykeySankey";
+
+function Chip({ token, label }: { token: string; label: string }) {
+  return (
+    <HStack gap={1.5}>
+      <Box w="10px" h="10px" borderRadius="sm" bg={token} />
+      <Text>{label}</Text>
+    </HStack>
+  );
+}
+
+function Legend() {
+  const categories = useAtomValue(legendCategoriesAtom);
+
+  return (
+    <HStack flexWrap="wrap" gap={3} fontSize="xs" color="fg.muted">
+      {categories.map((cat) => (
+        <Chip key={cat} token={categoryToken(cat)} label={CATEGORY_LABELS[cat]} />
+      ))}
+      <Box w="1px" alignSelf="stretch" bg="gray.subtle" />
+      {OUTCOME_ORDER.map((o) => (
+        <Chip key={o} token={`chart.${OUTCOME_PALETTE_KEY[o]}`} label={o} />
+      ))}
+    </HStack>
+  );
+}
 
 function Content() {
   useAtomValue(initializeSankeykeyAtom);
