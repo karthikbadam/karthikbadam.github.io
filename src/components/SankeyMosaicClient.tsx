@@ -745,52 +745,73 @@ function layoutSankey(
     }
   }
 
-  // Layout links — sub-bands proportional within source/target.
-  const fromOff = new Map<string, number>();
-  const toOff = new Map<string, number>();
-  // Sort links in column-major order so layout is deterministic.
-  const sortedLinks = linkRows.slice().sort((a, b) => {
-    if (a.fromCol !== b.fromCol) return a.fromCol - b.fromCol;
-    const srcA = nodeIndex.get(`${a.fromCol}|${a.from}`);
-    const srcB = nodeIndex.get(`${b.fromCol}|${b.from}`);
-    const dstA = nodeIndex.get(`${a.toCol}|${a.to}`);
-    const dstB = nodeIndex.get(`${b.toCol}|${b.to}`);
-    if (srcA && srcB && srcA.y !== srcB.y) return srcA.y - srcB.y;
-    if (dstA && dstB) return dstA.y - dstB.y;
-    return 0;
-  });
+  // Layout links — sub-bands proportional within source/target. Attachment
+  // offsets are assigned per node: a source's outgoing ribbons attach
+  // top-to-bottom in destination-position order, a destination's incoming
+  // ribbons in source-position order — so ribbons never twist at a node
+  // boundary (skip-edges used to braid here, attaching in column order).
+  const valid = linkRows.filter(
+    (lk) =>
+      nodeIndex.has(`${lk.fromCol}|${lk.from}`) &&
+      nodeIndex.has(`${lk.toCol}|${lk.to}`),
+  );
+  const srcNode = (lk: LinkRow) => nodeIndex.get(`${lk.fromCol}|${lk.from}`)!;
+  const dstNode = (lk: LinkRow) => nodeIndex.get(`${lk.toCol}|${lk.to}`)!;
 
-  const linkLayouts: LinkLayout[] = [];
-  for (const lk of sortedLinks) {
-    const src = nodeIndex.get(`${lk.fromCol}|${lk.from}`);
-    const dst = nodeIndex.get(`${lk.toCol}|${lk.to}`);
-    if (!src || !dst) continue;
-    const srcKey = `${lk.fromCol}|${lk.from}`;
-    const dstKey = `${lk.toCol}|${lk.to}`;
-    const srcSum = src.count || 1;
-    const dstSum = dst.count || 1;
-    const srcThickness = (lk.count / srcSum) * src.h;
-    const dstThickness = (lk.count / dstSum) * dst.h;
-    const srcOff = fromOff.get(srcKey) ?? 0;
-    const dstOff = toOff.get(dstKey) ?? 0;
-    linkLayouts.push({
+  const srcOffs = new Map<LinkRow, number>();
+  const bySrc = new Map<string, LinkRow[]>();
+  for (const lk of valid) {
+    const k = `${lk.fromCol}|${lk.from}`;
+    (bySrc.get(k) ?? bySrc.set(k, []).get(k)!).push(lk);
+  }
+  for (const group of bySrc.values()) {
+    group.sort((a, b) => dstNode(a).y - dstNode(b).y || dstNode(a).x - dstNode(b).x);
+    let off = 0;
+    for (const lk of group) {
+      srcOffs.set(lk, off);
+      const src = srcNode(lk);
+      off += (lk.count / (src.count || 1)) * src.h;
+    }
+  }
+
+  const dstOffs = new Map<LinkRow, number>();
+  const byDst = new Map<string, LinkRow[]>();
+  for (const lk of valid) {
+    const k = `${lk.toCol}|${lk.to}`;
+    (byDst.get(k) ?? byDst.set(k, []).get(k)!).push(lk);
+  }
+  for (const group of byDst.values()) {
+    group.sort((a, b) => srcNode(a).y - srcNode(b).y || srcNode(a).x - srcNode(b).x);
+    let off = 0;
+    for (const lk of group) {
+      dstOffs.set(lk, off);
+      const dst = dstNode(lk);
+      off += (lk.count / (dst.count || 1)) * dst.h;
+    }
+  }
+
+  const linkLayouts: LinkLayout[] = valid.map((lk) => {
+    const src = srcNode(lk);
+    const dst = dstNode(lk);
+    return {
       ...lk,
       x0: src.x + src.w,
-      y0: src.y + srcOff,
+      y0: src.y + (srcOffs.get(lk) ?? 0),
       x1: dst.x,
-      y1: dst.y + dstOff,
-      t0: srcThickness,
-      t1: dstThickness,
+      y1: dst.y + (dstOffs.get(lk) ?? 0),
+      t0: (lk.count / (src.count || 1)) * src.h,
+      t1: (lk.count / (dst.count || 1)) * dst.h,
       // Color the ribbon by its DESTINATION node's colour. This makes the
       // sankey read as "where did this lead?" — outcomes (success/fail/partial)
       // get strong distinct colours flowing INTO them; intermediate columns
       // inherit the next-step's tool colour. Falls back to the destination's
       // resolved node colour when the dst was collapsed into "other".
       color: dst.color,
-    });
-    fromOff.set(srcKey, srcOff + srcThickness);
-    toOff.set(dstKey, dstOff + dstThickness);
-  }
+    };
+  });
+
+  // Paint big bands first so thin ribbons draw on top and stay traceable.
+  linkLayouts.sort((a, b) => b.count - a.count);
 
   return { nodes: orderedNodes, links: linkLayouts };
 }
