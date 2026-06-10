@@ -25,11 +25,8 @@ import {
 import type { Outcome } from "../../../components/taxonomy";
 import { outcomeColor } from "./outcomeColors";
 
-// Outcome order reversed vs the shared OUTCOME_ORDER: with top-aligned
-// columns, dropoff skip-edges travel the bottom gutter, so success sits at
-// the bottom of the outcome column where the gutter lands without crossing.
-const ORDERINGS = {
-  outcome: [...OUTCOME_ORDER].reverse() as string[],
+const ORDERINGS: Record<string, string[]> = {
+  outcome: [...OUTCOME_ORDER],
 };
 
 export function SankeykeySankey() {
@@ -80,7 +77,7 @@ export function SankeykeySankey() {
       orderings={ORDERINGS}
       dark={dark}
       maxNodesPerColumn={11}
-      align="top"
+      align="bottom"
       dropoffLabels
       nodeOrder="barycenter"
       resetSignal={resetSignal}
