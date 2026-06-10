@@ -22,8 +22,8 @@ import { SourceToggle } from "./SourceToggle";
 
 function Chip({ token, label }: { token: string; label: string }) {
   return (
-    <HStack gap={1.5}>
-      <Box w="9px" h="9px" borderRadius="sm" bg={token} />
+    <HStack gap={1}>
+      <Box w="8px" h="8px" borderRadius="sm" bg={token} />
       <Text>{label}</Text>
     </HStack>
   );

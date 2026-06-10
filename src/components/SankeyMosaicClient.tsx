@@ -756,7 +756,7 @@ function layoutSankey(
   const padLeft = 8;
   const padRight = 8;
   // Dropoff labels occupy a second header line below the column headers.
-  const padTop = dropoffLabels ? 34 : 22;
+  const padTop = dropoffLabels ? 36 : 24;
   const padBottom = 8;
   const innerW = Math.max(0, width - padLeft - padRight);
   const innerH = Math.max(0, height - padTop - padBottom);
@@ -777,7 +777,7 @@ function layoutSankey(
   for (const n of nodeRows) {
     (byCol[n.col] ??= []).push(n);
   }
-  const gapY = 6;
+  const gapY = 8;
 
   // Sort each column.
   for (let ci = 0; ci < nCols; ci++) {
