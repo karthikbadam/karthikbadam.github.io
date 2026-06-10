@@ -2,7 +2,11 @@ import { Box, Container, Heading, Text } from "@chakra-ui/react";
 import { Provider, useAtomValue } from "jotai";
 import { Page } from "../../../components/Page";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
-import { initializeSankeykeyAtom, loadingStateAtom } from "./atoms";
+import {
+  initializeSankeykeyAtom,
+  loadedSourceAtom,
+  loadingStateAtom,
+} from "./atoms";
 import { DepthControl } from "./DepthControl";
 import { Legend } from "./Legend";
 import { SankeykeySankey } from "./SankeykeySankey";
@@ -10,6 +14,7 @@ import { SankeykeySankey } from "./SankeykeySankey";
 function Content() {
   useAtomValue(initializeSankeykeyAtom);
   const state = useAtomValue(loadingStateAtom);
+  const loadedSource = useAtomValue(loadedSourceAtom);
 
   if (state.status !== "ready") {
     return <LoadingIndicator state={state} title="Loading Sankeykey" />;
@@ -22,8 +27,8 @@ function Content() {
           Sankeykey
         </Heading>
         <Text fontSize="sm" color="fg.muted">
-          DeepSWE · Kimi-K2 rollouts — i-th tool call → outcome. Slide to
-          expand how deep into each rollout the sankey looks.
+          Agent rollouts — i-th tool call → outcome. Slide to expand how deep
+          into each rollout the sankey looks.
         </Text>
       </Box>
       <DepthControl />
@@ -37,7 +42,9 @@ function Content() {
         borderRadius="lg"
         bg="bg"
       >
-        <SankeykeySankey />
+        {/* Keyed on the loaded source so the chart re-queries only after the
+            table swap has completed. */}
+        <SankeykeySankey key={loadedSource ?? "init"} />
       </Box>
       <Box mt={2} px={1}>
         <Legend />

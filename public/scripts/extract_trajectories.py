@@ -575,6 +575,7 @@ def main() -> int:
     p.add_argument("--outcome-mode", choices=["score+match", "terminal-tool", "auto"], default="auto")
 
     p.add_argument("--flat-csv", type=Path, default=None)
+    p.add_argument("--flat-csv-where", default=None)
     p.add_argument("--batch-size", type=int, default=500)
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--print-summary", action=argparse.BooleanOptionalAction, default=True)
@@ -743,8 +744,9 @@ def main() -> int:
         import duckdb
 
         cols = ", ".join(f"step_{i}" for i in range(1, MAX_TOOL_STEPS + 1))
+        where = f" WHERE {args.flat_csv_where}" if args.flat_csv_where else ""
         duckdb.connect().execute(
-            f"COPY (SELECT id, outcome, {cols} FROM read_parquet('{args.output}')) "
+            f"COPY (SELECT id, outcome, {cols} FROM read_parquet('{args.output}'){where}) "
             f"TO '{args.flat_csv}' (HEADER, DELIMITER ',')"
         )
         if args.print_summary:

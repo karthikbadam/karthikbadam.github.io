@@ -6,7 +6,7 @@ import {
   categoryToken,
 } from "../TrajectoryAtlas/taxonomy";
 import { legendCategoriesAtom } from "./atoms";
-import { OUTCOME_PALETTE_KEY } from "./SankeykeySankey";
+import { OUTCOME_PALETTE_KEY } from "./outcomeColors";
 
 function Chip({ token, label }: { token: string; label: string }) {
   return (

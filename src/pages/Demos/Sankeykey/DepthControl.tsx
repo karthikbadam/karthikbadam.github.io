@@ -1,17 +1,23 @@
 // Sankeykey — the centerpiece control bar: play button, wide tick-marked
 // depth slider, and a live "depth survival" readout.
 
-import { Button, Flex, IconButton, Slider, Text } from "@chakra-ui/react";
+import { Button, ButtonGroup, Flex, IconButton, Slider, Text } from "@chakra-ui/react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { LuPause, LuPlay } from "react-icons/lu";
 import {
   MAX_DEPTH,
+  SOURCES,
   depthAtom,
+  loadedSourceAtom,
   resetSignalAtom,
   sankeyActiveAtom,
   survivalAtom,
+  switchSourceAtom,
+  type SourceKey,
 } from "./atoms";
 import { useAutoExpand } from "./useAutoExpand";
+
+const SOURCE_KEYS = Object.keys(SOURCES) as SourceKey[];
 
 const MARKS = Array.from({ length: MAX_DEPTH }, (_, i) => ({
   value: i + 1,
@@ -23,6 +29,8 @@ export function DepthControl() {
   const survival = useAtomValue(survivalAtom);
   const sankeyActive = useAtomValue(sankeyActiveAtom);
   const setResetSignal = useSetAtom(resetSignalAtom);
+  const loadedSource = useAtomValue(loadedSourceAtom);
+  const switchSource = useSetAtom(switchSourceAtom);
   const { playing, toggle, stop } = useAutoExpand();
 
   const pct =
@@ -99,6 +107,22 @@ export function DepthControl() {
           Clear selection
         </Button>
       )}
+      <ButtonGroup size="xs" variant="outline" attached ml="auto">
+        {SOURCE_KEYS.map((key) => {
+          const active = key === loadedSource;
+          return (
+            <Button
+              key={key}
+              onClick={() => switchSource(key)}
+              color={active ? "gray.contrast" : "accent"}
+              bg={active ? "accent" : undefined}
+              borderColor="accent"
+            >
+              {SOURCES[key].label}
+            </Button>
+          );
+        })}
+      </ButtonGroup>
     </Flex>
   );
 }
