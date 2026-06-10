@@ -84,6 +84,8 @@ export function SankeykeySankey() {
       orderings={ORDERINGS}
       dark={dark}
       maxNodesPerColumn={11}
+      align="top"
+      dropoffLabels
       resetSignal={resetSignal}
       onSelectionStateChange={setSankeyActive}
     />

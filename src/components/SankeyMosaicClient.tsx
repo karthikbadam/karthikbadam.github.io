@@ -59,6 +59,13 @@ export interface SankeyMosaicClientProps {
   dark?: boolean;
   /** Cap on nodes per column. Long tail collapsed into a single 'other (N)' node. */
   maxNodesPerColumn?: number;
+  /** Column alignment. "bottom" (default) leaves whitespace at the top for
+   * skip-edges; "top" pins the biggest node of every column to a shared top
+   * line and routes skip-edges through a bottom gutter instead. */
+  align?: "bottom" | "top";
+  /** Annotate each non-final column with the number of trajectories that
+   * end there (skip-edges straight to the final column). */
+  dropoffLabels?: boolean;
   /** Trajectory ids to highlight (e.g. clicked-row in the trajectory table).
    * Ribbons whose trajectory set intersects this are emphasised; the rest
    * dim. */
@@ -128,6 +135,8 @@ export function SankeyMosaicClient({
   orderings,
   dark = false,
   maxNodesPerColumn,
+  align = "bottom",
+  dropoffLabels = false,
   highlightedTrajIds,
   onLinkClick,
   resetSignal,
@@ -302,8 +311,23 @@ export function SankeyMosaicClient({
 
   // Layout — produces nodes and links with x/y/w/h.
   const layout = useMemo(() => {
-    return layoutSankey(columns, nodes, links, size.w, size.h, orderings, palette);
-  }, [columns, nodes, links, size.w, size.h, orderings, palette]);
+    return layoutSankey(columns, nodes, links, size.w, size.h, orderings, palette, align);
+  }, [columns, nodes, links, size.w, size.h, orderings, palette, align]);
+
+  // Per-column dropoff counts: trajectories whose link from this column goes
+  // straight to the final column, skipping at least one column in between —
+  // i.e. they stop calling tools here.
+  const dropoffs = useMemo(() => {
+    if (!dropoffLabels) return new Map<number, number>();
+    const last = columns.length - 1;
+    const m = new Map<number, number>();
+    for (const lk of links) {
+      if (lk.toCol === last && lk.fromCol < last - 1) {
+        m.set(lk.fromCol, (m.get(lk.fromCol) ?? 0) + lk.count);
+      }
+    }
+    return m;
+  }, [dropoffLabels, links, columns.length]);
 
   function isSelected(lk: LinkRow): boolean {
     return (
@@ -441,6 +465,29 @@ export function SankeyMosaicClient({
               </text>
             );
           })}
+          {dropoffLabels &&
+            columns.map((_, i) => {
+              const count = dropoffs.get(i);
+              if (!count) return null;
+              const colNodes = layout.nodes.filter((n) => n.col === i);
+              if (!colNodes.length) return null;
+              const x = colNodes[0].x;
+              const y = Math.max(...colNodes.map((n) => n.y + n.h)) + 14;
+              if (y > size.h - 2) return null;
+              return (
+                <text
+                  key={`d-${i}`}
+                  x={x}
+                  y={y}
+                  fill={chartFgMuted(dark)}
+                  textAnchor="start"
+                  pointerEvents="none"
+                  style={chartValueStyle}
+                >
+                  ↳ {count.toLocaleString()} end here
+                </text>
+              );
+            })}
         </Group>
       </svg>
       {hover?.kind === "link" && (
@@ -543,6 +590,7 @@ function layoutSankey(
   height: number,
   orderings: Record<string, string[]> | undefined,
   palette: (column: string, value: string) => string,
+  align: "bottom" | "top",
 ): { nodes: NodeLayout[]; links: LinkLayout[] } {
   if (!nodeRows.length || !columns.length) return { nodes: [], links: [] };
   const colW = 14;
@@ -598,10 +646,11 @@ function layoutSankey(
   }
   if (!Number.isFinite(unit) || unit <= 0) unit = innerH;
 
-  // Bottom-align each column. Largest column reaches the top because its
-  // total fills `innerH`; shorter columns leave whitespace at the TOP of the
-  // chart, which is exactly where skip-edges from earlier columns to later
-  // ones need to flow without crossing intermediate nodes.
+  // Align each column. The largest column fills `innerH` either way; shorter
+  // columns leave whitespace on the opposite side, which is exactly where
+  // skip-edges from earlier columns to later ones flow without crossing
+  // intermediate nodes: bottom-aligned columns route skips over the TOP,
+  // top-aligned columns collect them in a bottom gutter.
   const orderedNodes: NodeLayout[] = [];
   const nodeIndex = new Map<string, NodeLayout>(); // key: "col|key"
   const bottomY = padTop + innerH;
@@ -612,7 +661,7 @@ function layoutSankey(
     const colTotal = list.reduce((a, n) => a + n.count, 0);
     const nGaps = Math.max(0, list.length - 1);
     const colHeight = colTotal * unit + nGaps * gapY;
-    let y = bottomY - colHeight;
+    let y = align === "top" ? padTop : bottomY - colHeight;
     for (const n of list) {
       const h = Math.max(1, n.count * unit);
       const x = padLeft + ci * (colW + gapX);
