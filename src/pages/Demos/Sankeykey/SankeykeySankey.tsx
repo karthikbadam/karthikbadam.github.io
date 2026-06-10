@@ -27,11 +27,13 @@ const ORDERINGS = {
   outcome: [...OUTCOME_ORDER].reverse() as string[],
 };
 
-const stepLabel = (i: number): string => {
+// Compact ordinals at high depth so headers can't collide at narrow gaps.
+const stepLabel = (i: number, depth: number): string => {
+  const ord =
+    i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `${i + 1}th`;
+  if (depth > 5) return ord;
   if (i === 0) return "Entry tool";
-  if (i === 1) return "2nd tool";
-  if (i === 2) return "3rd tool";
-  return `${i + 1}th tool`;
+  return `${ord} tool`;
 };
 
 export function SankeykeySankey() {
@@ -46,7 +48,7 @@ export function SankeykeySankey() {
     () => [
       ...Array.from({ length: depth }, (_, i) => ({
         name: `step_${i + 1}`,
-        label: stepLabel(i),
+        label: stepLabel(i, depth),
         expr: `any_value(step_${i + 1})`,
       })),
       { name: "outcome", label: "Outcome", expr: "any_value(outcome)" },
