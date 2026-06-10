@@ -19,17 +19,24 @@ export const MAX_DEPTH = 8;
 // a third-party CDN — the page is fully self-hosted.
 export type SourceKey = "deepswe" | "qwen-math" | "qwen-hotpotqa";
 
-export const SOURCES: Record<SourceKey, { label: string; url: string }> = {
+// `short` is the compact toggle label; `label` is the full descriptive name.
+export const SOURCES: Record<
+  SourceKey,
+  { label: string; short: string; url: string }
+> = {
   deepswe: {
     label: "DeepSWE · Kimi-K2",
+    short: "deepswe",
     url: "/data/trajectory-atlas/deepswe-kimi-flat.csv",
   },
   "qwen-math": {
     label: "Qwen · math",
+    short: "qwen-math",
     url: "/data/trajectory-atlas/qwen-math-flat.csv",
   },
   "qwen-hotpotqa": {
     label: "Qwen · hotpotqa",
+    short: "qwen-hotpotqa",
     url: "/data/trajectory-atlas/qwen-hotpotqa-flat.csv",
   },
 };
@@ -61,6 +68,17 @@ export const loadedSourceAtom = atom<SourceKey | null>(null);
 // Computed once at init so the readout tracks slider drags synchronously.
 export const survivalAtom = atom<Survival | null>(null);
 export const legendCategoriesAtom = atom<Category[]>([]);
+
+/** Deepest tool call actually present in the loaded dataset: the largest k
+ * where at least one rollout makes a k-th call. The slider caps here (not at
+ * the hard MAX_DEPTH column ceiling) so the control fits the data. */
+export const maxDepthAtom = atom((get) => {
+  const s = get(survivalAtom);
+  if (!s) return MAX_DEPTH;
+  let k = 0;
+  for (let i = 0; i < s.ge.length; i++) if (s.ge[i] > 0) k = i + 1;
+  return Math.min(MAX_DEPTH, Math.max(1, k));
+});
 
 async function loadSurvival(coord: Coordinator): Promise<Survival> {
   const ge = STEP_COLS.map(
@@ -118,6 +136,8 @@ export const switchSourceAtom = atom(null, async (get, set, src: SourceKey) => {
     const stats = await loadStats(coord);
     set(survivalAtom, stats.survival);
     set(legendCategoriesAtom, stats.categories);
+    // Clamp depth so it never exceeds the new dataset's real max.
+    set(depthAtom, (d) => Math.min(d, get(maxDepthAtom)));
     set(resetSignalAtom, (n) => n + 1);
     set(loadedSourceAtom, src);
   } catch (err) {

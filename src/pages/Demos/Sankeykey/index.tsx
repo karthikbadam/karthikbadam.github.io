@@ -1,4 +1,4 @@
-import { Box, Container, Heading, HStack, Text } from "@chakra-ui/react";
+import { Box, chakra, Container, Heading, HStack, Text } from "@chakra-ui/react";
 import { Provider, useAtomValue } from "jotai";
 import { Page } from "../../../components/Page";
 import { LoadingIndicator } from "../../../components/LoadingIndicator";
@@ -52,19 +52,22 @@ function Content() {
   }
 
   return (
-    <Container maxW="100ch" py={4}>
+    <Container maxW="1400px" py={4}>
       <Box mb={4}>
         <Heading color="accent" mb={1}>
-          Sankeykey
+          San(key)
+          <chakra.sup fontSize="0.55em" top="-0.6em">
+            n
+          </chakra.sup>
         </Heading>
         <Text fontSize="sm" color="fg.muted">
-          Agent rollouts — i-th tool call → outcome. Slide to expand how deep
-          into each rollout the sankey looks.
+          AI agents solve tasks by calling tools step by step. Each path is one
+          agent run; raise n to reveal the first n tool calls across every run.
         </Text>
       </Box>
       <DepthControl />
       <Box
-        mt={3}
+        mt={4}
         h={{ base: "420px", md: "60vh" }}
         minH="380px"
         p={2}
