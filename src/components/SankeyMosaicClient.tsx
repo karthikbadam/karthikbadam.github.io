@@ -678,6 +678,11 @@ const COL_W_MIN = 4;
 const GAP_MIN = 4;
 const FOCUS_W = 32;
 const FOCUS_GAP_W = 10;
+// Staggered vertical column offsets spread early-dropoff skip-edges across the
+// gutter instead of piling them up. Only worthwhile with few columns; deep
+// sankeys aren't dominated by early dropoff.
+const STAGGER_MAX_COLS = 6;
+const STAGGER_STEP = 12;
 
 interface ColLayout {
   x: number;
@@ -750,6 +755,11 @@ function layoutSankey(
       ? focusedCol
       : null;
   const colGeom = columnGeometry(nCols, innerW, padLeft, fc);
+
+  const stagger =
+    align === "top" && nCols >= 2 && nCols <= STAGGER_MAX_COLS ? STAGGER_STEP : 0;
+  const staggerOffset = (ci: number) => (nCols - 1 - ci) * stagger;
+  const maxStagger = stagger * (nCols - 1);
 
   // Group nodes by column, apply ordering.
   const byCol: Record<number, NodeRow[]> = {};
@@ -842,10 +852,10 @@ function layoutSankey(
     const total = list.reduce((a, n) => a + n.count, 0);
     if (total <= 0) continue;
     const nGaps = Math.max(0, list.length - 1);
-    const colUnit = Math.max(1, innerH - nGaps * gapY) / total;
+    const colUnit = Math.max(1, innerH - maxStagger - nGaps * gapY) / total;
     if (colUnit < unit) unit = colUnit;
   }
-  if (!Number.isFinite(unit) || unit <= 0) unit = innerH;
+  if (!Number.isFinite(unit) || unit <= 0) unit = Math.max(1, innerH - maxStagger);
 
   // Align each column. The largest column fills `innerH` either way; shorter
   // columns leave whitespace on the opposite side, which is exactly where
@@ -862,7 +872,7 @@ function layoutSankey(
     const colTotal = list.reduce((a, n) => a + n.count, 0);
     const nGaps = Math.max(0, list.length - 1);
     const colHeight = colTotal * unit + nGaps * gapY;
-    let y = align === "top" ? padTop : bottomY - colHeight;
+    let y = align === "top" ? padTop + staggerOffset(ci) : bottomY - colHeight;
     const geom = colGeom[ci];
     for (const n of list) {
       const h = Math.max(1, n.count * unit);
