@@ -3,7 +3,7 @@
 // since there are no sibling panels to drive. Ribbon clicks still highlight
 // locally inside SankeyMosaicClient.
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useColorMode } from "../../../components/ui/color-mode";
 import {
@@ -40,17 +40,22 @@ export function SankeykeySankey() {
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
 
+  const [renderDepth, setRenderDepth] = useState(depth);
+  useEffect(() => {
+    const id = setTimeout(() => setRenderDepth(depth), 150);
+    return () => clearTimeout(id);
+  }, [depth]);
+
   const columns: SankeyColumnSpec[] = useMemo(
     () => [
-      ...Array.from({ length: depth }, (_, i) => ({
+      ...Array.from({ length: renderDepth }, (_, i) => ({
         name: `step_${i + 1}`,
-        // Compact ordinals at high depth so headers fit the narrow gaps.
-        label: stepLabel(i, depth > 5),
+        label: stepLabel(i, renderDepth > 5),
         expr: `any_value(step_${i + 1})`,
       })),
       { name: "outcome", label: "Outcome", expr: "any_value(outcome)" },
     ],
-    [depth],
+    [renderDepth],
   );
 
   const palette = useMemo(

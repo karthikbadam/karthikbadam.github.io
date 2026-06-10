@@ -231,9 +231,14 @@ export function SankeyMosaicClient({
     // trajectories whose values at i and j are non-NONE AND whose
     // intermediate columns are all NONE — i.e. trajectories that "skip"
     // through (none) on intermediate columns and want a direct edge.
+    // `(none)` is terminal: once a run stops it stays stopped, so the only
+    // real edges are adjacent columns plus each column's dropoff straight to
+    // the final column. That keeps link queries O(n) instead of O(n²).
+    const lastCol = columns.length - 1;
     const linkPairs: Array<{ i: number; j: number }> = [];
-    for (let i = 0; i < columns.length - 1; i++) {
-      for (let j = i + 1; j < columns.length; j++) linkPairs.push({ i, j });
+    for (let i = 0; i < lastCol; i++) {
+      linkPairs.push({ i, j: i + 1 });
+      if (i + 1 < lastCol) linkPairs.push({ i, j: lastCol });
     }
     const noneStr = `'${NONE_VALUE.replace(/'/g, "''")}'`;
     const realCheck = (k: number) =>
@@ -399,6 +404,13 @@ export function SankeyMosaicClient({
     onLinkClick?.(lk.fromCol, lk.from, lk.to, Array.from(lk.trajIds));
   }
 
+  // Fade ribbons as depth grows — at many columns they're too thin to trace,
+  // so let the node structure carry the read.
+  const linkBase =
+    columns.length > 16 ? 0.1 : columns.length > 8 ? 0.18 : 0.32;
+  const colSlot = (ci: number) =>
+    (layout.cols[ci + 1]?.x ?? size.w) - (layout.cols[ci]?.x ?? 0);
+
   return (
     <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
       <svg width={size.w} height={size.h} style={{ display: "block" }}>
@@ -456,7 +468,7 @@ export function SankeyMosaicClient({
                 key={`l-${i}`}
                 d={ribbonPath(lk.x0, lk.y0, lk.t0, lk.x1, lk.y1, lk.t1)}
                 fill={lk.color}
-                opacity={accent ? 0.85 : dimmed ? 0.04 : 0.32}
+                opacity={accent ? 0.85 : dimmed ? 0.04 : linkBase}
                 style={{ cursor: "pointer", transition: "opacity .15s" }}
                 onClick={() => handleClick(lk)}
                 onMouseEnter={() => setHover({ kind: "link", lk })}
@@ -465,9 +477,11 @@ export function SankeyMosaicClient({
             );
           })}
           {layout.nodes.map((n, i) => {
-            // Drop labels on rectangles too short to fit the text — they
-            // collide otherwise. The "other" node is small but always shown.
-            const showLabel = n.h >= 11 || n.key === OTHER_KEY;
+            const wideEnough =
+              colSlot(n.col) >= 40 ||
+              focusedCol === n.col ||
+              n.col === columns.length - 1;
+            const showLabel = wideEnough && (n.h >= 11 || n.key === OTHER_KEY);
             const fit = fitNodeLabel(
               n.label,
               n.count.toLocaleString(),
@@ -525,10 +539,12 @@ export function SankeyMosaicClient({
             if (!firstNode) return null;
             const lastCol = i === columns.length - 1;
             const focused = focusedCol === i;
-            // Hide crowded headers when columns compress; always keep the
-            // focused column, the first, and the last.
-            const slot = (layout.cols[i + 1]?.x ?? size.w) - layout.cols[i].x;
-            if (!focused && !lastCol && i !== 0 && slot < 28) return null;
+            const headerStep =
+              columns.length > 30 ? 5 : columns.length > 16 ? 2 : 1;
+            const keep =
+              focused || lastCol || i === 0 || i % headerStep === 0;
+            if (!keep || (!focused && !lastCol && i !== 0 && colSlot(i) < 28))
+              return null;
             const labelText = c.label ?? c.name;
             const x = lastCol ? firstNode.x + firstNode.w : firstNode.x;
             const anchor = lastCol ? "end" : "start";
@@ -552,6 +568,7 @@ export function SankeyMosaicClient({
             );
           })}
           {dropoffLabels &&
+            columns.length <= 10 &&
             columns.map((_, i) => {
               const count = dropoffs.get(i);
               if (!count) return null;
