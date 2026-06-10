@@ -16,15 +16,24 @@ import {
   resetSignalAtom,
   sankeyActiveAtom,
 } from "./atoms";
-import {
-  OUTCOME_ORDER,
-  categoryFor,
-  categoryHex,
-  outcomeHex,
-} from "../TrajectoryAtlas/taxonomy";
+import { OUTCOME_ORDER, categoryFor, categoryHex } from "../TrajectoryAtlas/taxonomy";
 import type { Outcome } from "../TrajectoryAtlas/types";
+import { chartPalette } from "../../../theme";
 
 const ORDERINGS = { outcome: OUTCOME_ORDER as readonly string[] as string[] };
+
+// Local outcome colours: green = success, red = fail. (The shared taxonomy
+// uses blue for success; here the verdict should read at a glance.)
+export const OUTCOME_PALETTE_KEY: Record<Outcome, keyof typeof chartPalette> = {
+  success: "green",
+  partial: "orange",
+  fail: "red",
+};
+
+function outcomeColor(o: Outcome, dark: boolean): string {
+  const v = chartPalette[OUTCOME_PALETTE_KEY[o] ?? "gray"];
+  return dark ? v.dark : v.light;
+}
 
 const stepLabel = (i: number): string => {
   if (i === 0) return "Entry tool";
@@ -55,7 +64,7 @@ export function SankeykeySankey() {
 
   const palette = useMemo(
     () => (column: string, value: string): string => {
-      if (column === "outcome") return outcomeHex(value as Outcome, dark);
+      if (column === "outcome") return outcomeColor(value as Outcome, dark);
       if (value === "(none)") return dark ? "#4a5568" : "#a0aec0";
       return categoryHex(categoryFor(value), dark);
     },

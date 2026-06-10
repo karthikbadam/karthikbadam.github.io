@@ -4,9 +4,9 @@ import {
   CATEGORY_LABELS,
   OUTCOME_ORDER,
   categoryToken,
-  outcomeToken,
 } from "../TrajectoryAtlas/taxonomy";
 import { legendCategoriesAtom } from "./atoms";
+import { OUTCOME_PALETTE_KEY } from "./SankeykeySankey";
 
 function Chip({ token, label }: { token: string; label: string }) {
   return (
@@ -27,7 +27,7 @@ export function Legend() {
       ))}
       <Box w="1px" alignSelf="stretch" bg="gray.subtle" />
       {OUTCOME_ORDER.map((o) => (
-        <Chip key={o} token={outcomeToken(o)} label={o} />
+        <Chip key={o} token={`chart.${OUTCOME_PALETTE_KEY[o]}`} label={o} />
       ))}
     </HStack>
   );
