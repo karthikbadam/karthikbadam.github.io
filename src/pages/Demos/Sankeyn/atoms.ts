@@ -1,4 +1,4 @@
-// Sankeykey — minimal data layer. One CSV, one table, no crossfilter:
+// Sankeyn — minimal data layer. One CSV, one table, no crossfilter:
 // the page exists to showcase the depth-expandable sankey on its own.
 
 import { atom } from "jotai";
@@ -141,7 +141,7 @@ export const switchSourceAtom = atom(null, async (get, set, src: SourceKey) => {
     set(resetSignalAtom, (n) => n + 1);
     set(loadedSourceAtom, src);
   } catch (err) {
-    console.error("Sankeykey source switch failed:", err);
+    console.error("Sankeyn source switch failed:", err);
   }
 });
 
@@ -153,7 +153,7 @@ async function loadStats(coord: Coordinator) {
   return { survival, categories };
 }
 
-export const initializeSankeykeyAtom = atom(null, async (get, set) => {
+export const initializeSankeynAtom = atom(null, async (get, set) => {
   if (get(coordinatorAtom)) return;
   const src: SourceKey = "deepswe";
 
@@ -181,7 +181,7 @@ export const initializeSankeykeyAtom = atom(null, async (get, set) => {
     set(loadedSourceAtom, src);
     set(loadingStateAtom, { status: "ready" });
   } catch (err) {
-    console.error("Sankeykey init failed:", err);
+    console.error("Sankeyn init failed:", err);
     set(loadingStateAtom, {
       status: "error",
       message: err instanceof Error ? err.message : "Unknown error",
@@ -189,6 +189,6 @@ export const initializeSankeykeyAtom = atom(null, async (get, set) => {
   }
 });
 
-initializeSankeykeyAtom.onMount = (trigger) => {
+initializeSankeynAtom.onMount = (trigger) => {
   trigger();
 };

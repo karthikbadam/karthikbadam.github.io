@@ -1,5 +1,5 @@
 // Agent-trajectory taxonomy + colour mapping, shared by the demos that
-// visualize rollouts (Trajectory Atlas, Sankeykey). Categories map to Chakra
+// visualize rollouts (Trajectory Atlas, Sankeyn). Categories map to Chakra
 // `chart.*` tokens defined in src/theme.ts. The hex helpers below are for
 // SVG fills (Visx) where we need a concrete colour string that responds to
 // the active color mode.

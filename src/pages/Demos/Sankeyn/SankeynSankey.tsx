@@ -1,4 +1,4 @@
-// Sankeykey — hero sankey. Same column recipe as the Trajectory Atlas
+// Sankeyn — hero sankey. Same column recipe as the Trajectory Atlas
 // OutcomeSankey (step_1..step_K + outcome), but standalone: no crossfilter,
 // since there are no sibling panels to drive. Ribbon clicks still highlight
 // locally inside SankeyMosaicClient.
@@ -29,7 +29,7 @@ const ORDERINGS: Record<string, string[]> = {
   outcome: [...OUTCOME_ORDER],
 };
 
-export function SankeykeySankey() {
+export function SankeynSankey() {
   const coordinator = useAtomValue(coordinatorAtom);
   const depth = useAtomValue(depthAtom);
   const resetSignal = useAtomValue(resetSignalAtom);

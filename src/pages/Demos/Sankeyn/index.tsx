@@ -9,14 +9,14 @@ import {
   categoryToken,
 } from "../../../components/taxonomy";
 import {
-  initializeSankeykeyAtom,
+  initializeSankeynAtom,
   legendCategoriesAtom,
   loadedSourceAtom,
   loadingStateAtom,
 } from "./atoms";
 import { DepthControl } from "./DepthControl";
 import { OUTCOME_PALETTE_KEY } from "./outcomeColors";
-import { SankeykeySankey } from "./SankeykeySankey";
+import { SankeynSankey } from "./SankeynSankey";
 import { SourceToggle } from "./SourceToggle";
 
 function Chip({ token, label }: { token: string; label: string }) {
@@ -45,7 +45,7 @@ function Legend() {
 }
 
 function Content() {
-  useAtomValue(initializeSankeykeyAtom);
+  useAtomValue(initializeSankeynAtom);
   const state = useAtomValue(loadingStateAtom);
   const loadedSource = useAtomValue(loadedSourceAtom);
 
@@ -101,14 +101,14 @@ function Content() {
         >
           {/* Keyed on the loaded source so the chart re-queries only after the
               table swap has completed. */}
-          <SankeykeySankey key={loadedSource ?? "init"} />
+          <SankeynSankey key={loadedSource ?? "init"} />
         </TrajectoryPanel>
       </Box>
     </Flex>
   );
 }
 
-export function Sankeykey() {
+export function Sankeyn() {
   return (
     <Page>
       <Provider>
