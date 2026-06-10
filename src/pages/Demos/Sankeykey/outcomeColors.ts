@@ -1,12 +1,11 @@
-// Sankeykey-local outcome colours: green = success, red = fail. (The shared
-// taxonomy uses blue for success; here the verdict should read at a glance.)
+// Outcomes use blue/yellow/red, kept distinct from the tool palette.
 
 import { chartPalette } from "../../../theme";
 import { chartHex } from "../../../components/taxonomy";
 import type { Outcome } from "../../../components/taxonomy";
 
 export const OUTCOME_PALETTE_KEY: Record<Outcome, keyof typeof chartPalette> = {
-  success: "green",
+  success: "blue",
   partial: "orange",
   fail: "red",
 };
