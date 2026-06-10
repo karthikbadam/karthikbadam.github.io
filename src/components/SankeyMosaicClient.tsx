@@ -316,22 +316,35 @@ export function SankeyMosaicClient({
     };
   }, [version, coordinator, table, idCol, columns, whereExpr, selection, maxNodesPerColumn]);
 
-  // Layout — produces nodes and links with x/y/w/h. Dropoff labels occupy a
-  // second header line, so reserve extra top padding for them.
+  // Layout — produces nodes and links with x/y/w/h.
   const layout = useMemo(() => {
     return layoutSankey(
       columns, nodes, links, size.w, size.h, orderings, palette, align,
-      dropoffLabels ? 34 : 22, nodeOrder,
+      dropoffLabels, nodeOrder,
     );
   }, [columns, nodes, links, size.w, size.h, orderings, palette, align, dropoffLabels, nodeOrder]);
 
-  // Sorted column x positions — used to budget label widths so text never
-  // bleeds into the neighboring column.
-  const colXs = useMemo(() => {
-    const xs = new Set<number>();
-    for (const n of layout.nodes) xs.add(n.x);
-    return Array.from(xs).sort((a, b) => a - b);
-  }, [layout.nodes]);
+  // Per-column label width budget: the space up to the neighboring column
+  // (or the chart edge), so labels never bleed into the next column. The
+  // last column's labels render to its LEFT, so it budgets that side.
+  const labelAvail = useMemo(() => {
+    const xw = new Map<number, { x: number; w: number }>();
+    for (const n of layout.nodes) {
+      if (!xw.has(n.col)) xw.set(n.col, { x: n.x, w: n.w });
+    }
+    const cols = Array.from(xw.entries()).sort((a, b) => a[1].x - b[1].x);
+    const m = new Map<number, number>();
+    cols.forEach(([ci, { x, w }], i) => {
+      if (ci === columns.length - 1) {
+        const prev = cols[i - 1]?.[1];
+        m.set(ci, x - 6 - (prev ? prev.x + prev.w + 6 : 0));
+      } else {
+        const next = cols[i + 1]?.[1].x ?? size.w;
+        m.set(ci, next - (x + w + 6) - 6);
+      }
+    });
+    return m;
+  }, [layout.nodes, columns.length, size.w]);
 
   // Per-column dropoff counts: trajectories whose link from this column goes
   // straight to the final column, skipping at least one column in between —
@@ -418,17 +431,11 @@ export function SankeyMosaicClient({
             // Drop labels on rectangles too short to fit the text — they
             // collide otherwise. The "other" node is small but always shown.
             const showLabel = n.h >= 11 || n.key === OTHER_KEY;
-            const lastCol = n.col === columns.length - 1;
-            // Width budget: the space up to the neighboring column (or the
-            // chart edge), so labels never collide with the next column.
-            const avail = lastCol
-              ? n.x -
-                6 -
-                (colXs.filter((x) => x < n.x).pop() ?? -n.w - 6) -
-                n.w -
-                6
-              : (colXs.find((x) => x > n.x) ?? size.w) - (n.x + n.w + 6) - 6;
-            const fit = fitNodeLabel(n.label, n.count.toLocaleString(), avail);
+            const fit = fitNodeLabel(
+              n.label,
+              n.count.toLocaleString(),
+              labelAvail.get(n.col) ?? 0,
+            );
             const isHoverNode = hover?.kind === "node" && hover.n === n;
             const dimmedNode =
               hover != null &&
@@ -620,7 +627,7 @@ function layoutSankey(
   orderings: Record<string, string[]> | undefined,
   palette: (column: string, value: string) => string,
   align: "bottom" | "top",
-  padTop = 22,
+  dropoffLabels = false,
   nodeOrder: "count" | "barycenter" = "count",
 ): { nodes: NodeLayout[]; links: LinkLayout[] } {
   if (!nodeRows.length || !columns.length) return { nodes: [], links: [] };
@@ -629,6 +636,8 @@ function layoutSankey(
   // (textAnchor='end' with x=n.x - 6) so we don't need extra right margin.
   const padLeft = 8;
   const padRight = 8;
+  // Dropoff labels occupy a second header line below the column headers.
+  const padTop = dropoffLabels ? 34 : 22;
   const padBottom = 8;
   const innerW = Math.max(0, width - padLeft - padRight);
   const innerH = Math.max(0, height - padTop - padBottom);
@@ -778,37 +787,34 @@ function layoutSankey(
   const srcNode = (lk: LinkRow) => nodeIndex.get(`${lk.fromCol}|${lk.from}`)!;
   const dstNode = (lk: LinkRow) => nodeIndex.get(`${lk.toCol}|${lk.to}`)!;
 
-  const srcOffs = new Map<LinkRow, number>();
-  const bySrc = new Map<string, LinkRow[]>();
-  for (const lk of valid) {
-    const k = `${lk.fromCol}|${lk.from}`;
-    (bySrc.get(k) ?? bySrc.set(k, []).get(k)!).push(lk);
-  }
-  for (const group of bySrc.values()) {
-    group.sort((a, b) => dstNode(a).y - dstNode(b).y || dstNode(a).x - dstNode(b).x);
-    let off = 0;
-    for (const lk of group) {
-      srcOffs.set(lk, off);
-      const src = srcNode(lk);
-      off += (lk.count / (src.count || 1)) * src.h;
+  // Group the links touching each node end, order them by the OPPOSITE
+  // end's position, and stack proportional offsets down the node.
+  const attachOffsets = (
+    endNode: (lk: LinkRow) => NodeLayout,
+    oppositeNode: (lk: LinkRow) => NodeLayout,
+  ): Map<LinkRow, number> => {
+    const groups = new Map<NodeLayout, LinkRow[]>();
+    for (const lk of valid) {
+      const n = endNode(lk);
+      (groups.get(n) ?? groups.set(n, []).get(n)!).push(lk);
     }
-  }
-
-  const dstOffs = new Map<LinkRow, number>();
-  const byDst = new Map<string, LinkRow[]>();
-  for (const lk of valid) {
-    const k = `${lk.toCol}|${lk.to}`;
-    (byDst.get(k) ?? byDst.set(k, []).get(k)!).push(lk);
-  }
-  for (const group of byDst.values()) {
-    group.sort((a, b) => srcNode(a).y - srcNode(b).y || srcNode(a).x - srcNode(b).x);
-    let off = 0;
-    for (const lk of group) {
-      dstOffs.set(lk, off);
-      const dst = dstNode(lk);
-      off += (lk.count / (dst.count || 1)) * dst.h;
+    const offs = new Map<LinkRow, number>();
+    for (const [n, group] of groups) {
+      group.sort(
+        (a, b) =>
+          oppositeNode(a).y - oppositeNode(b).y ||
+          oppositeNode(a).x - oppositeNode(b).x,
+      );
+      let off = 0;
+      for (const lk of group) {
+        offs.set(lk, off);
+        off += (lk.count / (n.count || 1)) * n.h;
+      }
     }
-  }
+    return offs;
+  };
+  const srcOffs = attachOffsets(srcNode, dstNode);
+  const dstOffs = attachOffsets(dstNode, srcNode);
 
   const linkLayouts: LinkLayout[] = valid.map((lk) => {
     const src = srcNode(lk);
