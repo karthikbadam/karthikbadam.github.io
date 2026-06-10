@@ -84,6 +84,17 @@ const CATEGORY_RULES: Array<[RegExp, Category]> = [
   [/^(solve|simplify|symbols|Rational|Fraction|Eq|integrate|limit|factor|factorial|comb|sqrt|sin|cos|tan|log|exp|sympify|gcd|limit_denominator|create)$/, "exec"],
   [/^(api_call|sql_query|calculator|requests|httpx|fetch)$/, "tool"],
   [/^(assert|diff_check|lint|verify)$/, "verify"],
+  // Claude-Code / multi-tool agent vocabularies (CapitalCase tool names).
+  [/^(Read|LS|Glob|NotebookRead|view_file|cat|head|tail)$/, "read"],
+  [/^(Grep|ripgrep|rg|search_files)$/, "search"],
+  [/^(Edit|Write|MultiEdit|NotebookEdit|apply_patch|update_file|str_replace_based_edit_tool)$/, "edit"],
+  [/^(Bash|BashOutput|KillBash|KillShell|run_command|terminal)$/, "exec"],
+  [/^(Task|Agent|dispatch_agent|subagent|spawn_agent)$/, "tool"],
+  [/^(TodoWrite|update_plan|ExitPlanMode)$/, "plan"],
+  [/^(WebFetch|visit_url)$/, "read"],
+  [/^WebSearch$/, "search"],
+  [/^browser_(snapshot|screenshot|read|extract)$/, "read"],
+  [/^browser_(navigate|click|type|select|scroll|hover|press|fill)$/, "tool"],
 ];
 
 /** Column header for the i-th tool-call step of an outcome sankey.
