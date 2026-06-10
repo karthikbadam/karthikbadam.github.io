@@ -16,7 +16,12 @@ import {
   resetSignalAtom,
   sankeyActiveAtom,
 } from "./atoms";
-import { OUTCOME_ORDER, categoryFor, categoryHex } from "../TrajectoryAtlas/taxonomy";
+import {
+  OUTCOME_ORDER,
+  categoryFor,
+  categoryHex,
+  stepLabel,
+} from "../TrajectoryAtlas/taxonomy";
 import type { Outcome } from "../TrajectoryAtlas/types";
 import { outcomeColor } from "./outcomeColors";
 
@@ -25,15 +30,6 @@ import { outcomeColor } from "./outcomeColors";
 // the bottom of the outcome column where the gutter lands without crossing.
 const ORDERINGS = {
   outcome: [...OUTCOME_ORDER].reverse() as string[],
-};
-
-// Compact ordinals at high depth so headers can't collide at narrow gaps.
-const stepLabel = (i: number, depth: number): string => {
-  const ord =
-    i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `${i + 1}th`;
-  if (depth > 5) return ord;
-  if (i === 0) return "Entry tool";
-  return `${ord} tool`;
 };
 
 export function SankeykeySankey() {
@@ -48,7 +44,8 @@ export function SankeykeySankey() {
     () => [
       ...Array.from({ length: depth }, (_, i) => ({
         name: `step_${i + 1}`,
-        label: stepLabel(i, depth),
+        // Compact ordinals at high depth so headers fit the narrow gaps.
+        label: stepLabel(i, depth > 5),
         expr: `any_value(step_${i + 1})`,
       })),
       { name: "outcome", label: "Outcome", expr: "any_value(outcome)" },

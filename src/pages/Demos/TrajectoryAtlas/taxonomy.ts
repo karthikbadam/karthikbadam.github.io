@@ -63,6 +63,15 @@ const CATEGORY_RULES: Array<[RegExp, Category]> = [
   [/^(assert|diff_check|lint|verify)$/, "verify"],
 ];
 
+/** Column header for the i-th tool-call step of an outcome sankey.
+ * `compact` drops the "tool" suffix so headers fit narrow column gaps. */
+export function stepLabel(i: number, compact = false): string {
+  const ord =
+    i === 0 ? "1st" : i === 1 ? "2nd" : i === 2 ? "3rd" : `${i + 1}th`;
+  if (compact) return ord;
+  return i === 0 ? "Entry tool" : `${ord} tool`;
+}
+
 export function categoryFor(name: string): Category {
   for (const [pat, cat] of CATEGORY_RULES) {
     if (pat.test(name)) return cat;

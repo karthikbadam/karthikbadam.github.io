@@ -14,17 +14,16 @@ import {
   sankeyActiveAtom,
   sankeyDepthAtom,
 } from "./atoms";
-import { OUTCOME_ORDER, categoryFor, categoryHex, outcomeHex } from "./taxonomy";
+import {
+  OUTCOME_ORDER,
+  categoryFor,
+  categoryHex,
+  outcomeHex,
+  stepLabel,
+} from "./taxonomy";
 import type { Category, Outcome } from "./types";
 
 const ORDERINGS = { outcome: OUTCOME_ORDER as readonly string[] as string[] };
-
-const stepLabel = (i: number): string => {
-  if (i === 0) return "Entry tool";
-  if (i === 1) return "2nd tool";
-  if (i === 2) return "3rd tool";
-  return `${i + 1}th tool`;
-};
 
 export function OutcomeSankey() {
   const coordinator = useAtomValue(coordinatorAtom);
