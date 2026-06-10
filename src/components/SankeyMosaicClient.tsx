@@ -66,6 +66,11 @@ export interface SankeyMosaicClientProps {
   /** Annotate each non-final column with the number of trajectories that
    * end there (skip-edges straight to the final column). */
   dropoffLabels?: boolean;
+  /** Node ordering within columns. "count" (default) sorts by size;
+   * "barycenter" additionally runs crossing-reduction sweeps that pull
+   * connected nodes toward each other. Columns with an `orderings` override
+   * are never reordered. */
+  nodeOrder?: "count" | "barycenter";
   /** Trajectory ids to highlight (e.g. clicked-row in the trajectory table).
    * Ribbons whose trajectory set intersects this are emphasised; the rest
    * dim. */
@@ -137,6 +142,7 @@ export function SankeyMosaicClient({
   maxNodesPerColumn,
   align = "bottom",
   dropoffLabels = false,
+  nodeOrder = "count",
   highlightedTrajIds,
   onLinkClick,
   resetSignal,
@@ -314,9 +320,9 @@ export function SankeyMosaicClient({
   const layout = useMemo(() => {
     return layoutSankey(
       columns, nodes, links, size.w, size.h, orderings, palette, align,
-      dropoffLabels ? 34 : 22,
+      dropoffLabels ? 34 : 22, nodeOrder,
     );
-  }, [columns, nodes, links, size.w, size.h, orderings, palette, align, dropoffLabels]);
+  }, [columns, nodes, links, size.w, size.h, orderings, palette, align, dropoffLabels, nodeOrder]);
 
   // Per-column dropoff counts: trajectories whose link from this column goes
   // straight to the final column, skipping at least one column in between —
@@ -595,6 +601,7 @@ function layoutSankey(
   palette: (column: string, value: string) => string,
   align: "bottom" | "top",
   padTop = 22,
+  nodeOrder: "count" | "barycenter" = "count",
 ): { nodes: NodeLayout[]; links: LinkLayout[] } {
   if (!nodeRows.length || !columns.length) return { nodes: [], links: [] };
   const colW = 14;
@@ -630,6 +637,61 @@ function layoutSankey(
       });
     } else {
       list.sort((a, b) => b.count - a.count);
+    }
+  }
+
+  // Crossing reduction: barycenter sweeps pull each node toward the
+  // count-weighted mean position of its link neighbors. Columns with an
+  // explicit ordering (e.g. the outcome column) are left untouched.
+  if (nodeOrder === "barycenter") {
+    // Normalized center (0..1) of each node within its column, weighted by
+    // count so a large node's center reflects the span it occupies.
+    const centers: Array<Map<string, number>> = [];
+    const computeCenters = (ci: number) => {
+      const m = new Map<string, number>();
+      const list = byCol[ci] ?? [];
+      const total = list.reduce((a, n) => a + n.count, 0) || 1;
+      let acc = 0;
+      for (const n of list) {
+        m.set(n.key, (acc + n.count / 2) / total);
+        acc += n.count;
+      }
+      centers[ci] = m;
+    };
+    for (let ci = 0; ci < nCols; ci++) computeCenters(ci);
+
+    const sweep = (ci: number) => {
+      if (orderings?.[columns[ci].name]?.length) return;
+      const list = byCol[ci] ?? [];
+      if (list.length < 2) return;
+      const bary = new Map<string, number>();
+      for (const n of list) {
+        let sum = 0;
+        let wsum = 0;
+        for (const lk of linkRows) {
+          let other: { col: number; key: string } | null = null;
+          if (lk.fromCol === ci && lk.from === n.key) {
+            other = { col: lk.toCol, key: lk.to };
+          } else if (lk.toCol === ci && lk.to === n.key) {
+            other = { col: lk.fromCol, key: lk.from };
+          }
+          if (!other) continue;
+          const c = centers[other.col]?.get(other.key);
+          if (c === undefined) continue;
+          sum += c * lk.count;
+          wsum += lk.count;
+        }
+        bary.set(n.key, wsum > 0 ? sum / wsum : centers[ci].get(n.key) ?? 0.5);
+      }
+      list.sort(
+        (a, b) => bary.get(a.key)! - bary.get(b.key)! || b.count - a.count,
+      );
+      computeCenters(ci);
+    };
+
+    for (let round = 0; round < 3; round++) {
+      for (let ci = 1; ci < nCols; ci++) sweep(ci);
+      for (let ci = nCols - 2; ci >= 0; ci--) sweep(ci);
     }
   }
 
