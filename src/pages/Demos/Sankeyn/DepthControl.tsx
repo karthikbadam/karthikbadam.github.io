@@ -1,6 +1,5 @@
-// San(key)ⁿ — the primary control: a play/pause auto-expand toggle and the
-// prominent `n` slider (capped at the loaded dataset's real max depth) that
-// drives how many tool-call columns the sankey unfolds.
+// San(key)ⁿ depth control: play/pause auto-expand plus the n slider, capped
+// at the loaded dataset's real max depth.
 
 import { useEffect } from "react";
 import { Flex, IconButton, Slider, Text } from "@chakra-ui/react";
@@ -13,17 +12,6 @@ import {
   resetSignalAtom,
   sankeyActiveAtom,
 } from "./atoms";
-
-/** Tick marks that stay legible as the max grows: always 1 and max, plus a
- * rounded interior step (every 5 ≤20, every 10 ≤50, every 20 beyond). */
-function buildMarks(max: number): { value: number; label: string }[] {
-  const step = max <= 20 ? 5 : max <= 50 ? 10 : 20;
-  const values = new Set<number>([1, max]);
-  for (let v = step; v < max; v += step) values.add(v);
-  return Array.from(values)
-    .sort((a, b) => a - b)
-    .map((value) => ({ value, label: `${value}` }));
-}
 
 /** Animates the depth slider 1→max while playing; stops at the end. Pressing
  * play at max restarts the sweep from the entry tool. */
@@ -63,7 +51,7 @@ export function DepthControl() {
   const { playing, toggle, stop } = useAutoExpand(maxDepth);
 
   return (
-    <Flex align="center" gap={4} flex="1" minW={0}>
+    <Flex align="center" gap={3} w="100%">
       <IconButton
         aria-label={playing ? "Pause auto-expand" : "Auto-expand n"}
         size="sm"
@@ -75,6 +63,9 @@ export function DepthControl() {
       >
         {playing ? <LuPause /> : <LuPlay />}
       </IconButton>
+      <Text fontFamily="mono" fontSize="xs" color="fg.muted" flexShrink={0}>
+        1
+      </Text>
       <Slider.Root
         value={[depth]}
         onValueChange={(d) => {
@@ -85,16 +76,18 @@ export function DepthControl() {
         max={maxDepth}
         step={1}
         flex="1"
-        pb={4}
+        size="sm"
       >
         <Slider.Control>
           <Slider.Track>
             <Slider.Range />
           </Slider.Track>
           <Slider.Thumbs />
-          <Slider.Marks marks={buildMarks(maxDepth)} fontSize="xs" />
         </Slider.Control>
       </Slider.Root>
+      <Text fontFamily="mono" fontSize="xs" color="fg.muted" flexShrink={0}>
+        {maxDepth}
+      </Text>
       {sankeyActive && (
         <Text
           as="button"
@@ -119,7 +112,14 @@ export function DepthControl() {
         <Text fontFamily="mono" fontSize="xs" color="fg.muted">
           n =
         </Text>
-        <Text fontFamily="mono" fontSize="md" fontWeight="bold" color="accent" minW="2ch" textAlign="right">
+        <Text
+          fontFamily="mono"
+          fontSize="md"
+          fontWeight="bold"
+          color="accent"
+          minW="2ch"
+          textAlign="right"
+        >
           {depth}
         </Text>
       </Flex>

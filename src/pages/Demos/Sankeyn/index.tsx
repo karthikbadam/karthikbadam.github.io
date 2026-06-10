@@ -7,6 +7,7 @@ import {
   CATEGORY_LABELS,
   OUTCOME_ORDER,
   categoryToken,
+  outcomeToken,
 } from "../../../components/taxonomy";
 import {
   initializeSankeynAtom,
@@ -15,7 +16,6 @@ import {
   loadingStateAtom,
 } from "./atoms";
 import { DepthControl } from "./DepthControl";
-import { OUTCOME_PALETTE_KEY } from "./outcomeColors";
 import { SankeynSankey } from "./SankeynSankey";
 import { SourceToggle } from "./SourceToggle";
 
@@ -38,7 +38,7 @@ function Legend() {
       ))}
       <Box w="1px" h="12px" bg="gray.subtle" />
       {OUTCOME_ORDER.map((o) => (
-        <Chip key={o} token={`chart.${OUTCOME_PALETTE_KEY[o]}`} label={o} />
+        <Chip key={o} token={outcomeToken(o)} label={o} />
       ))}
     </HStack>
   );
@@ -62,37 +62,39 @@ function Content() {
       p={4}
       gap={3}
     >
-      {/* Header — title + one-line concept. */}
-      <Box>
-        <Heading as="h1" size="lg" color="accent" mb={1} lineHeight="1">
-          San(key)
-          <chakra.sup fontSize="0.5em" top="-0.7em" ml="1px">
-            n
-          </chakra.sup>
-        </Heading>
-        <Text fontSize="sm" color="fg.muted" maxW="80ch">
-          Each agent run is a chain of tool calls. Slide n to unfold the first n
-          calls of every run into one flow.
-        </Text>
-      </Box>
+      <Flex justify="space-between" align="flex-start" gap={8} wrap="wrap">
+        <Box maxW="72ch">
+          <Heading as="h1" size="lg" color="accent" mb={1} lineHeight="1">
+            San(key)
+            <chakra.sup fontSize="0.5em" top="-0.7em" ml="1px">
+              n
+            </chakra.sup>
+          </Heading>
+          <Text fontSize="sm" color="fg.muted" mt={1}>
+            Each agent run is a chain of tool calls that ends in an outcome.
+            Every column stacks one position in that chain, colored by the kind
+            of tool used there; ribbons trace how runs flow from tool to tool
+            and finally into success, partial, or fail. Slide n to unfold more
+            of the chain.
+          </Text>
+        </Box>
+        <SourceToggle />
+      </Flex>
 
-      {/* Control bar — play, the primary n slider, value, and dataset toggle. */}
       <Flex
         align="center"
-        gap={4}
         bg="bg"
         borderWidth="1px"
         borderColor="gray.subtle"
         borderRadius="lg"
         px={4}
         py={3}
+        alignSelf={{ base: "stretch", md: "flex-start" }}
+        w={{ base: "100%", md: "min(72ch, 100%)" }}
       >
         <DepthControl />
-        <Box w="1px" h="24px" bg="gray.subtle" flexShrink={0} />
-        <SourceToggle />
       </Flex>
 
-      {/* Hero chart — fills the remaining height, full width. */}
       <Box flex="1" minH={0} h={{ base: "460px", md: "auto" }}>
         <TrajectoryPanel
           title="Tool-call flow"
