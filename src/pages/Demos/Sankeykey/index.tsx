@@ -6,7 +6,7 @@ import {
   CATEGORY_LABELS,
   OUTCOME_ORDER,
   categoryToken,
-} from "../TrajectoryAtlas/taxonomy";
+} from "../../../components/taxonomy";
 import {
   initializeSankeykeyAtom,
   legendCategoriesAtom,

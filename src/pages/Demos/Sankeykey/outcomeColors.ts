@@ -2,7 +2,8 @@
 // taxonomy uses blue for success; here the verdict should read at a glance.)
 
 import { chartPalette } from "../../../theme";
-import type { Outcome } from "../TrajectoryAtlas/types";
+import { chartHex } from "../../../components/taxonomy";
+import type { Outcome } from "../../../components/taxonomy";
 
 export const OUTCOME_PALETTE_KEY: Record<Outcome, keyof typeof chartPalette> = {
   success: "green",
@@ -11,6 +12,5 @@ export const OUTCOME_PALETTE_KEY: Record<Outcome, keyof typeof chartPalette> = {
 };
 
 export function outcomeColor(o: Outcome, dark: boolean): string {
-  const v = chartPalette[OUTCOME_PALETTE_KEY[o] ?? "gray"];
-  return dark ? v.dark : v.light;
+  return chartHex(OUTCOME_PALETTE_KEY[o] ?? "gray", dark);
 }

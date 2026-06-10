@@ -1,10 +1,33 @@
-// Trajectory Atlas — taxonomy + colour mapping.
-// Categories map to Chakra `chart.*` tokens defined in src/theme.ts. The
-// hex helpers below are for SVG fills (Visx) where we need a concrete
-// colour string that responds to the active color mode.
+// Agent-trajectory taxonomy + colour mapping, shared by the demos that
+// visualize rollouts (Trajectory Atlas, Sankeykey). Categories map to Chakra
+// `chart.*` tokens defined in src/theme.ts. The hex helpers below are for
+// SVG fills (Visx) where we need a concrete colour string that responds to
+// the active color mode.
 
-import { chartPalette } from "../../../theme";
-import type { Category, Outcome } from "./types";
+import { chartPalette } from "../theme";
+
+export type Category =
+  | "task"
+  | "thought"
+  | "observation"
+  | "plan"
+  | "search"
+  | "read"
+  | "edit"
+  | "exec"
+  | "tool"
+  | "verify"
+  | "submit"
+  | "error";
+
+export type Outcome = "success" | "partial" | "fail";
+
+/** Concrete hex from the theme chart palette — for SVG fills (Visx) where a
+ * CSS token isn't usable directly. */
+export function chartHex(key: keyof typeof chartPalette, dark: boolean): string {
+  const v = chartPalette[key] ?? chartPalette.gray;
+  return dark ? v.dark : v.light;
+}
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   plan: "Plan",
@@ -84,12 +107,8 @@ export function categoryToken(cat: Category): string {
   return `chart.${CAT_PALETTE_KEY[cat]}`;
 }
 
-/** Concrete hex for an SVG fill — used by visx where a CSS token isn't
- * usable directly. */
 export function categoryHex(cat: Category, dark: boolean): string {
-  const key = CAT_PALETTE_KEY[cat] ?? "gray";
-  const v = chartPalette[key];
-  return dark ? v.dark : v.light;
+  return chartHex(CAT_PALETTE_KEY[cat] ?? "gray", dark);
 }
 
 export function outcomeToken(o: Outcome): string {
@@ -97,9 +116,7 @@ export function outcomeToken(o: Outcome): string {
 }
 
 export function outcomeHex(o: Outcome, dark: boolean): string {
-  const key = OUTCOME_PALETTE_KEY[o] ?? "gray";
-  const v = chartPalette[key];
-  return dark ? v.dark : v.light;
+  return chartHex(OUTCOME_PALETTE_KEY[o] ?? "gray", dark);
 }
 
 /**

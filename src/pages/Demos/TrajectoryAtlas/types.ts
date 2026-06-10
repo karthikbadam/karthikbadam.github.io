@@ -1,20 +1,9 @@
-// Trajectory Atlas — shared types.
+// Trajectory Atlas — shared types. Category/Outcome live with the shared
+// taxonomy in src/components/taxonomy.ts; re-exported for local imports.
 
-export type Category =
-  | "task"
-  | "thought"
-  | "observation"
-  | "plan"
-  | "search"
-  | "read"
-  | "edit"
-  | "exec"
-  | "tool"
-  | "verify"
-  | "submit"
-  | "error";
+import type { Category, Outcome } from "../../../components/taxonomy";
 
-export type Outcome = "success" | "partial" | "fail";
+export type { Category, Outcome };
 
 export interface Step {
   idx: number;

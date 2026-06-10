@@ -7,8 +7,8 @@ import type { Coordinator } from "@uwdata/mosaic-core";
 import { arrowFirstRow, arrowRows } from "../../../components/chartUtils";
 import { localDuckDB } from "../../../components/duckdbLocal";
 import { LoadingState } from "../../../types/loading";
-import { categoryFor } from "../TrajectoryAtlas/taxonomy";
-import type { Category } from "../TrajectoryAtlas/types";
+import { categoryFor } from "../../../components/taxonomy";
+import type { Category } from "../../../components/taxonomy";
 
 // Must match MAX_TOOL_STEPS in extract_trajectories.py
 export const MAX_DEPTH = 8;

@@ -21,8 +21,8 @@ import {
   categoryFor,
   categoryHex,
   stepLabel,
-} from "../TrajectoryAtlas/taxonomy";
-import type { Outcome } from "../TrajectoryAtlas/types";
+} from "../../../components/taxonomy";
+import type { Outcome } from "../../../components/taxonomy";
 import { outcomeColor } from "./outcomeColors";
 
 // Outcome order reversed vs the shared OUTCOME_ORDER: with top-aligned

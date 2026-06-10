@@ -12,7 +12,7 @@ import {
   icicleActiveAtom,
   resetSignalAtom,
 } from "./atoms";
-import { accentRamp } from "./taxonomy";
+import { accentRamp } from "../../../components/taxonomy";
 
 export function StepIcicle() {
   const coordinator = useAtomValue(coordinatorAtom);

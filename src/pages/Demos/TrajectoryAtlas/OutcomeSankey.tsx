@@ -20,7 +20,7 @@ import {
   categoryHex,
   outcomeHex,
   stepLabel,
-} from "./taxonomy";
+} from "../../../components/taxonomy";
 import type { Category, Outcome } from "./types";
 
 const ORDERINGS = { outcome: OUTCOME_ORDER as readonly string[] as string[] };
