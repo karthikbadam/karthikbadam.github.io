@@ -23,6 +23,7 @@ import {
   chartFg,
   chartFgMuted,
   chartLabelStyle,
+  chartTextHalo,
   chartValueStyle,
   tooltipContainerStyle,
   tooltipRowStyle,
@@ -439,7 +440,7 @@ export function SankeyMosaicClient({
                     fill={chartFg(dark)}
                     textAnchor={n.col === columns.length - 1 ? "end" : "start"}
                     pointerEvents="none"
-                    style={chartLabelStyle}
+                    style={{ ...chartLabelStyle, ...chartTextHalo(dark) }}
                     opacity={dimmedNode ? 0.4 : 1}
                   >
                     {n.label}
@@ -469,7 +470,7 @@ export function SankeyMosaicClient({
                 y={12}
                 fill={chartFgMuted(dark)}
                 textAnchor={anchor}
-                style={chartColumnHeaderStyle}
+                style={{ ...chartColumnHeaderStyle, ...chartTextHalo(dark) }}
               >
                 {labelText}
               </text>
@@ -491,7 +492,7 @@ export function SankeyMosaicClient({
                   fill={chartFgMuted(dark)}
                   textAnchor="start"
                   pointerEvents="none"
-                  style={chartValueStyle}
+                  style={{ ...chartValueStyle, ...chartTextHalo(dark) }}
                 >
                   ↳ {count.toLocaleString()} end here
                 </text>

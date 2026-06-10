@@ -28,6 +28,17 @@ export function chartFg(dark: boolean): string {
   return dark ? "#f7fafc" : "#1a202c";
 }
 
+/** Halo behind SVG text so labels stay legible over ribbons/marks. Spread
+ * onto a text element's style alongside the font styles. */
+export function chartTextHalo(dark: boolean): CSSProperties {
+  return {
+    stroke: dark ? "#1a202c" : "#ffffff",
+    strokeWidth: 3,
+    strokeLinejoin: "round",
+    paintOrder: "stroke",
+  };
+}
+
 /** Inverse foreground (text against an accent fill, e.g. dark icicle level). */
 export function chartFgInverse(dark: boolean): string {
   return dark ? "#1a202c" : "#ffffff";
