@@ -1,4 +1,5 @@
 import * as vg from "@uwdata/vgplot";
+import { localDuckDB } from "../../../components/duckdbLocal";
 import { atom } from "jotai";
 import { LoadingState } from "../../../types/loading";
 import { getMetricCategory, isHeadMetric } from "./config/metrics";
@@ -148,14 +149,13 @@ export const initializeTransformerAtom = atom(null, async (get, set) => {
   try {
     set(loadingStateAtom, { status: "initializing" });
 
-    const connector = vg.wasmConnector();
+    const connector = vg.wasmConnector({ duckdb: await localDuckDB() });
     const coord = new vg.Coordinator(connector, {
       cache: false,
       preagg: { enabled: false },
     });
     vg.coordinator(coord).databaseConnector(connector);
     set(coordinatorAtom, coord);
-    await connector.getDuckDB();
 
     set(brushSelectionAtom, vg.Selection.crossfilter());
     set(tokenHighlightAtom, vg.Selection.single());

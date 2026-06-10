@@ -1,5 +1,6 @@
 import { atom } from "jotai";
 import * as vg from "@uwdata/vgplot";
+import { localDuckDB } from "../../../components/duckdbLocal";
 import { LoadingState } from "../../../types/loading";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,14 +46,13 @@ export const initializeSWEBenchAtom = atom(null, async (get, set) => {
 
     const traceLimit = window.innerWidth < 768 ? 5 : 50;
 
-    const connector = vg.wasmConnector();
+    const connector = vg.wasmConnector({ duckdb: await localDuckDB() });
     const coord = new vg.Coordinator(connector, {
       cache: false,
       preagg: { enabled: false },
     });
     vg.coordinator(coord).databaseConnector(connector);
     set(coordinatorAtom, coord);
-    await connector.getDuckDB();
 
     set(loadingStateAtom, {
       status: "loading-parquet",
