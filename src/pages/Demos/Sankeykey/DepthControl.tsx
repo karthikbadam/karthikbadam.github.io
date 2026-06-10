@@ -1,6 +1,6 @@
-// San(key)ⁿ — compact depth control for the chart panel header (mirrors the
-// Trajectory Atlas SankeyDepthSlider): a play/pause auto-expand toggle, the
-// `n` slider capped at the dataset's real max depth, and the live value.
+// San(key)ⁿ — the primary control: a play/pause auto-expand toggle and the
+// prominent `n` slider (capped at the loaded dataset's real max depth) that
+// drives how many tool-call columns the sankey unfolds.
 
 import { useEffect } from "react";
 import { Flex, IconButton, Slider, Text } from "@chakra-ui/react";
@@ -10,9 +10,20 @@ import {
   depthAtom,
   maxDepthAtom,
   playingAtom,
-  sankeyActiveAtom,
   resetSignalAtom,
+  sankeyActiveAtom,
 } from "./atoms";
+
+/** Tick marks that stay legible as the max grows: always 1 and max, plus a
+ * rounded interior step (every 5 ≤20, every 10 ≤50, every 20 beyond). */
+function buildMarks(max: number): { value: number; label: string }[] {
+  const step = max <= 20 ? 5 : max <= 50 ? 10 : 20;
+  const values = new Set<number>([1, max]);
+  for (let v = step; v < max; v += step) values.add(v);
+  return Array.from(values)
+    .sort((a, b) => a - b)
+    .map((value) => ({ value, label: `${value}` }));
+}
 
 /** Animates the depth slider 1→max while playing; stops at the end. Pressing
  * play at max restarts the sweep from the entry tool. */
@@ -52,32 +63,25 @@ export function DepthControl() {
   const { playing, toggle, stop } = useAutoExpand(maxDepth);
 
   return (
-    <Flex align="center" gap={2} flexShrink={0}>
-      {sankeyActive && (
-        <Text
-          as="button"
-          fontSize="xs"
-          color="accent"
-          onClick={() => setResetSignal((n) => n + 1)}
-        >
-          clear
-        </Text>
-      )}
+    <Flex align="center" gap={4} w="100%">
       <IconButton
         aria-label={playing ? "Pause auto-expand" : "Auto-expand n"}
-        size="xs"
-        variant="ghost"
+        size="sm"
+        variant="outline"
         color="accent"
+        borderColor="accent"
         onClick={toggle}
+        flexShrink={0}
       >
         {playing ? <LuPause /> : <LuPlay />}
       </IconButton>
       <Text
-        fontSize="xs"
-        color="fg.muted"
-        textTransform="uppercase"
-        letterSpacing="0.04em"
+        fontFamily="mono"
         fontStyle="italic"
+        fontWeight="bold"
+        color="accent"
+        fontSize="md"
+        flexShrink={0}
       >
         n
       </Text>
@@ -90,19 +94,40 @@ export function DepthControl() {
         min={1}
         max={maxDepth}
         step={1}
-        width="160px"
-        size="sm"
+        flex="1"
+        pb={4}
       >
         <Slider.Control>
           <Slider.Track>
             <Slider.Range />
           </Slider.Track>
           <Slider.Thumbs />
+          <Slider.Marks marks={buildMarks(maxDepth)} fontSize="xs" />
         </Slider.Control>
       </Slider.Root>
-      <Text fontSize="xs" color="fg.muted" fontFamily="mono" minW="3ch" textAlign="right">
+      <Text
+        fontFamily="mono"
+        fontSize="md"
+        fontWeight="bold"
+        color="fg"
+        minW="3ch"
+        textAlign="right"
+        flexShrink={0}
+      >
         {depth}
       </Text>
+      {sankeyActive && (
+        <Text
+          as="button"
+          fontSize="xs"
+          color="accent"
+          textDecoration="underline"
+          flexShrink={0}
+          onClick={() => setResetSignal((n) => n + 1)}
+        >
+          clear
+        </Text>
+      )}
     </Flex>
   );
 }
