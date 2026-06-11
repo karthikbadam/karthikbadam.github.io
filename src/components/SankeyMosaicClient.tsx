@@ -458,6 +458,9 @@ export function SankeyMosaicClient({
     Math.max(0.08, 0.2 - (columns.length - 4) * 0.006),
   );
   const dimOpacity = Math.max(0.03, linkBase * 0.15);
+  // At depth the cursor is always over some hair-thin ribbon, so hover-dimming
+  // everything else blanks the chart; let the accent alone carry the contrast.
+  const hoverDims = columns.length <= 20;
   const lastCol = columns.length - 1;
   const colSlot = (ci: number) =>
     (layout.cols[ci + 1]?.x ?? size.w) - (layout.cols[ci]?.x ?? 0);
@@ -521,7 +524,7 @@ export function SankeyMosaicClient({
               ((hover.n.col === lk.fromCol && hover.n.key === lk.from) ||
                 (hover.n.col === lk.toCol && hover.n.key === lk.to));
             const dimmedByHover =
-              hover != null && !isHoverLink && !isHoverConnected;
+              hoverDims && hover != null && !isHoverLink && !isHoverConnected;
             const dimmedBySelection =
               (localSelection !== null && !sel) ||
               (highlightedTrajIds != null && !hi);
@@ -555,6 +558,7 @@ export function SankeyMosaicClient({
               : null;
             const isHoverNode = hover?.kind === "node" && hover.n === n;
             const dimmedNode =
+              hoverDims &&
               hover != null &&
               !isHoverNode &&
               !(
