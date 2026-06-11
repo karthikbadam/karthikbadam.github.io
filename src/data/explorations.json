@@ -1,11 +1,11 @@
 {
   "posts": [
     {
-      "title": "San(key)ⁿ: Unfold Recursive Agent Flows",
+      "title": "San(key)ⁿ: Visualize Recursive Flows",
       "abstract": "A custom visualization for recursive flows: a sankey that unfolds the first n tool calls of every agent run, up to 80 levels deep. Slide n to grow the chain, click a layer to expand it in place, and switch between DeepSWE Kimi-K2, Hermes, and DeepSeek-v4 traces, all in-browser on DuckDB-WASM.",
       "link": "/sankeyn",
       "type": "Interactive Demo",
-      "date": "June 2026"
+      "date": "May 2026"
     },
     {
       "title": "Understand Agent Trajectories",

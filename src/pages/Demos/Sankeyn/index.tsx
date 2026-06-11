@@ -63,7 +63,7 @@ function Content() {
       p={4}
       gap={3}
     >
-      <Box maxW="100em" mx='auto'>
+      <Box w="100%" maxW="100em" mx="auto">
         <Heading as="h1" size="lg" lineHeight="1.2">
           <Text as="span" color="accent">
             San(key)
