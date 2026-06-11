@@ -23,6 +23,7 @@ export function SourceToggle() {
         <NativeSelect.Field
           value={loadedSource ?? undefined}
           onChange={(e) => switchSource(e.currentTarget.value as SourceKey)}
+          bg="bg"
         >
           {SOURCE_KEYS.map((key) => (
             <option key={key} value={key}>
