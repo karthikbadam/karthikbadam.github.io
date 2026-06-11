@@ -84,7 +84,7 @@ function Content() {
         </Text>
       </Box>
 
-      <Flex maxW="100em" gap={3} align="stretch" wrap="wrap">
+      <Flex maxW="100em" mx="auto" w="100%" gap={3} align="stretch" wrap="wrap">
         <SourceToggle />
         <Flex
           align="center"

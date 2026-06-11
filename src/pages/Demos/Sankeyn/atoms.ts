@@ -57,7 +57,7 @@ export const loadingStateAtom = atom<LoadingState>({ status: "idle" });
 export const coordinatorAtom = atom<Coordinator | null>(null);
 
 // Primitive atoms — UI
-export const depthAtom = atom(12);
+export const depthAtom = atom(8);
 export const playingAtom = atom(false);
 export const sankeyActiveAtom = atom(false);
 export const resetSignalAtom = atom(0);
