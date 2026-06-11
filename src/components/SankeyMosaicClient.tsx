@@ -488,7 +488,7 @@ export function SankeyMosaicClient({
               (colSlot(n.col) >= 40 && columns.length <= 20) ||
               focusedCol === n.col ||
               n.col === lastCol;
-            const showLabel = wideEnough && (n.h >= 11 || n.key === OTHER_KEY);
+            const showLabel = wideEnough && (n.h >= 8 || n.key === OTHER_KEY);
             const fit = showLabel
               ? fitNodeLabel(
                   n.label,
@@ -531,7 +531,7 @@ export function SankeyMosaicClient({
                     opacity={dimmedNode ? 0.4 : 1}
                   >
                     {fit.text}
-                    {n.h >= 14 && fit.showCount && (
+                    {n.h >= 12 && fit.showCount && (
                       <tspan dx="6" style={chartValueStyle}>
                         {n.count.toLocaleString()}
                       </tspan>
