@@ -108,6 +108,17 @@ DEFAULT_CATEGORY_RULES = [
     (re.compile(r"^(solve|simplify|symbols|Rational|Fraction|Eq|integrate|limit|factor|factorial|comb|sqrt|sin|cos|tan|log|exp|sympify)$"), "exec"),
     (re.compile(r"^(api_call|sql_query|calculator|requests|httpx|fetch)$"), "tool"),
     (re.compile(r"^(assert|diff_check|lint|verify)$"), "verify"),
+    # Claude-Code / multi-tool agent vocabularies (CapitalCase tool names).
+    (re.compile(r"^(Read|LS|Glob|NotebookRead|view_file|cat|head|tail)$"), "read"),
+    (re.compile(r"^(Grep|ripgrep|rg|search_files)$"), "search"),
+    (re.compile(r"^(Edit|Write|MultiEdit|NotebookEdit|apply_patch|update_file|str_replace_based_edit_tool)$"), "edit"),
+    (re.compile(r"^(Bash|BashOutput|KillBash|KillShell|run_command|terminal)$"), "exec"),
+    (re.compile(r"^(Task|Agent|dispatch_agent|subagent|spawn_agent)$"), "tool"),
+    (re.compile(r"^(TodoWrite|update_plan|ExitPlanMode)$"), "plan"),
+    (re.compile(r"^(WebFetch|visit_url)$"), "read"),
+    (re.compile(r"^(WebSearch)$"), "search"),
+    (re.compile(r"^browser_(snapshot|screenshot|read|extract)$"), "read"),
+    (re.compile(r"^browser_(navigate|click|type|select|scroll|hover|press|fill)$"), "tool"),
 ]
 
 
@@ -141,6 +152,37 @@ FORMAT_PRESETS = {
         "pred_path": None,
         "cost_path": None,
         "tool_call_mode": "inline_xml",
+        "outcome_mode": "terminal-tool",
+    },
+    # OpenAI/OpenHands chat format: assistant messages carry a structured
+    # `tool_calls` array; tool results come back as role="tool". Covers
+    # Orchard, SWE-rebench, Nemotron, SWE-Hero, SWE-Gym, tau2, and the
+    # normalized `messages` of the HF agent-traces datasets.
+    "openai_messages": {
+        "messages_path": "$.messages",
+        "task_path": None,
+        "model_path": None,
+        "dataset_path": None,
+        "score_path": None,
+        "gold_path": None,
+        "pred_path": None,
+        "cost_path": None,
+        "tool_call_mode": "openai",
+        "outcome_mode": "terminal-tool",
+    },
+    # ShareGPT format: a `conversations` list of {from, value} turns where
+    # tool calls are inline `<tool_call>{json}</tool_call>` blocks. Covers
+    # the Hermes agent-reasoning traces.
+    "sharegpt_xml": {
+        "messages_path": "$.conversations",
+        "task_path": None,
+        "model_path": None,
+        "dataset_path": None,
+        "score_path": None,
+        "gold_path": None,
+        "pred_path": None,
+        "cost_path": None,
+        "tool_call_mode": "sharegpt",
         "outcome_mode": "terminal-tool",
     },
 }
@@ -384,6 +426,130 @@ def extract_steps_inline_xml(messages: list[dict], xml_pattern: re.Pattern) -> l
     return steps
 
 
+def _editor_subcommand(tool: str, args: dict | None) -> str:
+    """Disambiguate a generic editor tool by its `command` arg, mirroring the
+    inline-XML handling: view/open → file_editor.view, mutations → .str_replace
+    etc. so the taxonomy can colour reads vs edits distinctly."""
+    if not args:
+        return tool
+    cmd = args.get("command") or args.get("subcommand")
+    if not isinstance(cmd, str):
+        return tool
+    if cmd in ("view", "open"):
+        return "file_editor.view"
+    if cmd in ("str_replace", "create", "insert", "write"):
+        return f"file_editor.{cmd}"
+    return tool
+
+
+_EDITOR_NAMES = {"str_replace_editor", "file_editor", "editor", "edit_file", "str_replace_based_edit_tool"}
+
+
+def _coerce_args(raw: Any) -> dict | None:
+    """tool_call arguments are often a JSON string; parse defensively."""
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str) and raw.strip():
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, dict) else None
+        except json.JSONDecodeError:
+            return None
+    return None
+
+
+def extract_steps_openai(messages: list[dict]) -> list[dict]:
+    """OpenAI/OpenHands chat messages: assistant turns carry a structured
+    `tool_calls` array; tool results arrive as role="tool"."""
+    steps: list[dict] = []
+    seen_user = False
+
+    for m in messages:
+        role = m.get("role")
+        text = _msg_text(m.get("content"))
+
+        if role == "system":
+            continue
+
+        if role == "user":
+            kind = "task" if not seen_user else "observation"
+            seen_user = True
+            ok = not bool(re.search(r"(traceback|error:|exit code:\s*[1-9])", text, re.IGNORECASE))
+            steps.append(_make_step(len(steps), name=kind, role="user", text=text, ok=ok))
+            continue
+
+        if role in ("tool", "tool-response", "tool_response"):
+            ok = not bool(re.search(r"\b(Error|Traceback|Exception)\b", text, re.IGNORECASE))
+            steps.append(_make_step(len(steps), name="observation", role="user", text=text, ok=ok))
+            continue
+
+        if role == "assistant":
+            tool_calls = m.get("tool_calls") or []
+            if not isinstance(tool_calls, list) or not tool_calls:
+                steps.append(_make_step(len(steps), name="thought", role="assistant", text=text))
+                continue
+            for tc in tool_calls:
+                fn = (tc.get("function") if isinstance(tc, dict) else None) or {}
+                name = str(fn.get("name", "") or "tool_call")
+                args = _coerce_args(fn.get("arguments"))
+                if name in _EDITOR_NAMES:
+                    name = _editor_subcommand(name, args)
+                steps.append(_make_step(len(steps), name=_canonicalize_tool(name), role="tool", text=""))
+            continue
+
+    return steps
+
+
+_SHAREGPT_TOOL_CALL_RE = re.compile(r"<tool_call>\s*(?P<body>.*?)\s*</tool_call>", re.DOTALL)
+_SHAREGPT_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
+
+
+def extract_steps_sharegpt(messages: list[dict]) -> list[dict]:
+    """ShareGPT `conversations`: {from, value} turns where tool calls are inline
+    `<tool_call>{"name": ...}</tool_call>` blocks (Hermes-style)."""
+    steps: list[dict] = []
+    seen_user = False
+
+    for m in messages:
+        frm = m.get("from")
+        value = _msg_text(m.get("value") if "value" in m else m.get("content"))
+
+        if frm == "system":
+            continue
+
+        if frm in ("human", "user"):
+            kind = "task" if not seen_user else "observation"
+            seen_user = True
+            steps.append(_make_step(len(steps), name=kind, role="user", text=value))
+            continue
+
+        if frm == "tool":
+            ok = not bool(re.search(r"\b(Error|Traceback|Exception)\b", value, re.IGNORECASE))
+            steps.append(_make_step(len(steps), name="observation", role="user", text=value, ok=ok))
+            continue
+
+        if frm in ("gpt", "assistant"):
+            calls = list(_SHAREGPT_TOOL_CALL_RE.finditer(value))
+            if not calls:
+                steps.append(_make_step(len(steps), name="thought", role="assistant", text=value))
+                continue
+            for c in calls:
+                name = "tool_call"
+                try:
+                    obj = json.loads(c.group("body"))
+                    if isinstance(obj, dict) and obj.get("name"):
+                        name = str(obj["name"])
+                        args = obj.get("arguments")
+                        if name in _EDITOR_NAMES and isinstance(args, dict):
+                            name = _editor_subcommand(name, args)
+                except json.JSONDecodeError:
+                    pass
+                steps.append(_make_step(len(steps), name=_canonicalize_tool(name), role="tool", text=""))
+            continue
+
+    return steps
+
+
 # Map equivalent tool/role names to a canonical form so the same concept
 # doesn't appear under multiple labels.
 _TOOL_ALIASES = {
@@ -469,8 +635,9 @@ STEP_STRUCT = pa.struct(
 
 
 # Number of pre-computed sequential tool-step columns. The sankey's depth
-# slider can request any 1..MAX_TOOL_STEPS of these.
-MAX_TOOL_STEPS = 8
+# slider can request any 1..MAX_TOOL_STEPS of these. Must match MAX_DEPTH in
+# src/pages/Demos/Sankeykey/atoms.ts.
+MAX_TOOL_STEPS = 80
 
 
 def _tool_step_fields() -> list[tuple[str, pa.DataType]]:
@@ -522,9 +689,21 @@ def _parse_first_user_task(messages: list[dict]) -> str:
 
 
 def detect_format(record: dict) -> str:
+    if "conversations" in record:
+        return "sharegpt_xml"
     if "log_data" in record and "score" in record:
         return "smolagents"
     if "messages" in record and "log_data" not in record:
+        # Structured tool_calls → OpenAI/OpenHands; otherwise inline-XML.
+        msgs = record.get("messages") or []
+        if isinstance(msgs, list) and any(
+            isinstance(m, dict) and m.get("tool_calls") for m in msgs
+        ):
+            return "openai_messages"
+        if isinstance(msgs, list) and any(
+            isinstance(m, dict) and m.get("role") == "tool" for m in msgs
+        ):
+            return "openai_messages"
         return "raw_messages"
     return "smolagents"
 
@@ -557,7 +736,11 @@ def main() -> int:
     p.add_argument("input", type=Path)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--source-tag", default="traj")
-    p.add_argument("--format", choices=["auto", "smolagents", "raw_messages"], default="auto")
+    p.add_argument(
+        "--format",
+        choices=["auto", "smolagents", "raw_messages", "openai_messages", "sharegpt_xml"],
+        default="auto",
+    )
 
     p.add_argument("--messages-path")
     p.add_argument("--task-path")
@@ -574,6 +757,8 @@ def main() -> int:
 
     p.add_argument("--outcome-mode", choices=["score+match", "terminal-tool", "auto"], default="auto")
 
+    p.add_argument("--flat-csv", type=Path, default=None)
+    p.add_argument("--flat-csv-where", default=None)
     p.add_argument("--batch-size", type=int, default=500)
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--print-summary", action=argparse.BooleanOptionalAction, default=True)
@@ -650,7 +835,11 @@ def main() -> int:
         if not isinstance(messages, list):
             continue
 
-        if tool_call_mode == "structured":
+        if tool_call_mode == "openai":
+            steps = extract_steps_openai(messages)
+        elif tool_call_mode == "sharegpt":
+            steps = extract_steps_sharegpt(messages)
+        elif tool_call_mode == "structured":
             steps = extract_steps_smolagents(messages)
         else:
             steps = extract_steps_inline_xml(messages, inline_pattern)
@@ -735,6 +924,20 @@ def main() -> int:
 
     flush_batch()
     writer.close()
+
+    # Flat (id, outcome, step_1..step_K) projection consumed by the Sankeykey
+    # demo as CSV, which duckdb-wasm reads without the parquet extension.
+    if args.flat_csv:
+        import duckdb
+
+        cols = ", ".join(f"step_{i}" for i in range(1, MAX_TOOL_STEPS + 1))
+        where = f" WHERE {args.flat_csv_where}" if args.flat_csv_where else ""
+        duckdb.connect().execute(
+            f"COPY (SELECT id, outcome, {cols} FROM read_parquet('{args.output}'){where}) "
+            f"TO '{args.flat_csv}' (HEADER, DELIMITER ',')"
+        )
+        if args.print_summary:
+            print(f"[extract_trajectories] wrote flat csv to {args.flat_csv}", file=sys.stderr)
 
     if args.print_summary:
         print(f"\n[extract_trajectories] wrote {n:,} trajectories to {args.output}", file=sys.stderr)

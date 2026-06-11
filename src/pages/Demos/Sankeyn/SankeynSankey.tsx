@@ -1,18 +1,20 @@
-// Trajectory Atlas — OutcomeSankey. Renders the slider-controlled
-// step_1..step_K columns alongside the outcome column. The step_i values
-// are pre-computed in the parquet (see public/scripts/extract_trajectories.py).
+// Sankeyn — hero sankey. Same column recipe as the Trajectory Atlas
+// OutcomeSankey (step_1..step_K + outcome), but standalone: no crossfilter,
+// since there are no sibling panels to drive. Ribbon clicks still highlight
+// locally inside SankeyMosaicClient.
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useColorMode } from "../../../components/ui/color-mode";
-import { SankeyMosaicClient, type SankeyColumnSpec } from "../../../components/SankeyMosaicClient";
+import {
+  SankeyMosaicClient,
+  type SankeyColumnSpec,
+} from "../../../components/SankeyMosaicClient";
 import {
   coordinatorAtom,
-  crossfilterAtom,
-  highlightedTrajIdAtom,
+  depthAtom,
   resetSignalAtom,
   sankeyActiveAtom,
-  sankeyDepthAtom,
 } from "./atoms";
 import {
   OUTCOME_ORDER,
@@ -22,37 +24,43 @@ import {
   outcomeHex,
   stepLabel,
 } from "../../../components/taxonomy";
-import type { Category, Outcome } from "./types";
+import type { Outcome } from "../../../components/taxonomy";
 
-const ORDERINGS = { outcome: OUTCOME_ORDER as readonly string[] as string[] };
+const ORDERINGS: Record<string, string[]> = {
+  outcome: [...OUTCOME_ORDER],
+};
 
-export function OutcomeSankey() {
+export function SankeynSankey() {
   const coordinator = useAtomValue(coordinatorAtom);
-  const crossfilter = useAtomValue(crossfilterAtom);
-  const highlightedTrajId = useAtomValue(highlightedTrajIdAtom);
-  const sankeyDepth = useAtomValue(sankeyDepthAtom);
+  const depth = useAtomValue(depthAtom);
   const resetSignal = useAtomValue(resetSignalAtom);
-  const setSankeySelectionActive = useSetAtom(sankeyActiveAtom);
+  const setSankeyActive = useSetAtom(sankeyActiveAtom);
   const { colorMode } = useColorMode();
   const dark = colorMode === "dark";
 
+  const [renderDepth, setRenderDepth] = useState(depth);
+  useEffect(() => {
+    const id = setTimeout(() => setRenderDepth(depth), 150);
+    return () => clearTimeout(id);
+  }, [depth]);
+
   const columns: SankeyColumnSpec[] = useMemo(
     () => [
-      ...Array.from({ length: sankeyDepth }, (_, i) => ({
+      ...Array.from({ length: renderDepth }, (_, i) => ({
         name: `step_${i + 1}`,
-        label: stepLabel(i),
+        label: stepLabel(i, renderDepth > 5),
         expr: `any_value(step_${i + 1})`,
       })),
       { name: "outcome", label: "Outcome", expr: "any_value(outcome)" },
     ],
-    [sankeyDepth],
+    [renderDepth],
   );
 
   const palette = useMemo(
     () => (column: string, value: string): string => {
       if (column === "outcome") return outcomeHex(value as Outcome, dark);
       if (value === "(none)") return noneHex(dark);
-      return categoryHex(categoryFor(value) as Category, dark);
+      return categoryHex(categoryFor(value), dark);
     },
     [dark],
   );
@@ -65,14 +73,16 @@ export function OutcomeSankey() {
       table="trajectories"
       idCol="id"
       columns={columns}
-      selection={crossfilter}
+      selection={null}
       palette={palette}
       orderings={ORDERINGS}
       dark={dark}
       maxNodesPerColumn={11}
-      highlightedTrajIds={highlightedTrajId ? new Set([highlightedTrajId]) : null}
+      align="bottom"
+      dropoffLabels
+      nodeOrder="barycenter"
       resetSignal={resetSignal}
-      onSelectionStateChange={setSankeySelectionActive}
+      onSelectionStateChange={setSankeyActive}
     />
   );
 }

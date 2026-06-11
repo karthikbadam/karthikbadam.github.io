@@ -2,7 +2,7 @@
 // the trajectory table's Path column. Plain Chakra components, no CSS file.
 
 import { Box, Flex, Text } from "@chakra-ui/react";
-import { categoryFor, categoryToken } from "./taxonomy";
+import { categoryFor, categoryToken } from "../../../components/taxonomy";
 
 interface StepPathProps {
   /** Comma-joined string of step names, e.g. "task,thought,web_search,…" */

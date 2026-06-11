@@ -1,5 +1,6 @@
 import { atom } from "jotai";
 import * as vg from "@uwdata/vgplot";
+import { localDuckDB } from "../../../components/duckdbLocal";
 import { LoadingState } from "../../../types/loading";
 
 type Coordinator = vg.Coordinator;
@@ -96,14 +97,13 @@ export const initializeLensingAtom = atom(null, async (get, set) => {
   try {
     set(loadingStateAtom, { status: "initializing" });
 
-    const connector = vg.wasmConnector();
+    const connector = vg.wasmConnector({ duckdb: await localDuckDB() });
     const coord = new vg.Coordinator(connector, {
       cache: false,
       preagg: { enabled: false },
     });
     vg.coordinator(coord).databaseConnector(connector);
     set(coordinatorAtom, coord);
-    await connector.getDuckDB();
 
     const gridQuery = `
       CREATE TABLE IF NOT EXISTS source_grid AS

@@ -5,15 +5,16 @@ import rehypeSlug from "rehype-slug";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-
-
 
 // https://vite.dev/config/
 export default defineConfig({
   base: "/",
+  // Native tsconfig `paths` resolution (replaces the vite-tsconfig-paths plugin).
+  resolve: {
+    tsconfigPaths: true,
+  },
   plugins: [
-    react(), tsconfigPaths(),
+    react(),
     mdx({
       remarkPlugins: [remarkGfm, remarkFrontmatter],
       rehypePlugins: [rehypeSlug, [rehypePrism, { ignoreMissing: true }]],
@@ -21,11 +22,5 @@ export default defineConfig({
   ],
   optimizeDeps: {
     exclude: ["@duckdb/duckdb-wasm"],
-  },
-  server: {
-    headers: {
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "require-corp",
-    },
   },
 });

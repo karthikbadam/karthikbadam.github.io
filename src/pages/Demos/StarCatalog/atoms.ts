@@ -1,5 +1,6 @@
 import { atom } from "jotai";
 import * as vg from "@uwdata/vgplot";
+import { localDuckDB } from "../../../components/duckdbLocal";
 import { LoadingState } from "../../../types/loading";
 
 type VgSelection = vg.Selection;
@@ -23,7 +24,7 @@ export const initializeGaiaAtom = atom(null, async (get, set) => {
   try {
     set(loadingStateAtom, { status: "initializing" });
 
-    const connector = vg.wasmConnector();
+    const connector = vg.wasmConnector({ duckdb: await localDuckDB() });
     const coord = new vg.Coordinator(connector, {
       cache: false,
       preagg: { enabled: false },
@@ -32,7 +33,6 @@ export const initializeGaiaAtom = atom(null, async (get, set) => {
     // Set the atom synchronously before any await so a StrictMode dev
     // double-mount sees the guard at the top of this action and bails out.
     set(coordinatorAtom, coord);
-    await connector.getDuckDB();
 
     const baseUrl = window.location.origin;
     const hashBase = window.location.pathname.replace(/\/$/, "");

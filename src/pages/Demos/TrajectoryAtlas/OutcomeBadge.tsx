@@ -3,7 +3,7 @@
 // the same token so the badge stays cohesive with the rest of the demo.
 
 import { Box } from "@chakra-ui/react";
-import { outcomeToken } from "./taxonomy";
+import { outcomeToken } from "../../../components/taxonomy";
 import type { Outcome } from "./types";
 
 export function OutcomeBadge({ outcome }: { outcome: Outcome }) {

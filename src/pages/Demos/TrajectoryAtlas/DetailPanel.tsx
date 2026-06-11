@@ -5,7 +5,7 @@
 import { Box, CloseButton, Drawer, Flex, Grid, Portal, Text } from "@chakra-ui/react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { OutcomeBadge } from "./OutcomeBadge";
-import { categoryFor, categoryToken } from "./taxonomy";
+import { categoryFor, categoryToken } from "../../../components/taxonomy";
 import type { Trajectory } from "./types";
 
 interface DetailPanelProps {
