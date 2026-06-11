@@ -400,12 +400,14 @@ export function SankeyMosaicClient({
     onLinkClick?.(lk.fromCol, lk.from, lk.to, Array.from(lk.trajIds));
   }
 
-  // Ribbons fade as depth grows — too thin to trace, so nodes carry the read.
-  const linkBase =
-    columns.length > 16 ? 0.1 : columns.length > 8 ? 0.18 : 0.32;
-  // At high depth, hover-dimming everything makes the chart go black; keep
-  // unhovered ribbons at base instead.
-  const dimOpacity = columns.length > 16 ? linkBase : 0.04;
+  // Ribbons fade uniformly as columns grow — at depth they're too thin to
+  // trace, so the nodes carry the read. Dim tracks base so hover never turns
+  // a deep chart black.
+  const linkBase = Math.min(
+    0.32,
+    Math.max(0.08, 0.32 - (columns.length - 4) * 0.006),
+  );
+  const dimOpacity = Math.max(0.03, linkBase * 0.15);
   const lastCol = columns.length - 1;
   const colSlot = (ci: number) =>
     (layout.cols[ci + 1]?.x ?? size.w) - (layout.cols[ci]?.x ?? 0);
@@ -557,7 +559,7 @@ export function SankeyMosaicClient({
               <text
                 key={`h-${i}`}
                 x={isLast ? geom.x + geom.w : geom.x}
-                y={top - 16}
+                y={Math.max(12, top - 16)}
                 fill={focused ? chartFg(dark) : chartFgMuted(dark)}
                 textAnchor={isLast ? "end" : "start"}
                 style={{
@@ -582,7 +584,7 @@ export function SankeyMosaicClient({
                 <text
                   key={`d-${i}`}
                   x={layout.cols[i].x}
-                  y={top - 4}
+                  y={Math.max(24, top - 4)}
                   fill={chartFgMuted(dark)}
                   textAnchor="start"
                   pointerEvents="none"
