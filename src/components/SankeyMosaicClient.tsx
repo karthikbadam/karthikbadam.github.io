@@ -403,8 +403,22 @@ export function SankeyMosaicClient({
   // Ribbons fade as depth grows — too thin to trace, so nodes carry the read.
   const linkBase =
     columns.length > 16 ? 0.1 : columns.length > 8 ? 0.18 : 0.32;
+  // At high depth, hover-dimming everything makes the chart go black; keep
+  // unhovered ribbons at base instead.
+  const dimOpacity = columns.length > 16 ? linkBase : 0.04;
+  const lastCol = columns.length - 1;
   const colSlot = (ci: number) =>
     (layout.cols[ci + 1]?.x ?? size.w) - (layout.cols[ci]?.x ?? 0);
+  // Top edge of each column, so headers hug their column instead of floating
+  // in a fixed row above bottom-aligned bars.
+  const colTops = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const n of layout.nodes) {
+      const cur = m.get(n.col);
+      if (cur === undefined || n.y < cur) m.set(n.col, n.y);
+    }
+    return m;
+  }, [layout.nodes]);
 
   return (
     <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
@@ -415,9 +429,7 @@ export function SankeyMosaicClient({
             if (!layout.nodes.some((n) => n.col === i)) return null;
             const left = i === 0 ? 0 : (layout.cols[i - 1].x + layout.cols[i - 1].w + c.x) / 2;
             const right =
-              i === columns.length - 1
-                ? size.w
-                : (c.x + c.w + layout.cols[i + 1].x) / 2;
+              i === lastCol ? size.w : (c.x + c.w + layout.cols[i + 1].x) / 2;
             const isFocused = focusedCol === i;
             return (
               <rect
@@ -461,15 +473,7 @@ export function SankeyMosaicClient({
                 key={`l-${i}`}
                 d={ribbonPath(lk.x0, lk.y0, lk.t0, lk.x1, lk.y1, lk.t1)}
                 fill={lk.color}
-                opacity={
-                  accent
-                    ? 0.85
-                    : dimmed
-                      ? columns.length > 16
-                        ? linkBase
-                        : 0.04
-                      : linkBase
-                }
+                opacity={accent ? 0.85 : dimmed ? dimOpacity : linkBase}
                 style={{ cursor: "pointer", transition: "opacity .15s" }}
                 onClick={() => handleClick(lk)}
                 onMouseEnter={() => setHover({ kind: "link", lk })}
@@ -481,13 +485,15 @@ export function SankeyMosaicClient({
             const wideEnough =
               (colSlot(n.col) >= 40 && columns.length <= 20) ||
               focusedCol === n.col ||
-              n.col === columns.length - 1;
+              n.col === lastCol;
             const showLabel = wideEnough && (n.h >= 11 || n.key === OTHER_KEY);
-            const fit = fitNodeLabel(
-              n.label,
-              n.count.toLocaleString(),
-              labelAvail.get(n.col) ?? 0,
-            );
+            const fit = showLabel
+              ? fitNodeLabel(
+                  n.label,
+                  n.count.toLocaleString(),
+                  labelAvail.get(n.col) ?? 0,
+                )
+              : null;
             const isHoverNode = hover?.kind === "node" && hover.n === n;
             const dimmedNode =
               hover != null &&
@@ -512,12 +518,12 @@ export function SankeyMosaicClient({
                   onMouseLeave={() => setHover(null)}
                   onClick={() => toggleFocus(n.col)}
                 />
-                {showLabel && (
+                {fit && (
                   <text
-                    x={n.col === columns.length - 1 ? n.x - 6 : n.x + n.w + 6}
+                    x={n.col === lastCol ? n.x - 6 : n.x + n.w + 6}
                     y={n.y + n.h / 2 + 4}
                     fill={chartFg(dark)}
-                    textAnchor={n.col === columns.length - 1 ? "end" : "start"}
+                    textAnchor={n.col === lastCol ? "end" : "start"}
                     pointerEvents="none"
                     style={{ ...chartLabelStyle, ...chartTextHalo(dark) }}
                     opacity={dimmedNode ? 0.4 : 1}
@@ -534,28 +540,26 @@ export function SankeyMosaicClient({
             );
           })}
           {columns.map((c, i) => {
-            // Skip the header when no nodes landed in this column — e.g. a
-            // step_3 column with no trajectories that reach a third tool.
-            const firstNode = layout.nodes.find((n) => n.col === i);
-            if (!firstNode) return null;
-            const lastCol = i === columns.length - 1;
+            const top = colTops.get(i);
+            // Skip empty columns — e.g. a step column no trajectory reaches.
+            if (top === undefined) return null;
+            const isLast = i === lastCol;
             const focused = focusedCol === i;
+            // First, last, and focused headers always show; the rest thin out
+            // as columns crowd.
+            const isAnchor = focused || isLast || i === 0;
             const headerStep =
               columns.length > 30 ? 5 : columns.length > 16 ? 2 : 1;
-            const keep =
-              focused || lastCol || i === 0 || i % headerStep === 0;
-            if (!keep || (!focused && !lastCol && i !== 0 && colSlot(i) < 28))
+            if (!isAnchor && (i % headerStep !== 0 || colSlot(i) < 28))
               return null;
-            const labelText = c.label ?? c.name;
-            const x = lastCol ? firstNode.x + firstNode.w : firstNode.x;
-            const anchor = lastCol ? "end" : "start";
+            const geom = layout.cols[i];
             return (
               <text
                 key={`h-${i}`}
-                x={x}
-                y={12}
+                x={isLast ? geom.x + geom.w : geom.x}
+                y={top - 16}
                 fill={focused ? chartFg(dark) : chartFgMuted(dark)}
-                textAnchor={anchor}
+                textAnchor={isLast ? "end" : "start"}
                 style={{
                   ...chartColumnHeaderStyle,
                   ...chartTextHalo(dark),
@@ -564,7 +568,7 @@ export function SankeyMosaicClient({
                 }}
                 onClick={() => toggleFocus(i)}
               >
-                {labelText}
+                {c.label ?? c.name}
               </text>
             );
           })}
@@ -572,16 +576,13 @@ export function SankeyMosaicClient({
             columns.length <= 10 &&
             columns.map((_, i) => {
               const count = dropoffs.get(i);
-              if (!count) return null;
-              const colNodes = layout.nodes.filter((n) => n.col === i);
-              if (!colNodes.length) return null;
-              // Render right under the column header — the column itself may
-              // be full-height, leaving no room below the nodes.
+              const top = colTops.get(i);
+              if (!count || top === undefined) return null;
               return (
                 <text
                   key={`d-${i}`}
-                  x={colNodes[0].x}
-                  y={24}
+                  x={layout.cols[i].x}
+                  y={top - 4}
                   fill={chartFgMuted(dark)}
                   textAnchor="start"
                   pointerEvents="none"
@@ -692,8 +693,6 @@ const COL_W_MIN = 4;
 const GAP_MIN = 4;
 const FOCUS_W = 32;
 const FOCUS_GAP_W = 10;
-const STAGGER_MAX_COLS = 6;
-const STAGGER_STEP = 12;
 
 interface ColLayout {
   x: number;
@@ -756,7 +755,7 @@ function layoutSankey(
   const padLeft = 8;
   const padRight = 8;
   // Dropoff labels occupy a second header line below the column headers.
-  const padTop = dropoffLabels ? 36 : 24;
+  const padTop = dropoffLabels ? 28 : 20;
   const padBottom = 8;
   const innerW = Math.max(0, width - padLeft - padRight);
   const innerH = Math.max(0, height - padTop - padBottom);
@@ -766,11 +765,6 @@ function layoutSankey(
       ? focusedCol
       : null;
   const colGeom = columnGeometry(nCols, innerW, padLeft, fc);
-
-  const stagger =
-    align === "top" && nCols >= 2 && nCols <= STAGGER_MAX_COLS ? STAGGER_STEP : 0;
-  const staggerOffset = (ci: number) => (nCols - 1 - ci) * stagger;
-  const maxStagger = stagger * (nCols - 1);
 
   // Group nodes by column, apply ordering.
   const byCol: Record<number, NodeRow[]> = {};
@@ -863,10 +857,10 @@ function layoutSankey(
     const total = list.reduce((a, n) => a + n.count, 0);
     if (total <= 0) continue;
     const nGaps = Math.max(0, list.length - 1);
-    const colUnit = Math.max(1, innerH - maxStagger - nGaps * gapY) / total;
+    const colUnit = Math.max(1, innerH - nGaps * gapY) / total;
     if (colUnit < unit) unit = colUnit;
   }
-  if (!Number.isFinite(unit) || unit <= 0) unit = Math.max(1, innerH - maxStagger);
+  if (!Number.isFinite(unit) || unit <= 0) unit = innerH;
 
   // Align each column. The largest column fills `innerH` either way; shorter
   // columns leave whitespace on the opposite side, which is exactly where
@@ -883,7 +877,7 @@ function layoutSankey(
     const colTotal = list.reduce((a, n) => a + n.count, 0);
     const nGaps = Math.max(0, list.length - 1);
     const colHeight = colTotal * unit + nGaps * gapY;
-    let y = align === "top" ? padTop + staggerOffset(ci) : bottomY - colHeight;
+    let y = align === "top" ? padTop : bottomY - colHeight;
     const geom = colGeom[ci];
     for (const n of list) {
       const h = Math.max(1, n.count * unit);

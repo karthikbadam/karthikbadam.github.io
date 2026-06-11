@@ -46,12 +46,10 @@ export const SOURCES: Record<
 const STEP_COLS = Array.from({ length: MAX_DEPTH }, (_, i) => `step_${i + 1}`);
 
 /** Depth stats: `ge[k-1]` = rollouts whose k-th step column is a real tool
- * (not the `(none)` sentinel); `paths[k-1]` = distinct tool sequences
- * through the first k calls — the diversity the sankey aggregates. */
+ * (not the `(none)` sentinel). */
 export interface Survival {
   total: number;
   ge: number[];
-  paths: number[];
 }
 
 // Primitive atoms — infra
@@ -87,19 +85,14 @@ async function loadSurvival(coord: Coordinator): Promise<Survival> {
     (c, i) =>
       `COUNT(*) FILTER (WHERE ${c} IS NOT NULL AND ${c} <> '(none)') AS ge_${i + 1}`,
   );
-  const paths = STEP_COLS.map(
-    (_, i) =>
-      `COUNT(DISTINCT concat_ws('→', ${STEP_COLS.slice(0, i + 1).join(", ")})) AS paths_${i + 1}`,
-  );
   const r = await coord.query(`
-    SELECT COUNT(*) AS total, ${ge.join(", ")}, ${paths.join(", ")}
+    SELECT COUNT(*) AS total, ${ge.join(", ")}
     FROM trajectories
   `);
   const row = arrowFirstRow(r);
   return {
     total: Number(row?.total ?? 0),
     ge: STEP_COLS.map((_, i) => Number(row?.[`ge_${i + 1}`] ?? 0)),
-    paths: STEP_COLS.map((_, i) => Number(row?.[`paths_${i + 1}`] ?? 0)),
   };
 }
 
