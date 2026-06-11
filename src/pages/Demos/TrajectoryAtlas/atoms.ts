@@ -74,7 +74,8 @@ export const isReadyAtom = atom(
 );
 
 export const sourcesAtom = atom(() => SOURCES);
-export const maxSankeyDepthAtom = atom(() => MAX_SANKEY_DEPTH);
+/** Deepest tool call present in the loaded data; caps the depth slider. */
+export const maxSankeyDepthAtom = atom(MAX_SANKEY_DEPTH);
 
 export const sourceConfigAtom = atom((get) => SOURCES[get(sourceAtom)]);
 
@@ -123,6 +124,24 @@ async function loadSource(coord: Coordinator, src: SourceKey) {
            s.ok       AS ok
     FROM trajectories t, UNNEST(t.steps) AS u(s)
   `);
+}
+
+async function loadMaxDepth(coord: Coordinator): Promise<number> {
+  const cols = Array.from(
+    { length: MAX_SANKEY_DEPTH },
+    (_, i) => `step_${i + 1}`,
+  );
+  const ge = cols.map(
+    (c, i) =>
+      `COUNT(*) FILTER (WHERE ${c} IS NOT NULL AND ${c} <> '(none)') AS ge_${i + 1}`,
+  );
+  const r = await coord.query(`SELECT ${ge.join(", ")} FROM trajectories`);
+  const row = arrowFirstRow(r);
+  let k = 1;
+  for (let i = 0; i < cols.length; i++) {
+    if (Number(row?.[`ge_${i + 1}`] ?? 0) > 0) k = i + 1;
+  }
+  return Math.max(2, k);
 }
 
 // Action atoms
@@ -180,6 +199,9 @@ export const switchSourceAtom = atom(
       set(outcomeFilterAtom, "all");
       set(selectedTrajectoryAtom, null);
       set(highlightedTrajIdAtom, null);
+      const maxDepth = await loadMaxDepth(coord);
+      set(maxSankeyDepthAtom, maxDepth);
+      set(sankeyDepthAtom, (d) => Math.min(d, maxDepth));
       await set(refreshStatsAtom);
       set(loadingStateAtom, { status: "ready" });
     } catch (err) {
@@ -226,6 +248,9 @@ export const initializeTrajectoryAtlasAtom = atom(null, async (get, set) => {
     set(loadedSourceAtom, src);
 
     set(loadingStateAtom, { status: "creating-tables", table: "steps" });
+    const maxDepth = await loadMaxDepth(coord);
+    set(maxSankeyDepthAtom, maxDepth);
+    set(sankeyDepthAtom, (d) => Math.min(d, maxDepth));
     await set(refreshStatsAtom);
     set(loadingStateAtom, { status: "ready" });
   } catch (err) {
