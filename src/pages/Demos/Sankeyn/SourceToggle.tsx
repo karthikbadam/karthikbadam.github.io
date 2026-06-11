@@ -2,7 +2,7 @@
 // Selecting swaps the live DuckDB table; the chart remounts on the new source
 // (see loadedSourceAtom).
 
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, NativeSelect, Text } from "@chakra-ui/react";
 import { useAtomValue, useSetAtom } from "jotai";
 import { SOURCES, loadedSourceAtom, switchSourceAtom, type SourceKey } from "./atoms";
 
@@ -13,8 +13,29 @@ export function SourceToggle() {
   const switchSource = useSetAtom(switchSourceAtom);
 
   return (
-    <Flex gap={2} wrap="wrap" align="stretch">
-      {SOURCE_KEYS.map((key) => {
+    <>
+      {/* Mobile: a single dropdown so the dataset picker stays compact. */}
+      <NativeSelect.Root
+        display={{ base: "block", md: "none" }}
+        w="100%"
+        size="sm"
+      >
+        <NativeSelect.Field
+          value={loadedSource ?? undefined}
+          onChange={(e) => switchSource(e.currentTarget.value as SourceKey)}
+        >
+          {SOURCE_KEYS.map((key) => (
+            <option key={key} value={key}>
+              {SOURCES[key].label} · {SOURCES[key].blurb}
+            </option>
+          ))}
+        </NativeSelect.Field>
+        <NativeSelect.Indicator />
+      </NativeSelect.Root>
+
+      {/* Desktop: cards with descriptions. */}
+      <Flex display={{ base: "none", md: "flex" }} gap={2} wrap="wrap" align="stretch">
+        {SOURCE_KEYS.map((key) => {
         const active = key === loadedSource;
         return (
           <Box
@@ -46,6 +67,7 @@ export function SourceToggle() {
           </Box>
         );
       })}
-    </Flex>
+      </Flex>
+    </>
   );
 }
