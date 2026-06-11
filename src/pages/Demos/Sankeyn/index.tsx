@@ -99,7 +99,7 @@ function Content() {
         <Flex
           align="center"
           flex="1"
-          minW="480px"
+          minW={{ base: "auto", md: "480px" }}
           bg="bg"
           borderWidth="1px"
           borderColor="gray.subtle"
