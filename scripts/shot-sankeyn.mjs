@@ -7,8 +7,8 @@ const theme = process.argv[2] ?? "dark";
 const out = process.argv[3];
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const page = await browser.newPage({
-  viewport: { width: 1600, height: 880 },
-  deviceScaleFactor: 0.75,
+  viewport: { width: 960, height: 780 },
+  deviceScaleFactor: 1.5,
 });
 await page.addInitScript((t) => localStorage.setItem("theme", t), theme);
 await page.goto("http://localhost:5173/#/sankeyn");
