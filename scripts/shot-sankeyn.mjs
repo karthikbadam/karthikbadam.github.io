@@ -8,7 +8,7 @@ const out = process.argv[3];
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const page = await browser.newPage({
   viewport: { width: 1600, height: 1040 },
-  deviceScaleFactor: 1.25,
+  deviceScaleFactor: 0.9375,
 });
 await page.addInitScript((t) => localStorage.setItem("theme", t), theme);
 await page.goto("http://localhost:5173/#/sankeyn");
