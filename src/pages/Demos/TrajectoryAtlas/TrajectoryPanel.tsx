@@ -26,7 +26,14 @@ export function TrajectoryPanel({ title, subtitle, right, children }: Trajectory
       borderColor="gray.subtle"
       overflow="hidden"
     >
-      <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={2} mb={1}>
+      <Box
+        display="flex"
+        flexWrap="wrap"
+        justifyContent="space-between"
+        alignItems="flex-start"
+        gap={2}
+        mb={1}
+      >
         <Text fontSize="xs" fontWeight="semibold" color="accentSubtle">
           {title}
           {subtitle && (
