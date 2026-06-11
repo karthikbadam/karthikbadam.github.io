@@ -32,11 +32,6 @@ export const chartPalette = {
   brown:     { light: "#9C6B4E", dark: "#B58A72" },
   teal:      { light: "#2CA8A0", dark: "#6FD3CC" },
   gray:      { light: "#9498A0", dark: "#B8BCC4" },
-  // Outcome scale: deep blue / gold / crimson. Deeper and more saturated than
-  // the tool hues above so the two scales read as separate systems.
-  outcomeSuccess: { light: "#2563EB", dark: "#5B8DEF" },
-  outcomePartial: { light: "#CA8A04", dark: "#FACC15" },
-  outcomeFail:    { light: "#C81E1E", dark: "#E5484D" },
 } as const;
 
 const chartTokens = Object.fromEntries(

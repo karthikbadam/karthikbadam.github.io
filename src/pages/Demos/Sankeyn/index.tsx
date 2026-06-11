@@ -78,8 +78,9 @@ function Content() {
           )}
         </Heading>
         <Text fontSize="sm" color="fg.muted" mt={1}>
-          Each agent run is a chain of tool calls ending in success, partial,
-          or fail; slide n to unfold the first n calls of every run.
+          A custom visualization for recursive flows: the sankey unfolds the
+          first n tool calls of every agent run, and clicking a layer expands
+          it in place.
         </Text>
       </Box>
 

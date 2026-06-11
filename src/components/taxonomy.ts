@@ -44,30 +44,51 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   thought: "Thought",
 };
 
-// Category → palette key. Used both for `bg={`chart.${CAT_PALETTE_KEY[c]}`}`
-// in JSX and for hex resolution in SVG.
-// Tools lean orange/red/violet/cyan; outcomes own the deep blue/gold/crimson
-// scale, so the two read as separate systems.
-export const CAT_PALETTE_KEY: Record<Category, keyof typeof chartPalette> = {
-  plan: "pink",
-  task: "pink",
-  thought: "lightBlue",
-  observation: "gray",
-  search: "teal",
-  read: "cyan",
-  edit: "purple",
-  exec: "red",
-  tool: "orange",
-  verify: "brown",
-  submit: "pink",
-  error: "gray",
+// Outcomes own green / yellow / red from observable10; tools draw from the
+// remaining hues, so the two scales never overlap.
+const OUTCOME_PALETTE_KEY: Record<Outcome, keyof typeof chartPalette> = {
+  success: "green",
+  partial: "orange",
+  fail: "red",
 };
 
-const OUTCOME_PALETTE_KEY: Record<Outcome, keyof typeof chartPalette> = {
-  success: "outcomeSuccess",
-  partial: "outcomePartial",
-  fail: "outcomeFail",
-};
+const TOOL_POOL = [
+  "blue",
+  "cyan",
+  "pink",
+  "purple",
+  "lightBlue",
+  "brown",
+  "teal",
+  "gray",
+] as const;
+
+// Generator assignment order: common action categories first so they land on
+// the most distinct hues; wraps when categories outnumber the pool.
+const COLOR_ORDER: Category[] = [
+  "exec",
+  "read",
+  "edit",
+  "search",
+  "tool",
+  "plan",
+  "verify",
+  "submit",
+  "task",
+  "thought",
+  "observation",
+  "error",
+];
+
+function categoryPaletteKey(cat: Category): keyof typeof chartPalette {
+  const i = COLOR_ORDER.indexOf(cat);
+  return i < 0 ? "gray" : TOOL_POOL[i % TOOL_POOL.length];
+}
+
+/** Color for the synthetic "(none)" placeholder value. */
+export function noneHex(dark: boolean): string {
+  return dark ? "#4a5568" : "#a0aec0";
+}
 
 export const OUTCOME_ORDER: Outcome[] = ["success", "partial", "fail"];
 
@@ -117,11 +138,11 @@ export function categoryFor(name: string): Category {
 
 /** Chakra token name (e.g. "chart.blue") for a category. */
 export function categoryToken(cat: Category): string {
-  return `chart.${CAT_PALETTE_KEY[cat]}`;
+  return `chart.${categoryPaletteKey(cat)}`;
 }
 
 export function categoryHex(cat: Category, dark: boolean): string {
-  return chartHex(CAT_PALETTE_KEY[cat] ?? "gray", dark);
+  return chartHex(categoryPaletteKey(cat), dark);
 }
 
 export function outcomeToken(o: Outcome): string {

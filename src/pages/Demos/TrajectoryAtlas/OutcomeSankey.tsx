@@ -18,6 +18,7 @@ import {
   OUTCOME_ORDER,
   categoryFor,
   categoryHex,
+  noneHex,
   outcomeHex,
   stepLabel,
 } from "../../../components/taxonomy";
@@ -50,7 +51,7 @@ export function OutcomeSankey() {
   const palette = useMemo(
     () => (column: string, value: string): string => {
       if (column === "outcome") return outcomeHex(value as Outcome, dark);
-      if (value === "(none)") return dark ? "#4a5568" : "#a0aec0";
+      if (value === "(none)") return noneHex(dark);
       return categoryHex(categoryFor(value) as Category, dark);
     },
     [dark],
