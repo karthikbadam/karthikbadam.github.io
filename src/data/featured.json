@@ -1,7 +1,7 @@
 [
   {
     "title": "Visualize Recursive Flows",
-    "abstract": "San(key)ⁿ is a custom visualization for recursive flows: a sankey that unfolds the first n tool calls of every agent run, up to 80 levels deep. Slide n to grow the chain, click a layer to expand it in place, and switch between DeepSWE Kimi-K2, Hermes, and DeepSeek-v4 traces, all in-browser on DuckDB-WASM.",
+    "abstract": "San(key)ⁿ is a custom visualization for recursive flows: a sankey that unfolds the chain of tool calls behind every agent run. Slide n to reveal more of the chain, click a layer to expand it, and compare traces across agent datasets, all in-browser.",
     "link": "/sankeyn",
     "image": {
       "dark": "sankeyn-dark.png",
