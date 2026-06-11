@@ -134,18 +134,17 @@ export const Home = () => {
                 Karthik Badam
               </Heading>
               <Text fontSize="sm" color="gray.fg" lineHeight="tall">
-                I am a staff-level{" "}
                 <Text as="span" color="accent" fontWeight="semibold">
-                  full-stack engineer
+                  Full-stack engineer
                 </Text>{" "}
                 building visualization tools for metrics reporting, LLM
-                evaluation, and ML training data curation at{" "}
+                evaluation, and ML training at{" "}
                 <Text as="span" color="accent" fontWeight="semibold">
                   Apple.
                 </Text>{" "}
-                I received a Ph.D. in Computer Science from the University of
-                Maryland, College Park, where I published novel research in HCI,
-                Data Visualization, and ML.
+                Ph.D. in Computer Science from the University of Maryland,
+                College Park. Published novel research in HCI, Data
+                Visualization, and ML.
               </Text>
               <HStack gap={2} pt={2} align="center">
                 <SocialExpandLink
@@ -183,7 +182,7 @@ export const Home = () => {
               mb={{ base: 10, md: 12 }}
             >
               <Heading color="accent" fontWeight="semibold" fontSize="xl">
-                Featured Works
+                Featured Explorations
               </Heading>
               {featuredPosts.length > 0 && (
                 <Grid

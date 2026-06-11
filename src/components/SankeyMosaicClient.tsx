@@ -15,7 +15,10 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { clausePoints } from "@uwdata/mosaic-core";
-import type { Coordinator, Selection as VgSelection } from "@uwdata/mosaic-core";
+import type {
+  Coordinator,
+  Selection as VgSelection,
+} from "@uwdata/mosaic-core";
 import { Group } from "@visx/group";
 import { Bar } from "@visx/shape";
 import {
@@ -203,7 +206,10 @@ export function SankeyMosaicClient({
     onSelectionStateChange?.(false);
     if (selection) {
       selection.update(
-        clausePoints([idCol], undefined, { source: sourceRef.current, clients: new Set() }),
+        clausePoints([idCol], undefined, {
+          source: sourceRef.current,
+          clients: new Set(),
+        }),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -243,8 +249,7 @@ export function SankeyMosaicClient({
     const noneStr = `'${NONE_VALUE.replace(/'/g, "''")}'`;
     const realCheck = (k: number) =>
       `${col(columns[k].name)} IS NOT NULL AND ${col(columns[k].name)} <> ${noneStr}`;
-    const noneCheck = (k: number) =>
-      `${col(columns[k].name)} = ${noneStr}`;
+    const noneCheck = (k: number) => `${col(columns[k].name)} = ${noneStr}`;
 
     (async () => {
       try {
@@ -265,9 +270,12 @@ export function SankeyMosaicClient({
             linkPairs.map(({ i, j }) => {
               const intermediates: string[] = [];
               for (let k = i + 1; k < j; k++) intermediates.push(noneCheck(k));
-              const where = [realCheck(i), realCheck(j), ...intermediates].join(" AND ");
+              const where = [realCheck(i), realCheck(j), ...intermediates].join(
+                " AND ",
+              );
               return coordinator
-                .query(`
+                .query(
+                  `
                   ${trajCte}
                   SELECT ${col(columns[i].name)} AS from_key,
                          ${col(columns[j].name)} AS to_key,
@@ -275,7 +283,8 @@ export function SankeyMosaicClient({
                   FROM traj_cols
                   WHERE ${where}
                   GROUP BY 1, 2 ORDER BY 1, 2
-                `)
+                `,
+                )
                 .then((r) => ({ i, j, rows: arrowRows(r) }));
             }),
           ),
@@ -307,7 +316,12 @@ export function SankeyMosaicClient({
         }
 
         if (typeof maxNodesPerColumn === "number" && maxNodesPerColumn > 1) {
-          const collapse = collapseTopK(nextNodes, nextLinks, columns, maxNodesPerColumn);
+          const collapse = collapseTopK(
+            nextNodes,
+            nextLinks,
+            columns,
+            maxNodesPerColumn,
+          );
           nextNodes = collapse.nodes;
           nextLinks = collapse.links;
         }
@@ -322,15 +336,45 @@ export function SankeyMosaicClient({
     return () => {
       cancelled = true;
     };
-  }, [version, coordinator, table, idCol, columns, whereExpr, selection, maxNodesPerColumn]);
+  }, [
+    version,
+    coordinator,
+    table,
+    idCol,
+    columns,
+    whereExpr,
+    selection,
+    maxNodesPerColumn,
+  ]);
 
   // Layout — produces nodes and links with x/y/w/h.
   const layout = useMemo(() => {
     return layoutSankey(
-      columns, nodes, links, size.w, size.h, orderings, palette, align,
-      dropoffLabels, nodeOrder, focusedCol,
+      columns,
+      nodes,
+      links,
+      size.w,
+      size.h,
+      orderings,
+      palette,
+      align,
+      dropoffLabels,
+      nodeOrder,
+      focusedCol,
     );
-  }, [columns, nodes, links, size.w, size.h, orderings, palette, align, dropoffLabels, nodeOrder, focusedCol]);
+  }, [
+    columns,
+    nodes,
+    links,
+    size.w,
+    size.h,
+    orderings,
+    palette,
+    align,
+    dropoffLabels,
+    nodeOrder,
+    focusedCol,
+  ]);
 
   // Per-column label width budget: the space up to the neighboring column
   // (or the chart edge), so labels never bleed into the next column. The
@@ -388,12 +432,18 @@ export function SankeyMosaicClient({
     if (selection) {
       if (next === null) {
         selection.update(
-          clausePoints([idCol], undefined, { source: sourceRef.current, clients: new Set() }),
+          clausePoints([idCol], undefined, {
+            source: sourceRef.current,
+            clients: new Set(),
+          }),
         );
       } else {
         const ids = Array.from(lk.trajIds).map((id) => [id]);
         selection.update(
-          clausePoints([idCol], ids, { source: sourceRef.current, clients: new Set() }),
+          clausePoints([idCol], ids, {
+            source: sourceRef.current,
+            clients: new Set(),
+          }),
         );
       }
     }
@@ -404,8 +454,8 @@ export function SankeyMosaicClient({
   // trace, so the nodes carry the read. Dim tracks base so hover never turns
   // a deep chart black.
   const linkBase = Math.min(
-    0.32,
-    Math.max(0.08, 0.32 - (columns.length - 4) * 0.006),
+    0.2,
+    Math.max(0.08, 0.2 - (columns.length - 4) * 0.006),
   );
   const dimOpacity = Math.max(0.03, linkBase * 0.15);
   const lastCol = columns.length - 1;
@@ -423,13 +473,19 @@ export function SankeyMosaicClient({
   }, [layout.nodes]);
 
   return (
-    <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div
+      ref={containerRef}
+      style={{ width: "100%", height: "100%", position: "relative" }}
+    >
       <svg width={size.w} height={size.h} style={{ display: "block" }}>
         <Group>
           {/* Click a column's band to expand that layer. */}
           {layout.cols.map((c, i) => {
             if (!layout.nodes.some((n) => n.col === i)) return null;
-            const left = i === 0 ? 0 : (layout.cols[i - 1].x + layout.cols[i - 1].w + c.x) / 2;
+            const left =
+              i === 0
+                ? 0
+                : (layout.cols[i - 1].x + layout.cols[i - 1].w + c.x) / 2;
             const right =
               i === lastCol ? size.w : (c.x + c.w + layout.cols[i + 1].x) / 2;
             const isFocused = focusedCol === i;
@@ -455,7 +511,8 @@ export function SankeyMosaicClient({
           {layout.links.map((lk, i) => {
             const sel = isSelected(lk);
             const hi =
-              highlightedTrajIds && setIntersects(lk.trajIds, highlightedTrajIds);
+              highlightedTrajIds &&
+              setIntersects(lk.trajIds, highlightedTrajIds);
             // Hover-driven dimming: when the user hovers a link or a node,
             // dim every link NOT involved in the hover.
             const isHoverLink = hover?.kind === "link" && hover.lk === lk;
@@ -627,14 +684,27 @@ export function SankeyMosaicClient({
         <div
           style={{
             ...tooltipContainerStyle(dark, 220),
-            left: Math.min(hover.n.x + hover.n.w + 10, Math.max(0, size.w - 240)),
-            top: Math.max(0, Math.min(hover.n.y + hover.n.h / 2 - 10, size.h - 80)),
+            left: Math.min(
+              hover.n.x + hover.n.w + 10,
+              Math.max(0, size.w - 240),
+            ),
+            top: Math.max(
+              0,
+              Math.min(hover.n.y + hover.n.h / 2 - 10, size.h - 80),
+            ),
           }}
         >
           <div style={tooltipTitleStyle}>
             {hover.n.label}
-            <span style={{ color: chartFgMuted(dark), marginLeft: 6, fontWeight: 400 }}>
-              · {columns[hover.n.col]?.label ?? columns[hover.n.col]?.name ?? ""}
+            <span
+              style={{
+                color: chartFgMuted(dark),
+                marginLeft: 6,
+                fontWeight: 400,
+              }}
+            >
+              ·{" "}
+              {columns[hover.n.col]?.label ?? columns[hover.n.col]?.name ?? ""}
             </span>
           </div>
           <div style={tooltipRowStyle(dark)}>
@@ -675,7 +745,10 @@ function combineWhere(a: string | null, b: string | null): string | null {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function readPredicate(selection: VgSelection | null | undefined, ownSource: any): string | null {
+function readPredicate(
+  selection: VgSelection | null | undefined,
+  ownSource: { id: string },
+): string | null {
   if (!selection) return null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clauses = (selection as any).clauses ?? [];
@@ -714,7 +787,10 @@ function columnGeometry(
   let baseW = COL_W;
   const needed = nCols * COL_W + Math.max(0, nCols - 1) * GAP_MIN;
   if (needed > innerW) {
-    baseW = Math.max(COL_W_MIN, (innerW - Math.max(0, nCols - 1) * GAP_MIN) / nCols);
+    baseW = Math.max(
+      COL_W_MIN,
+      (innerW - Math.max(0, nCols - 1) * GAP_MIN) / nCols,
+    );
   }
   const barW = Array.from({ length: nCols }, (_, i) =>
     i === focusedCol ? Math.max(baseW, FOCUS_W) : baseW,
@@ -834,7 +910,10 @@ function layoutSankey(
           sum += c * lk.count;
           wsum += lk.count;
         }
-        bary.set(n.key, wsum > 0 ? sum / wsum : centers[ci].get(n.key) ?? 0.5);
+        bary.set(
+          n.key,
+          wsum > 0 ? sum / wsum : (centers[ci].get(n.key) ?? 0.5),
+        );
       }
       list.sort(
         (a, b) => bary.get(a.key)! - bary.get(b.key)! || b.count - a.count,
@@ -986,7 +1065,14 @@ function fitNodeLabel(
   return { text: `${name.slice(0, maxChars - 1)}…`, showCount: false };
 }
 
-function ribbonPath(x0: number, y0: number, t0: number, x1: number, y1: number, t1: number): string {
+function ribbonPath(
+  x0: number,
+  y0: number,
+  t0: number,
+  x1: number,
+  y1: number,
+  t1: number,
+): string {
   const mx = (x0 + x1) / 2;
   return [
     `M${x0},${y0}`,

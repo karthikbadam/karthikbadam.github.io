@@ -65,7 +65,7 @@ function Content() {
       h={{ base: "auto", md: "100%" }}
       overflow={{ base: "visible", md: "hidden" }}
       p={4}
-      gap={3}
+      gap={4}
     >
       <Box w="100%" maxW="75em" mx="auto">
         <Heading as="h1" size="lg" lineHeight="1.2">

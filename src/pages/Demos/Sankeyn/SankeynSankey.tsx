@@ -77,7 +77,7 @@ export function SankeynSankey() {
       palette={palette}
       orderings={ORDERINGS}
       dark={dark}
-      maxNodesPerColumn={11}
+      maxNodesPerColumn={15}
       align="bottom"
       dropoffLabels
       nodeOrder="barycenter"
