@@ -138,13 +138,10 @@ export const Home = () => {
                   Full-stack engineer
                 </Text>{" "}
                 building visualization tools for metrics reporting, LLM
-                evaluation, and ML training at{" "}
-                <Text as="span" color="accent" fontWeight="semibold">
-                  Apple.
-                </Text>{" "}
-                Ph.D. in Computer Science from the University of Maryland,
-                College Park. Published novel research in HCI, Data
-                Visualization, and ML.
+                evaluation, and ML training at Apple. Received a Ph.D. in
+                Computer Science from the University of Maryland, College Park.
+                Published novel research in HCI, Data Visualization, and Machine
+                Learning.
               </Text>
               <HStack gap={2} pt={2} align="center">
                 <SocialExpandLink
@@ -272,6 +269,7 @@ const FeaturedCard = ({ post, image }: FeaturedCardProps) => (
     h="100%"
     overflow="hidden"
     p={4}
+    gap={4}
   >
     <Image
       src={`/images/${image}`}
