@@ -488,7 +488,7 @@ export function SankeyMosaicClient({
               (colSlot(n.col) >= 40 && columns.length <= 20) ||
               focusedCol === n.col ||
               n.col === lastCol;
-            const showLabel = wideEnough && (n.h >= 8 || n.key === OTHER_KEY);
+            const showLabel = wideEnough && (n.h >= 10 || n.key === OTHER_KEY);
             const fit = showLabel
               ? fitNodeLabel(
                   n.label,

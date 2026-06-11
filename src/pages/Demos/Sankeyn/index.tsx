@@ -35,7 +35,11 @@ function Legend() {
   return (
     <HStack flexWrap="wrap" gap={3} fontSize="xs" color="fg.muted">
       {categories.map((cat) => (
-        <Chip key={cat} token={categoryToken(cat)} label={CATEGORY_LABELS[cat]} />
+        <Chip
+          key={cat}
+          token={categoryToken(cat)}
+          label={CATEGORY_LABELS[cat]}
+        />
       ))}
       <Box w="1px" h="12px" bg="gray.subtle" />
       {OUTCOME_ORDER.map((o) => (
@@ -63,7 +67,7 @@ function Content() {
       p={4}
       gap={3}
     >
-      <Box w="100%" maxW="100em" mx="auto">
+      <Box w="100%" maxW="75em" mx="auto">
         <Heading as="h1" size="lg" lineHeight="1.2">
           <Text as="span" color="accent">
             San(key)
@@ -72,19 +76,25 @@ function Content() {
             </chakra.sup>
           </Text>
           {loadedSource && (
-            <Text as="span" color="fg.muted" fontWeight="normal" fontSize="md" ml={2}>
+            <Text
+              as="span"
+              color="fg.muted"
+              fontWeight="normal"
+              fontSize="md"
+              ml={2}
+            >
               · {SOURCES[loadedSource].label} ({SOURCES[loadedSource].runs})
             </Text>
           )}
         </Heading>
         <Text fontSize="sm" color="fg.muted" mt={1}>
           A custom visualization for recursive flows: the sankey unfolds the
-          first n tool calls of every agent run, and clicking a layer expands
-          it in place.
+          first n tool calls of every agent run, and clicking a layer expands it
+          in place.
         </Text>
       </Box>
 
-      <Flex maxW="100em" mx="auto" w="100%" gap={3} align="stretch" wrap="wrap">
+      <Flex maxW="75em" mx="auto" w="100%" gap={3} align="stretch" wrap="wrap">
         <SourceToggle />
         <Flex
           align="center"
