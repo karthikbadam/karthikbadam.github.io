@@ -18,21 +18,24 @@ await page.waitForFunction(
 );
 await page.waitForTimeout(2500);
 
+// Frame from just below the navbar through the chart, so the card shows the
+// title, dataset cards, and slider for context above the sankey.
 const rect = await page.evaluate(() => {
+  const nav = document.querySelector("header")?.getBoundingClientRect();
   let best = null;
   for (const s of document.querySelectorAll("svg")) {
     const r = s.getBoundingClientRect();
     if (!best || r.width * r.height > best.width * best.height) best = r;
   }
-  return { x: best.x, y: best.y, width: best.width, height: best.height };
+  return { top: nav ? nav.bottom : 0, bottom: best.bottom + 8 };
 });
 await page.screenshot({
   path: out,
   clip: {
-    x: Math.max(0, rect.x - 8),
-    y: Math.max(0, rect.y - 44),
-    width: rect.width + 16,
-    height: rect.height + 52,
+    x: 0,
+    y: rect.top,
+    width: page.viewportSize().width,
+    height: rect.bottom - rect.top,
   },
 });
 await browser.close();
