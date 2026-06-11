@@ -637,6 +637,20 @@ export function SankeyMosaicClient({
               const count = dropoffs.get(i);
               const top = colTops.get(i);
               if (!count || top === undefined) return null;
+              // Keep the annotation within its column slot so neighbouring
+              // labels never collide: full phrasing where it fits, a compact
+              // "↳ N" when the column is narrow, nothing when even that won't.
+              const countStr = count.toLocaleString();
+              const full = `↳ ${countStr} end here`;
+              const short = `↳ ${countStr}`;
+              const avail = colSlot(i) - 4;
+              const text =
+                full.length * VALUE_CHAR_W <= avail
+                  ? full
+                  : short.length * VALUE_CHAR_W <= avail
+                    ? short
+                    : null;
+              if (!text) return null;
               return (
                 <text
                   key={`d-${i}`}
@@ -647,7 +661,7 @@ export function SankeyMosaicClient({
                   pointerEvents="none"
                   style={{ ...chartValueStyle, ...chartTextHalo(dark) }}
                 >
-                  ↳ {count.toLocaleString()} end here
+                  {text}
                 </text>
               );
             })}

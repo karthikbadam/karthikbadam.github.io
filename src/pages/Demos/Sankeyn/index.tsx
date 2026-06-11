@@ -99,7 +99,7 @@ function Content() {
         <Flex
           align="center"
           flex="1"
-          minW="480px"
+          minW={{ base: "auto", md: "480px" }}
           bg="bg"
           borderWidth="1px"
           borderColor="gray.subtle"
@@ -111,10 +111,13 @@ function Content() {
         </Flex>
       </Flex>
 
-      <Box flex="1" minH={0} h={{ base: "460px", md: "auto" }}>
+      {/* base: `flex="none"` so the fixed 460px height isn't overridden by a
+          0% flex-basis (the column parent has no definite height to distribute
+          on mobile, which would otherwise collapse the chart to 0). */}
+      <Box flex={{ base: "none", md: "1" }} minH={0} h={{ base: "460px", md: "auto" }}>
         <TrajectoryPanel
-          title="Tool-call flow"
-          subtitle="click a layer to expand · click a ribbon to filter"
+          title="Recursive flow of tool-calls"
+          subtitle="click a layer to expand"
           right={<Legend />}
         >
           {/* Keyed on the loaded source so the chart re-queries only after the

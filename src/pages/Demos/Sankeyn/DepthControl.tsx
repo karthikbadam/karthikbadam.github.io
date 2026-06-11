@@ -51,7 +51,7 @@ export function DepthControl() {
   const { playing, toggle, stop } = useAutoExpand(maxDepth);
 
   return (
-    <Flex align="center" gap={3} w="100%">
+    <Flex align="center" gap={3} w="100%" wrap="wrap">
       <Text fontSize="sm" fontWeight="semibold" flexShrink={0}>
         Tool calls (n ={" "}
         <Text as="span" fontFamily="mono" color="accent">
@@ -59,31 +59,35 @@ export function DepthControl() {
         </Text>
         )
       </Text>
-      <Text fontFamily="mono" fontSize="xs" color="fg.muted" flexShrink={0}>
-        1
-      </Text>
-      <Slider.Root
-        value={[depth]}
-        onValueChange={(d) => {
-          stop();
-          setDepth(d.value[0]);
-        }}
-        min={1}
-        max={maxDepth}
-        step={1}
-        flex="1"
-        size="sm"
-      >
-        <Slider.Control>
-          <Slider.Track>
-            <Slider.Range />
-          </Slider.Track>
-          <Slider.Thumbs />
-        </Slider.Control>
-      </Slider.Root>
-      <Text fontFamily="mono" fontSize="xs" color="fg.muted" flexShrink={0}>
-        {maxDepth}
-      </Text>
+      {/* Keep the slider grouped with its 1…max labels so they never wrap
+          apart when the row collapses on narrow screens. */}
+      <Flex align="center" gap={3} flex="1" minW="200px">
+        <Text fontFamily="mono" fontSize="xs" color="fg.muted" flexShrink={0}>
+          1
+        </Text>
+        <Slider.Root
+          value={[depth]}
+          onValueChange={(d) => {
+            stop();
+            setDepth(d.value[0]);
+          }}
+          min={1}
+          max={maxDepth}
+          step={1}
+          flex="1"
+          size="sm"
+        >
+          <Slider.Control>
+            <Slider.Track>
+              <Slider.Range />
+            </Slider.Track>
+            <Slider.Thumbs />
+          </Slider.Control>
+        </Slider.Root>
+        <Text fontFamily="mono" fontSize="xs" color="fg.muted" flexShrink={0}>
+          {maxDepth}
+        </Text>
+      </Flex>
       {sankeyActive && (
         <Text
           as="button"
