@@ -45,7 +45,8 @@ export const About = () => {
           <Box>
             <Text fontSize="md" mb={4}>
               Full-stack engineer building tools for metrics reporting,
-              exploratory data analysis, LLM evaluation, and ML training.
+              exploratory data analysis, LLM evaluation, ML training, and
+              autonomous systems.
               Passionate about crafting intuitive interfaces that make sense of
               complex data.
             </Text>
