@@ -70,14 +70,10 @@ A `404.html` redirect script is also included to handle cases where users might 
 
 ## Deployment
 
-This site is deployed to GitHub Pages. To build and deploy manually:
-
-```bash
-npm run build
-# Deploy the contents of the `dist/` directory to the `gh-pages` branch
-```
-
-You can also set up a GitHub Action to automate deployment on push to `main`.
+This site is deployed to GitHub Pages automatically. On every push to `main`,
+the [`Deploy to GitHub Pages`](.github/workflows/deploy.yml) workflow builds the
+site and publishes the `dist/` directory via GitHub Actions. No manual steps are
+required.
 
 ## License
 

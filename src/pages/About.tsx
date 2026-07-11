@@ -15,11 +15,18 @@ import { Page } from "../components/Page";
 export const About = () => {
   const experiences = [
     {
+      title: "Staff Software Engineer",
+      company: "Zoox",
+      period: "2026 - Present",
+      description:
+        "Building custom data tooling for autonomous systems.",
+    },
+    {
       title: "Staff Full Stack Engineer",
       company: "Apple",
-      period: "2019 - Present",
+      period: "2019 - 2026",
       description:
-        "Creating interactive ML tools to augment datasets that feed Apple Intelligence model training.",
+        "Created interactive ML tools to augment datasets that feed Apple Intelligence model training.",
     },
     {
       title: "Ph.D. in Computer Science",
@@ -38,7 +45,8 @@ export const About = () => {
           <Box>
             <Text fontSize="md" mb={4}>
               Full-stack engineer building tools for metrics reporting,
-              exploratory data analysis, LLM evaluation, and ML training.
+              exploratory data analysis, LLM evaluation, ML training, and
+              autonomous systems.
               Passionate about crafting intuitive interfaces that make sense of
               complex data.
             </Text>
