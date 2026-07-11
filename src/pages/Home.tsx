@@ -135,13 +135,12 @@ export const Home = () => {
               </Heading>
               <Text fontSize="sm" color="gray.fg" lineHeight="tall">
                 <Text as="span" color="accent" fontWeight="semibold">
-                  Full-stack engineer
+                  Staff Software Engineer
                 </Text>{" "}
-                building visualization tools for metrics reporting, LLM
-                evaluation, and ML training at Apple. Received a Ph.D. in
-                Computer Science from the University of Maryland, College Park.
-                Published novel research in HCI, Data Visualization, and Machine
-                Learning.
+                building custom data tooling for autonomous systems at Zoox.
+                Received a Ph.D. in Computer Science from the University of
+                Maryland, College Park. Published novel research in HCI, Data
+                Visualization, and Machine Learning.
               </Text>
               <HStack gap={2} pt={2} align="center">
                 <SocialExpandLink
